@@ -25,7 +25,7 @@
                     "initialStateCheck": false
                 },
                 {
-                    "name": "SetBlock",
+                    "name": "PlaceBlock",
                     "type": "Button",
                     "id": "6006cf5a-07d9-4ad9-a959-800019969202",
                     "expectedControlType": "",
@@ -34,9 +34,18 @@
                     "initialStateCheck": false
                 },
                 {
-                    "name": "RotateBlock",
+                    "name": "Kick",
                     "type": "Button",
                     "id": "72c16b70-65f7-46ce-9825-2ac265f324f8",
+                    "expectedControlType": "",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
+                },
+                {
+                    "name": "Cluck",
+                    "type": "Button",
+                    "id": "6d38b16f-8020-4fba-a1f1-add6053705b4",
                     "expectedControlType": "",
                     "processors": "",
                     "interactions": "",
@@ -157,22 +166,22 @@
                 {
                     "name": "",
                     "id": "3d19d9ad-10b8-44c5-a11d-895179e5eaa0",
-                    "path": "<Keyboard>/f",
+                    "path": "<Keyboard>/e",
                     "interactions": "",
                     "processors": "",
                     "groups": "Keyboard1",
-                    "action": "SetBlock",
+                    "action": "PlaceBlock",
                     "isComposite": false,
                     "isPartOfComposite": false
                 },
                 {
                     "name": "",
                     "id": "4fdc11c8-2be9-46a3-9143-47d42ef288d5",
-                    "path": "<Gamepad>/buttonEast",
+                    "path": "<Gamepad>/buttonWest",
                     "interactions": "",
                     "processors": "",
                     "groups": "Gamepad",
-                    "action": "SetBlock",
+                    "action": "PlaceBlock",
                     "isComposite": false,
                     "isPartOfComposite": false
                 },
@@ -183,29 +192,29 @@
                     "interactions": "",
                     "processors": "",
                     "groups": ";Keyboard2",
-                    "action": "SetBlock",
+                    "action": "PlaceBlock",
                     "isComposite": false,
                     "isPartOfComposite": false
                 },
                 {
                     "name": "",
                     "id": "6db3263e-2117-470c-a7a2-ce182d012b37",
-                    "path": "<Keyboard>/r",
+                    "path": "<Keyboard>/f",
                     "interactions": "",
                     "processors": "",
                     "groups": "Keyboard1",
-                    "action": "RotateBlock",
+                    "action": "Kick",
                     "isComposite": false,
                     "isPartOfComposite": false
                 },
                 {
                     "name": "",
                     "id": "24780e25-25d7-4dd4-88af-0182577c1b6c",
-                    "path": "<Gamepad>/rightShoulder",
+                    "path": "<Gamepad>/buttonEast",
                     "interactions": "",
                     "processors": "",
                     "groups": "Gamepad",
-                    "action": "RotateBlock",
+                    "action": "Kick",
                     "isComposite": false,
                     "isPartOfComposite": false
                 },
@@ -216,7 +225,40 @@
                     "interactions": "",
                     "processors": "",
                     "groups": ";Keyboard2",
-                    "action": "RotateBlock",
+                    "action": "Kick",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "372003b5-0da7-40d5-9f1b-eee45abeb138",
+                    "path": "<Keyboard>/r",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": ";Keyboard1",
+                    "action": "Cluck",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "03ea4c07-30d8-4912-b3c0-d750a2d3c181",
+                    "path": "<Gamepad>/buttonNorth",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": ";Gamepad",
+                    "action": "Cluck",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "65674442-95e3-4552-b49e-d14db27f5f9b",
+                    "path": "<Keyboard>/enter",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": ";Keyboard2",
+                    "action": "Cluck",
                     "isComposite": false,
                     "isPartOfComposite": false
                 }
@@ -423,7 +465,7 @@
                 {
                     "name": "",
                     "id": "b899f2ec-b4d7-42f2-ace8-4759243e4461",
-                    "path": "<Keyboard>/f",
+                    "path": "<Keyboard>/e",
                     "interactions": "",
                     "processors": "",
                     "groups": "Keyboard1",
@@ -456,7 +498,7 @@
                 {
                     "name": "",
                     "id": "3562446a-a894-491a-8788-8e59547c2422",
-                    "path": "<Keyboard>/r",
+                    "path": "<Keyboard>/f",
                     "interactions": "",
                     "processors": "",
                     "groups": "Keyboard1",
@@ -483,56 +525,6 @@
                     "processors": "",
                     "groups": ";Keyboard2",
                     "action": "Back",
-                    "isComposite": false,
-                    "isPartOfComposite": false
-                }
-            ]
-        },
-        {
-            "name": "Join",
-            "id": "4901c2ec-a176-40c1-9184-c0aff8f9fb51",
-            "actions": [
-                {
-                    "name": "JoinGame",
-                    "type": "Button",
-                    "id": "01b60402-bf64-4ab8-9c72-a4cb244ced56",
-                    "expectedControlType": "",
-                    "processors": "",
-                    "interactions": "",
-                    "initialStateCheck": false
-                }
-            ],
-            "bindings": [
-                {
-                    "name": "",
-                    "id": "e181ab8c-4715-40b7-b0e5-ce8f242a784f",
-                    "path": "<Keyboard>/f",
-                    "interactions": "",
-                    "processors": "",
-                    "groups": ";Keyboard1",
-                    "action": "JoinGame",
-                    "isComposite": false,
-                    "isPartOfComposite": false
-                },
-                {
-                    "name": "",
-                    "id": "a3a575d9-b102-4c56-86c5-12b0885146cd",
-                    "path": "<Gamepad>/buttonEast",
-                    "interactions": "",
-                    "processors": "",
-                    "groups": ";Gamepad",
-                    "action": "JoinGame",
-                    "isComposite": false,
-                    "isPartOfComposite": false
-                },
-                {
-                    "name": "",
-                    "id": "e78fcaae-b499-452d-bb51-e3ea731397fa",
-                    "path": "<Keyboard>/rightShift",
-                    "interactions": "",
-                    "processors": "",
-                    "groups": ";Keyboard2",
-                    "action": "JoinGame",
                     "isComposite": false,
                     "isPartOfComposite": false
                 }

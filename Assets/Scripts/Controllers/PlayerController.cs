@@ -1,9 +1,8 @@
-using System.Collections;
-using UnityEditor.Animations;
+using System;
 using UnityEngine;
 using UnityEngine.InputSystem;
-using UnityEngine.Pool;
 
+public enum PlayerState { InLobby, InGame, Dead}
 public class PlayerController : MonoBehaviour
 {
 	[SerializeField] private PlatformerValuesSO valuesSO;
@@ -32,10 +31,20 @@ public class PlayerController : MonoBehaviour
 	private InputAction jumpInput;
 	private bool isGrounded;
 	private bool isHoldingJump;
+	private InputAction placeBlockInput;
+	private InputAction kickInput;
+	private InputAction cluckInput;
+	public int playerIndex;
+	public bool isOnGame = false;
+	public PlayerState playerState = PlayerState.InLobby;
 
 	//InputSystem
 	private PlayerInput playerInput;
 	private string assignedScheme;
+
+	//Game Manager
+	public Action<PlayerController> onDeath;
+	public Action<PlayerController> onPlayerReady;
 
 
 	private void Awake()
@@ -47,7 +56,6 @@ public class PlayerController : MonoBehaviour
 
 		rb.gravityScale = 0f;
 		rb.freezeRotation = true;
-
 		CalculateValues();
 	}
 
@@ -67,16 +75,25 @@ public class PlayerController : MonoBehaviour
 		jumpInput.started += OnJumpStarted;
 		jumpInput.canceled += OnJumpCanceled;
 		jumpInput.Enable();
+
+		placeBlockInput = playerInput.actions.FindAction("PlaceBlock");
+		placeBlockInput.started += OnPlaceBlockStarted;
+
+		kickInput = playerInput.actions.FindAction("Kick");
+		kickInput.started += OnKickStarted;
+
+		cluckInput = playerInput.actions.FindAction("Cluck");
+		cluckInput.started += OnCluckStarted;
 	}
 
-    void OnDestroy()
-    {
+	void OnDestroy()
+	{
 		if (jumpInput != null)
 		{
 			jumpInput.started -= OnJumpStarted;
 			jumpInput.canceled -= OnJumpCanceled;
 		}
-    }
+	}
 
 	private void OnJumpStarted(InputAction.CallbackContext context)
 	{
@@ -89,6 +106,22 @@ public class PlayerController : MonoBehaviour
 		isHoldingJump = false;
 	}
 
+	private void OnPlaceBlockStarted(InputAction.CallbackContext context)
+	{
+		//!PLACE BLOCK LOGIC
+	}
+
+	private void OnKickStarted(InputAction.CallbackContext context)
+	{
+		//!KICK'S LOGIC 
+	}
+
+	private void OnCluckStarted(InputAction.CallbackContext context)
+	{
+		//!CLUCK SOUND
+		if (playerState == PlayerState.InLobby)
+			onPlayerReady?.Invoke(this);
+	}
 
 	void Update()
 	{
@@ -99,25 +132,25 @@ public class PlayerController : MonoBehaviour
 		CheckGround();
 
 		HandleJump();
-    }
-	
+	}
+
 	private void UpdateHorizontalDirection() => moveDirection = moveInput.ReadValue<float>();
 
 	private void UpdateJumpValues()
 	{
-        if (jumpBufferTimer > 0)
+		if (jumpBufferTimer > 0)
 		{
 			jumpBufferTimer -= Time.deltaTime;
 		}
 
-        if (isGrounded)
-        {
-            coyoteTimeTimer = valuesSO.coyoteTime;
-        }
-        else
-        {
-            coyoteTimeTimer -= Time.deltaTime;
-        }
+		if (isGrounded)
+		{
+			coyoteTimeTimer = valuesSO.coyoteTime;
+		}
+		else
+		{
+			coyoteTimeTimer -= Time.deltaTime;
+		}
 	}
 
 	private void CheckGround()
@@ -129,18 +162,18 @@ public class PlayerController : MonoBehaviour
 		isGrounded = hit.collider || hit2.collider;
 	}
 
-    void OnDrawGizmos()
-    {
+	void OnDrawGizmos()
+	{
 		Gizmos.color = Color.yellow;
 
 		float gizmos1 = transform.position.x - checkSpacing;
-        Gizmos.DrawLine(new Vector2(gizmos1, transform.position.y), new Vector2(gizmos1, transform.position.y - raycastDistance));
+		Gizmos.DrawLine(new Vector2(gizmos1, transform.position.y), new Vector2(gizmos1, transform.position.y - raycastDistance));
 
 		float gizmos2 = transform.position.x + checkSpacing;
-        Gizmos.DrawLine(new Vector2(gizmos2, transform.position.y), new Vector2(gizmos2, transform.position.y - raycastDistance));
-    }
+		Gizmos.DrawLine(new Vector2(gizmos2, transform.position.y), new Vector2(gizmos2, transform.position.y - raycastDistance));
+	}
 
-    private void HandleJump()
+	private void HandleJump()
 	{
 		bool canJump = jumpBufferTimer > 0f && coyoteTimeTimer > 0f;
 
@@ -160,11 +193,11 @@ public class PlayerController : MonoBehaviour
 	{
 		HandleHorizontalMovement();
 		HandleGravity();
-		
-		rb.linearVelocity = currentVelocity;
-    }
 
-    private void HandleHorizontalMovement()
+		rb.linearVelocity = currentVelocity;
+	}
+
+	private void HandleHorizontalMovement()
 	{
 		float targetSpeed = moveDirection * valuesSO.maxSpeed;
 
@@ -192,14 +225,20 @@ public class PlayerController : MonoBehaviour
 
 		if (currentVelocity.y < 0)
 		{
+			//!LOGICA DE GLIDE
 			currentVelocity.y += calculatedGravity * (valuesSO.fallMultiplier - 1f) * Time.deltaTime;
 		}
 		else if (currentVelocity.y > 0 && !isHoldingJump)
 		{
 			currentVelocity.y += calculatedGravity * (valuesSO.lowJumpMultiplier - 1f) * Time.deltaTime;
 		}
-    }
+	}
 
+	private void OnDeath()
+	{
+		//LOGICA DE MUERTE
+		onDeath?.Invoke(this);
+	}
 	public void OnAssignedScheme(string schemeName)
 	{
 		assignedScheme = schemeName;
@@ -213,7 +252,7 @@ public class PlayerController : MonoBehaviour
 	{
 		if (assignedScheme != "Gamepad")
 		{
-			PlayersManager.instance.FreeKeyboardScheme(assignedScheme);
+			GameManager.instance.FreeKeyboardScheme(assignedScheme);
 		}
 	}
 
