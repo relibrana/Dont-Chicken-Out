@@ -11,6 +11,7 @@ GameObject:
   - component: {fileID: 5081372368739897606}
   - component: {fileID: 3938633627374079030}
   - component: {fileID: 8844354146645330668}
+  - component: {fileID: 7977010263493204414}
   m_Layer: 0
   m_Name: Camera
   m_TagString: Untagged
@@ -25,13 +26,13 @@ Transform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1874643380446157127}
+  serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: -10}
+  m_LocalPosition: {x: 0, y: 0, z: -44.24871}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 8272918300763466392}
-  m_RootOrder: -1
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!20 &3938633627374079030
 Camera:
@@ -43,7 +44,7 @@ Camera:
   m_Enabled: 1
   serializedVersion: 2
   m_ClearFlags: 2
-  m_BackGroundColor: {r: 0.7830189, g: 0.5872642, b: 0.77878505, a: 0}
+  m_BackGroundColor: {r: 0.7496796, g: 0.949284, b: 0.9528302, a: 0}
   m_projectionMatrixMode: 1
   m_GateFitMode: 2
   m_FOVAxisMode: 0
@@ -92,6 +93,38 @@ AudioListener:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1874643380446157127}
   m_Enabled: 1
+--- !u!114 &7977010263493204414
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1874643380446157127}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 72ece51f2901e7445ab60da3685d6b5f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  ShowDebugText: 0
+  ShowCameraFrustum: 1
+  IgnoreTimeScale: 0
+  WorldUpOverride: {fileID: 0}
+  ChannelMask: -1
+  UpdateMethod: 2
+  BlendUpdateMethod: 1
+  LensModeOverride:
+    Enabled: 0
+    DefaultMode: 2
+  DefaultBlend:
+    Style: 1
+    Time: 2
+    CustomCurve:
+      serializedVersion: 2
+      m_Curve: []
+      m_PreInfinity: 2
+      m_PostInfinity: 2
+      m_RotationOrder: 4
+  CustomBlends: {fileID: 0}
 --- !u!1 &4615720834166920677
 GameObject:
   m_ObjectHideFlags: 0
@@ -101,8 +134,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 8272918300763466392}
-  - component: {fileID: 4416076417033056653}
-  - component: {fileID: 2903474578593076918}
+  - component: {fileID: 4340369678343532913}
   m_Layer: 0
   m_Name: CameraRig
   m_TagString: Untagged
@@ -117,6 +149,7 @@ Transform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 4615720834166920677}
+  serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
@@ -124,9 +157,8 @@ Transform:
   m_Children:
   - {fileID: 5081372368739897606}
   m_Father: {fileID: 0}
-  m_RootOrder: 3
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &4416076417033056653
+--- !u!114 &4340369678343532913
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -135,22 +167,19 @@ MonoBehaviour:
   m_GameObject: {fileID: 4615720834166920677}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: ec943b087b4ca433db540564252a1f3e, type: 3}
+  m_Script: {fileID: 11500000, guid: 3619877ad9b631344b226e39c11b09c9, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  players: []
-  smoothness: 0.5
---- !u!114 &2903474578593076918
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4615720834166920677}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: a6d111613e5564c6db6e029b787227ce, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  mainCamera: {fileID: 5081372368739897606}
-  fadeOutObject: {fileID: 0}
+  baseFollowTarget: {fileID: 0}
+  cineCam: {fileID: 0}
+  smoothTimeY: 0.5
+  minFollowHeight: 1
+  yOffset: 0
+  normalOrthoSize: 5
+  winnerOrthoSize: 3
+  zoomSmooth: 0.4
+  defaultShakeDuration: 0.35
+  defaultShakeAmplitude: 5
+  shakeFrequency: 25
+  shakeAffectsX: 1
+  shakeAffectsY: 1

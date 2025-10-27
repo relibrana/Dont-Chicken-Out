@@ -17,6 +17,9 @@ public class GameManager : MonoBehaviour
 
 	[Header ("UI")]
 	[SerializeField] private UIManager uiManager;
+    public CinemachineVerticalRig2D cameraRig;
+
+    [Header ("UI")]
 
 	[HideInInspector] public float autoMoveCameraCurrentTime;
 	[Header ("Game Variables")]
@@ -27,6 +30,17 @@ public class GameManager : MonoBehaviour
 
 
 	public GameState gameState = GameState.Menu;
+
+    public PlayerController[] InGamePlayers
+    {
+        get
+        {
+            var copy = new PlayerController[4];
+            for (int i = 0; i < playersAlive.Length; i++)
+                copy[i] = inGamePlayers[i];
+            return copy;
+        }
+    }
 
     void Awake()
 	{
@@ -91,15 +105,27 @@ public class GameManager : MonoBehaviour
 		
 		//CameraMovement
 		// autoMoveCameraCurrentTime -= Time.deltaTime;
+        //CameraMovement
+         autoMoveCameraCurrentTime -= Time.deltaTime;
 
-		// if (autoMoveCameraCurrentTime <= 0)
-		// {
-		// 	cameraController.maxHeightReached += autoMoveCameraSpeed * Time.deltaTime;
-		// }
+         if (autoMoveCameraCurrentTime <= 0)
+         {
+         	cameraRig.MaxHeightReached += autoMoveCameraSpeed * Time.deltaTime;
+         }
+    }
 
-		// Check player coordinates
-		// CheckPlayerCoordinates();
-	}
+	public float CheckPlayerCoordinates()
+	{
+		float lowestY = float.MaxValue;
+		foreach (PlayerController player in inGamePlayers)
+		{
+			if (player != null && player.transform.position.y < lowestY)
+			{
+				lowestY = player.transform.position.y;
+			}
+		}
+		return lowestY;
+    }
 
 	public void AddPlayer(PlayerController player)
 	{

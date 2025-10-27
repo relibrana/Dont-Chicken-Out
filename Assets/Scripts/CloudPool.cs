@@ -48,7 +48,7 @@ public class CloudPool : MonoBehaviour
 	{
 		// Buscar una nube inactiva en el pool
 		float spawnX = Screen.width + 3f;
-		float spawnY = Random.Range(GameManager.instance.cameraController.maxHeightReached, Screen.height + GameManager.instance.cameraController.maxHeightReached + Random.Range (-5f,5f));
+		float spawnY = Random.Range(GameManager.instance.cameraRig.MaxHeightReached, Screen.height + GameManager.instance.cameraRig.MaxHeightReached + Random.Range (-5f,5f));
 
 		Vector3 worldPos = mainCamera.ScreenToWorldPoint (new Vector3(spawnX, spawnY, 0));
 		worldPos.z = 1;
