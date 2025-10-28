@@ -50,11 +50,16 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   valuesSO: {fileID: 11400000, guid: 7dd54a8ef4e502444b0e082693e12d69, type: 2}
-  raycastDistance: 0.55
+  raycastDistance: 0.11
   checkSpacing: 0.2
+  spacingY: 0.44
+  headCheck: 0.9
   groundLayer:
     serializedVersion: 2
-    m_Bits: 64
+    m_Bits: 192
+  playerIndex: 0
+  isOnGame: 0
+  playerState: 0
 --- !u!50 &8124305224974726577
 Rigidbody2D:
   serializedVersion: 5
@@ -71,7 +76,7 @@ Rigidbody2D:
   m_LinearDamping: 0
   m_AngularDamping: 0.05
   m_GravityScale: 1
-  m_Material: {fileID: 0}
+  m_Material: {fileID: 6200000, guid: b74ff7cfe60d89a45807a1b36e006880, type: 2}
   m_IncludeLayers:
     serializedVersion: 2
     m_Bits: 0

@@ -21,6 +21,8 @@ public class PlatformerValuesSO : ScriptableObject
     public float fallMultiplier = 2.5f;
     [Tooltip("Gravity Multiplier when the Jump Button is released")]
     public float lowJumpMultiplier = 2f;
+    [Tooltip("Resistance force when the Jump Button is on hold while falling")]
+    public float glideResistance = 1f;
 
 
     [Header("Additional Values")]

@@ -19,5 +19,6 @@ MonoBehaviour:
   timeToPeak: 0.4
   fallMultiplier: 2.5
   lowJumpMultiplier: 2
+  glideResistance: 2.2
   coyoteTime: 0.15
   jumpBufferTime: 0.15

@@ -2684,7 +2684,6 @@ MonoBehaviour:
   - {fileID: 20636805}
   - {fileID: 1132217159}
   playerPrefab: {fileID: 63502757195481365, guid: f90e3cd907493544c9d9e2c3a54db358, type: 3}
-  currPlayersInGame: 0
 --- !u!114 &202624585
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2778,16 +2777,6 @@ MonoBehaviour:
   cameraController: {fileID: 0}
   autoMoveCameraCurrentTime: 0
   autoMoveCameraSpeed: 0.2
-  inGamePlayers:
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  playersAlive:
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
   playersManager: {fileID: 202624584}
   uiManager: {fileID: 872296592}
   gameState: 0
@@ -10369,7 +10358,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!114 &985441399
 MonoBehaviour:
   m_ObjectHideFlags: 0

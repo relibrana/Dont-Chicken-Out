@@ -15,7 +15,10 @@ public class PlayerController : MonoBehaviour
 	//Ground Checkers
 	[SerializeField] private float raycastDistance = 0.55f;
 	[SerializeField] private float checkSpacing = 0.2f;
+	[SerializeField] private float spacingY = 0.2f;
+	[SerializeField] private float headCheck = 0.2f;
 	[SerializeField] private LayerMask groundLayer;
+	private bool isPlayerOnHead;
 
 	//Timers
 	private float coyoteTimeTimer;
@@ -50,7 +53,7 @@ public class PlayerController : MonoBehaviour
 	private void Awake()
 	{
 		playerInput = GetComponent<PlayerInput>();
-		InitializeInputActions(playerInput.currentActionMap);
+		InitializeInputActions();
 
 		rb = GetComponent<Rigidbody2D>();
 
@@ -66,7 +69,7 @@ public class PlayerController : MonoBehaviour
 		calculatedInitialJumpVelocity = -calculatedGravity * valuesSO.timeToPeak;
 	}
 
-	private void InitializeInputActions(InputActionMap inputActions)
+	private void InitializeInputActions()
 	{
 		moveInput = playerInput.actions.FindAction("Move");
 		moveInput.Enable();
@@ -156,26 +159,40 @@ public class PlayerController : MonoBehaviour
 	private void CheckGround()
 	{
 		Vector2 pos = transform.position;
-		RaycastHit2D hit = Physics2D.Raycast(new Vector2(pos.x - checkSpacing, pos.y), Vector2.down, raycastDistance, groundLayer);
-		RaycastHit2D hit2 = Physics2D.Raycast(new Vector2(pos.x + checkSpacing, pos.y), Vector2.down, raycastDistance, groundLayer);
+		RaycastHit2D hit = Physics2D.Raycast(new Vector2(pos.x - checkSpacing, pos.y - spacingY), Vector2.down, raycastDistance, groundLayer);
+		RaycastHit2D hit2 = Physics2D.Raycast(new Vector2(pos.x, pos.y - spacingY - 0.07f), Vector2.down, raycastDistance, groundLayer);
+		RaycastHit2D hit3 = Physics2D.Raycast(new Vector2(pos.x + checkSpacing, pos.y - spacingY), Vector2.down, raycastDistance, groundLayer);
 
-		isGrounded = hit.collider || hit2.collider;
+		isGrounded = hit.collider || hit2.collider || hit3.collider;
+		
+		RaycastHit2D hitH = Physics2D.Raycast(new Vector2(pos.x - checkSpacing, pos.y + headCheck), Vector2.up, raycastDistance, groundLayer);
+		RaycastHit2D hitH2 = Physics2D.Raycast(new Vector2(pos.x, pos.y + headCheck + 0.07f), Vector2.up, raycastDistance, groundLayer);
+		RaycastHit2D hitH3 = Physics2D.Raycast(new Vector2(pos.x + checkSpacing, pos.y + headCheck), Vector2.up, raycastDistance, groundLayer);
+
+		isPlayerOnHead = hitH.collider || hitH2.collider || hitH3.collider;
 	}
 
 	void OnDrawGizmos()
 	{
 		Gizmos.color = Color.yellow;
 
+		float startPosY = transform.position.y - spacingY;
+		Gizmos.DrawLine(new Vector2(transform.position.x, startPosY - 0.07f), new Vector2(transform.position.x, startPosY - raycastDistance));
+		Gizmos.DrawLine(new Vector2(transform.position.x, startPosY + headCheck + 0.07f),
+			new Vector2(transform.position.x, startPosY + headCheck + raycastDistance));
+
 		float gizmos1 = transform.position.x - checkSpacing;
-		Gizmos.DrawLine(new Vector2(gizmos1, transform.position.y), new Vector2(gizmos1, transform.position.y - raycastDistance));
+		Gizmos.DrawLine(new Vector2(gizmos1, startPosY), new Vector2(gizmos1, startPosY - raycastDistance));
+		Gizmos.DrawLine(new Vector2(gizmos1, startPosY + headCheck), new Vector2(gizmos1, startPosY + headCheck + raycastDistance));
 
 		float gizmos2 = transform.position.x + checkSpacing;
-		Gizmos.DrawLine(new Vector2(gizmos2, transform.position.y), new Vector2(gizmos2, transform.position.y - raycastDistance));
+		Gizmos.DrawLine(new Vector2(gizmos2, startPosY), new Vector2(gizmos2, startPosY - raycastDistance));
+		Gizmos.DrawLine(new Vector2(gizmos2, startPosY + headCheck), new Vector2(gizmos2, startPosY + headCheck + raycastDistance));
 	}
 
 	private void HandleJump()
 	{
-		bool canJump = jumpBufferTimer > 0f && coyoteTimeTimer > 0f;
+		bool canJump = jumpBufferTimer > 0f && coyoteTimeTimer > 0f && !isPlayerOnHead;
 
 		if (canJump)
 		{
@@ -211,6 +228,11 @@ public class PlayerController : MonoBehaviour
 		);
 	}
 
+	public void AddImpulse(Vector2 impulseDirection)
+    {
+        currentVelocity += impulseDirection;
+    }
+
 	private void HandleGravity()
 	{
 		if (isGrounded)
@@ -225,8 +247,16 @@ public class PlayerController : MonoBehaviour
 
 		if (currentVelocity.y < 0)
 		{
-			//!LOGICA DE GLIDE
-			currentVelocity.y += calculatedGravity * (valuesSO.fallMultiplier - 1f) * Time.deltaTime;
+			float glideMultiplier = isHoldingJump ? valuesSO.glideResistance : 0;
+
+			int fallLimit = isHoldingJump ? -4 : -25;
+			
+			float nextVelocityY = currentVelocity.y + calculatedGravity * (valuesSO.fallMultiplier - 1f - glideMultiplier) * Time.deltaTime;
+
+			currentVelocity.y = Mathf.Clamp(nextVelocityY, fallLimit, 50);
+
+			Debug.Log(nextVelocityY);
+			Debug.Log(fallLimit);
 		}
 		else if (currentVelocity.y > 0 && !isHoldingJump)
 		{
@@ -236,9 +266,10 @@ public class PlayerController : MonoBehaviour
 
 	private void OnDeath()
 	{
-		//LOGICA DE MUERTE
+		//!LOGICA DE MUERTE
 		onDeath?.Invoke(this);
 	}
+
 	public void OnAssignedScheme(string schemeName)
 	{
 		assignedScheme = schemeName;
