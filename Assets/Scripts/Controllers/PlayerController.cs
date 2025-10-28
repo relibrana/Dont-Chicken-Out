@@ -1,4 +1,6 @@
 using System;
+using DG.Tweening;
+using UnityEditor;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -11,6 +13,7 @@ public class PlayerController : MonoBehaviour
 	private Rigidbody2D rb;
 	private Vector2 currentVelocity;
 	private float velocitySmoothing;
+	[SerializeField] private KickCollider kickCollider;
 
 	//Ground Checkers
 	[SerializeField] private float raycastDistance = 0.55f;
@@ -60,6 +63,8 @@ public class PlayerController : MonoBehaviour
 		rb.gravityScale = 0f;
 		rb.freezeRotation = true;
 		CalculateValues();
+
+		kickCollider.forceDirection = valuesSO.kickForce;
 	}
 
 	public void CalculateValues()
@@ -116,7 +121,9 @@ public class PlayerController : MonoBehaviour
 
 	private void OnKickStarted(InputAction.CallbackContext context)
 	{
-		//!KICK'S LOGIC 
+		//!KICK'S LOGIC
+		kickCollider.gameObject.SetActive(true);
+		DOVirtual.DelayedCall(0.5f, () => kickCollider.gameObject.SetActive(false));
 	}
 
 	private void OnCluckStarted(InputAction.CallbackContext context)
@@ -218,6 +225,9 @@ public class PlayerController : MonoBehaviour
 	{
 		float targetSpeed = moveDirection * valuesSO.maxSpeed;
 
+		if(moveDirection != 0)
+			transform.localScale = new Vector3(Mathf.Sign(moveDirection), 1);
+
 		float smoothTime = Mathf.Abs(targetSpeed) > 0.01f ? valuesSO.accelerationTime : valuesSO.decelerationTime;
 
 		currentVelocity.x = Mathf.SmoothDamp(
@@ -230,7 +240,10 @@ public class PlayerController : MonoBehaviour
 
 	public void AddImpulse(Vector2 impulseDirection)
     {
-        currentVelocity += impulseDirection;
+		currentVelocity += impulseDirection;
+
+		isGrounded = false;
+		coyoteTimeTimer = 0f;
     }
 
 	private void HandleGravity()
@@ -254,9 +267,6 @@ public class PlayerController : MonoBehaviour
 			float nextVelocityY = currentVelocity.y + calculatedGravity * (valuesSO.fallMultiplier - 1f - glideMultiplier) * Time.deltaTime;
 
 			currentVelocity.y = Mathf.Clamp(nextVelocityY, fallLimit, 50);
-
-			Debug.Log(nextVelocityY);
-			Debug.Log(fallLimit);
 		}
 		else if (currentVelocity.y > 0 && !isHoldingJump)
 		{

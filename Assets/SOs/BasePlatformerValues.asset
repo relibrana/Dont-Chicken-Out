@@ -22,3 +22,4 @@ MonoBehaviour:
   glideResistance: 2.2
   coyoteTime: 0.15
   jumpBufferTime: 0.15
+  kickForce: {x: 30, y: 15}

@@ -30,4 +30,6 @@ public class PlatformerValuesSO : ScriptableObject
     public float coyoteTime = 0.15f;
     [Tooltip("Time the Jump Input waits before reaching the ground")]
     public float jumpBufferTime = 0.15f;
+    [Tooltip("Amount of Force the kick will make")]
+    public Vector2 kickForce;
 }
