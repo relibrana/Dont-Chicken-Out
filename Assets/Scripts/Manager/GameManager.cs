@@ -12,31 +12,21 @@ public class GameManager : MonoBehaviour
 
 	[Header ("References")]
 	public CameraController cameraController;
+	public PoolingManager blocksPool;
+	[SerializeField] private PlayersManager playersManager;
 
 	[Header ("UI")]
+	[SerializeField] private UIManager uiManager;
 
-	[Header ("Game Variables")]
 	[HideInInspector] public float autoMoveCameraCurrentTime;
+	[Header ("Game Variables")]
 	public float autoMoveCameraSpeed = 0.2f;
 	// bool screenShakeTrigger=false;
 	private PlayerController[] inGamePlayers = new PlayerController[4];
 	private PlayerController[] playersAlive = new PlayerController[4];
 
-	[SerializeField] private PlayersManager playersManager;
-	[SerializeField] private UIManager uiManager;
 
-	[Header("Dont touch")]
 	public GameState gameState = GameState.Menu;
-	
-
-	public PoolingManager blocksPool;
-
-	public GameObject player1;
-	public GameObject player2;
-	bool gameStart=false;
-	public GameObject p1wins;
-	public GameObject p2wins;
-	public GameObject lose;
 
     void Awake()
 	{
@@ -93,6 +83,12 @@ public class GameManager : MonoBehaviour
     }
 	private void OnGameState()
 	{
+		for (int i = 0; i < playersAlive.Length; i++)
+		{
+			if(playersAlive[i] != null)
+				playersAlive[i].isOnGame = true;
+		}
+		
 		//CameraMovement
 		// autoMoveCameraCurrentTime -= Time.deltaTime;
 

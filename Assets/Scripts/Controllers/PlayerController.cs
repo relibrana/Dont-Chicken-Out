@@ -1,6 +1,5 @@
 using System;
 using DG.Tweening;
-using UnityEditor;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -51,6 +50,14 @@ public class PlayerController : MonoBehaviour
 	//Game Manager
 	public Action<PlayerController> onDeath;
 	public Action<PlayerController> onPlayerReady;
+
+	//Blocks
+	[SerializeField] private Transform blockPosition;
+	private BlockScript currentBlockHolding = null;
+	[SerializeField] private float blockPlaceCooldown = 1f;
+	private bool canPlaceBlock = false;
+	private bool isBlockLogicAvailable = true;
+	private bool isBlockOverlapping = false;
 
 
 	private void Awake()
@@ -116,14 +123,21 @@ public class PlayerController : MonoBehaviour
 
 	private void OnPlaceBlockStarted(InputAction.CallbackContext context)
 	{
-		//!PLACE BLOCK LOGIC
+		if (isGrounded && canPlaceBlock && !isBlockOverlapping)
+		{
+			currentBlockHolding.StopHold();
+			currentBlockHolding.AnimateAppear();
+			SoundManager.instance.PlaySound("placeBlock");
+			currentBlockHolding = null;
+			isBlockLogicAvailable = false;
+			DOVirtual.DelayedCall(blockPlaceCooldown, () => isBlockLogicAvailable = true, false);
+		}
 	}
 
 	private void OnKickStarted(InputAction.CallbackContext context)
 	{
-		//!KICK'S LOGIC
 		kickCollider.gameObject.SetActive(true);
-		DOVirtual.DelayedCall(0.5f, () => kickCollider.gameObject.SetActive(false));
+		DOVirtual.DelayedCall(0.2f, () => kickCollider.gameObject.SetActive(false));
 	}
 
 	private void OnCluckStarted(InputAction.CallbackContext context)
@@ -142,6 +156,8 @@ public class PlayerController : MonoBehaviour
 		CheckGround();
 
 		HandleJump();
+
+		HandleBlockLogic();
 	}
 
 	private void UpdateHorizontalDirection() => moveDirection = moveInput.ReadValue<float>();
@@ -297,118 +313,47 @@ public class PlayerController : MonoBehaviour
 		}
 	}
 
+	private void HandleBlockLogic()
+	{
+		if (!isOnGame || !isBlockLogicAvailable) return;
 
-	// 	// Block placing
-	// 	BlockScript currentBlockHolding = null;
-	// 	float cooldownTime = 3;
-	// 	float cooldownCurrentTime = 0;
-	// 	Vector2 placeBlockPosition = new Vector2 (0.5f, -0.47f);
+		if (currentBlockHolding == null)
+		{
+			int randomIndex = UnityEngine.Random.Range(0, GameManager.instance.blocksPool.pooledObjects.Count);
+			currentBlockHolding = GameManager.instance.blocksPool.GetPooledObject(randomIndex, blockPosition.position, 0).GetComponent<BlockScript>();
+			currentBlockHolding.StartHold();
+			canPlaceBlock = false;
+			DOVirtual.DelayedCall(0.3f, () => canPlaceBlock = true, false);
+		}
+		else
+		{
+			currentBlockHolding.transform.position = blockPosition.position;
+			currentBlockHolding.transform.localScale = new Vector3(transform.lossyScale.x, 1, 1);
 
-	// 	PoolingManager blocksPool => GameManager.instance.blocksPool;
+			isBlockOverlapping = false;
+			foreach (BoxCollider2D col in currentBlockHolding.boxCollider2Ds)
+			{
+				if (CheckOverlapping(col))
+					isBlockOverlapping = true;
+			}
+			currentBlockHolding.overlapping = isBlockOverlapping;
+		}
+	}
+	
+	private bool CheckOverlapping(BoxCollider2D collider)
+	{
+		Vector2 centerCollider = collider.bounds.center;
+		Vector2 colliderSize = new Vector2((collider.size.x - 0.1f) * transform.lossyScale.x, (collider.size.y - 0.1f) * transform.lossyScale.y);
 
-	// 	int nextBlockNumber = 0;
-	// 	bool canPlaceFix = true;
-	// 	float xLocalScale = 1f;
-
-
-
-
-	// 	void Start()
-	//     {
-	// 		nextBlockNumber = Random.Range(0, blocksPool.pooledObjects.Count - 1);
-	//     }
-
-
-
-
-	//     void Update()
-	//     {
-	// 		// Place blocks input
-	// 		KeyCode placeButton = (playerTag == "Player1") ? KeyCode.F : KeyCode.RightShift;
-
-	// 		if (currentBlockHolding == null)
-	// 		{
-	// 			if (Input.GetKeyDown (placeButton) && GameManager.instance.gameState == GameManager.GameState.Started)
-	// 			{
-	// 				currentBlockHolding = blocksPool.GetPooledObject (nextBlockNumber, transform.position + (Vector3)placeBlockPosition,
-	// 										Vector3.zero, 0).GetComponent<BlockScript>();
-	// 				currentBlockHolding.StartHold(playerTag == "Player1" ? 1 : 2);
-	// 				StartCoroutine (HoldBlockTimeFix(0.3f));
-	// 				canPlaceFix = false;
-	// 			}
-	// 		}
-	// 		else
-	// 		{
-	// 			// Flip block xScale
-	// 			currentBlockHolding.transform.localScale = new Vector3 (xLocalScale, 1, 1);
-	// 			placeBlockPosition.x = xLocalScale * 0.5f;
-
-	// 			// Make block follow player
-	// 			currentBlockHolding.transform.position = transform.position + (Vector3)placeBlockPosition;
-
-	// 			bool overlapping = false;
-	// 			foreach (BoxCollider2D col in currentBlockHolding.boxCollider2Ds)
-	// 			{
-	// 				if (VerificarSuperposicion (col))
-	// 					overlapping = true;
-	// 			}
-	// 			currentBlockHolding.overlapping = overlapping;
-
-	// 			// Place
-	// 			if (Input.GetKeyDown (placeButton) && isGrounded && canPlaceFix && !overlapping)
-	// 			{
-	// 				currentBlockHolding.StopHold ();
-	// 				currentBlockHolding.AnimateAppear ();
-	// 				nextBlockNumber = Random.Range(0, blocksPool.pooledObjects.Count - 1);
-	// 				SoundManager.instance.PlaySound("placeBlock");
-	// 				currentBlockHolding = null;
-	// 			}
-
-	// 			KeyCode rotateButton = (playerTag == "Player1") ? KeyCode.R : KeyCode.Return;
-
-	// 			// Rotate
-	// 			if (Input.GetKeyDown (rotateButton))
-	// 			{
-	// 				currentBlockHolding.Rotate ();
-	// 				SoundManager.instance.PlaySound("rotate");
-	// 				// SONIDO DE ROTAR
-	// 			}
-	// 		}
-	//     }
+		Collider2D[] overlappedColliders = Physics2D.OverlapBoxAll(centerCollider, colliderSize, 0f);
 
 
+		foreach (var col in overlappedColliders)
+		{
+			if (col != collider)
+				return true;
+		}
 
-
-
-	// 	bool VerificarSuperposicion(BoxCollider2D collider)
-	//     {
-	//         // Obtén el centro y tamaño del collider
-	//         Vector2 centroCollider = collider.bounds.center;
-	//         Vector2 tamañoCollider = new Vector2((collider.size.x - 0.1f) * transform.lossyScale.x, (collider.size.y - 0.1f) * transform.lossyScale.y);
-
-	//         // Realiza la verificación de superposición en un área rectangular alrededor del collider
-	//         Collider2D[] collidersSuperpuestos = Physics2D.OverlapBoxAll(centroCollider, tamañoCollider, 0f);
-
-	//         // Excluye el propio collider de la verificación
-	//         foreach (var colliderSuperpuesto in collidersSuperpuestos)
-	//         {
-	//             if (colliderSuperpuesto != collider && !colliderSuperpuesto.isTrigger)
-	//             {
-	// 				Debug.Log (colliderSuperpuesto.transform.name);
-	//                 return true; // Hay superposición con al menos un collider diferente
-	//             }
-	//         }
-
-	//         return false; // No hay superposición con otros colliders
-	//     }
-
-
-
-
-
-	// 	IEnumerator HoldBlockTimeFix (float time)
-	// 	{
-	// 		yield return new WaitForSeconds (time);
-	// 		canPlaceFix = true;
-	// 	}
+		return false;
+	}
 }

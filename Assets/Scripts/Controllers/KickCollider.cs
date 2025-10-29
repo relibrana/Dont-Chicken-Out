@@ -6,6 +6,7 @@ public class KickCollider : MonoBehaviour
 
     private void OnTriggerEnter2D(Collider2D other)
     {
+        //!LOGIC FOR BLOCKS
         PlayerController playerController = other.gameObject.GetComponent<PlayerController>();
 
         if (playerController != null)

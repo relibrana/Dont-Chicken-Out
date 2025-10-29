@@ -53,6 +53,6 @@ public class CloudPool : MonoBehaviour
 		Vector3 worldPos = mainCamera.ScreenToWorldPoint (new Vector3(spawnX, spawnY, 0));
 		worldPos.z = 1;
 
-		GameObject cloud = cloudsPool.GetPooledObject (0, worldPos, Vector3.zero, 20) ;
+		GameObject cloud = cloudsPool.GetPooledObject (0, worldPos, 20) ;
 	}
 }

@@ -22,8 +22,7 @@ public class PoolingManager : MonoBehaviour
         }
     }
 
-    public GameObject GetPooledObject(int _objIndex, Vector3 _spawnPosition, Vector3 _rotationEulers,
-        float _aliveTime = 3f, float _xScale = 1f)
+    public GameObject GetPooledObject(int _objIndex, Vector3 _spawnPosition, float _aliveTime = 3f, float _xScale = 1f)
 	{
 		GameObject tr = parentTransform[_objIndex].transform.GetChild(0).gameObject;
 
@@ -36,7 +35,6 @@ public class PoolingManager : MonoBehaviour
 		tr.SetActive(false);
 		tr.SetActive(true);
 		tr.transform.position = _spawnPosition;
-		tr.transform.rotation = Quaternion.Euler(_rotationEulers);
 		tr.transform.localScale = new Vector3(_xScale, 1, 1);
 		tr.transform.SetSiblingIndex(tr.transform.parent.childCount);
 		if(_aliveTime > 0f)
