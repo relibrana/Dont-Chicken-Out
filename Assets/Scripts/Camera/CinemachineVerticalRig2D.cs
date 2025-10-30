@@ -66,15 +66,17 @@ public class CinemachineVerticalRig2D : MonoBehaviour
 
     void Update()
     {
+        #if UNITY_EDITOR
         if(Input.GetKeyDown(KeyCode.Z))
         {
             DoDeathShake();
         }
 
-        if(Input.GetKeyDown(KeyCode.X))
+        if (Input.GetKeyDown(KeyCode.X))
         {
             FocusWinner(FindAnyObjectByType<PlayerController>()?.transform);
         }
+        #endif
 
         if (baseFollowTarget == null) return;
 
@@ -175,7 +177,7 @@ public class CinemachineVerticalRig2D : MonoBehaviour
     }
 
     /// <summary>
-    /// Reinicia estado de cámara para una nueva ronda.
+    /// Reinicia estado de cï¿½mara para una nueva ronda.
     /// </summary>
     public void ResetToGameplay()
     {

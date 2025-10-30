@@ -1,7 +1,5 @@
-using System.Collections;
 using UnityEngine;
 using System.Collections.Generic;
-using UnityEngine.SceneManagement;
 using System.Linq;
 
 public enum GameState { Menu, Prepare, Game, Win }
@@ -18,10 +16,9 @@ public class GameManager : MonoBehaviour
 	[Header ("UI")]
 	[SerializeField] private UIManager uiManager;
     public CinemachineVerticalRig2D cameraRig;
+	private float autoMoveCameraCurrentTime;
+	private const float startUpTime = 3.5f;
 
-    [Header ("UI")]
-
-	[HideInInspector] public float autoMoveCameraCurrentTime;
 	[Header ("Game Variables")]
 	public float autoMoveCameraSpeed = 0.2f;
 	// bool screenShakeTrigger=false;
@@ -52,16 +49,6 @@ public class GameManager : MonoBehaviour
 
 	void Update()
 	{
-		// if (!gameStart)
-		// {
-		// 	if (player1.activeSelf && player2.activeSelf)
-		// 	{
-		// 		Debug.Log("Game Start");
-		// 		gameStart = true;
-		// 		StartGame();
-		// 	}
-		// }
-
 		if (autoMoveCameraCurrentTime < 0)
 			autoMoveCameraCurrentTime = 0;
 
@@ -86,15 +73,18 @@ public class GameManager : MonoBehaviour
 	{
 		gameState = newGameState;
 	}
+
 	private void OnMenuState()
 	{
 		//RESETEAR TODO PARA PREPARARSE PARA OTRA SESIÓN
 		gameState = GameState.Prepare;
-    }
+	}
+	
 	private void OnPrepareState()
     {
-        
+		autoMoveCameraCurrentTime = startUpTime;
     }
+	
 	private void OnGameState()
 	{
 		for (int i = 0; i < playersAlive.Length; i++)
@@ -103,8 +93,6 @@ public class GameManager : MonoBehaviour
 				playersAlive[i].isOnGame = true;
 		}
 		
-		//CameraMovement
-		// autoMoveCameraCurrentTime -= Time.deltaTime;
         //CameraMovement
          autoMoveCameraCurrentTime -= Time.deltaTime;
 
