@@ -85,10 +85,10 @@ Rigidbody2D:
   m_Simulated: 1
   m_UseFullKinematicContacts: 0
   m_UseAutoMass: 0
-  m_Mass: 70
+  m_Mass: 50
   m_LinearDamping: 15
   m_AngularDamping: 0.05
-  m_GravityScale: 2
+  m_GravityScale: 4
   m_Material: {fileID: 6200000, guid: 9a0496c651c1b4855ab51994a2ee74f1, type: 2}
   m_IncludeLayers:
     serializedVersion: 2
