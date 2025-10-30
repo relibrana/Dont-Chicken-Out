@@ -186,13 +186,20 @@ public class PlayerController : MonoBehaviour
 		RaycastHit2D hit2 = Physics2D.Raycast(new Vector2(pos.x, pos.y - spacingY - 0.07f), Vector2.down, raycastDistance, groundLayer);
 		RaycastHit2D hit3 = Physics2D.Raycast(new Vector2(pos.x + checkSpacing, pos.y - spacingY), Vector2.down, raycastDistance, groundLayer);
 
-		isGrounded = hit.collider || hit2.collider || hit3.collider;
-		
+		isGrounded = hit.collider|| hit2.collider || hit3.collider;
+
 		RaycastHit2D hitH = Physics2D.Raycast(new Vector2(pos.x - checkSpacing, pos.y + headCheck), Vector2.up, raycastDistance, groundLayer);
 		RaycastHit2D hitH2 = Physics2D.Raycast(new Vector2(pos.x, pos.y + headCheck + 0.07f), Vector2.up, raycastDistance, groundLayer);
 		RaycastHit2D hitH3 = Physics2D.Raycast(new Vector2(pos.x + checkSpacing, pos.y + headCheck), Vector2.up, raycastDistance, groundLayer);
 
-		isPlayerOnHead = hitH.collider || hitH2.collider || hitH3.collider;
+		isPlayerOnHead = ColliderIsPlayer(hitH.collider) || ColliderIsPlayer(hitH2.collider) || ColliderIsPlayer(hitH3.collider);
+	}
+
+	private bool ColliderIsPlayer(Collider2D collider)
+	{
+		if (!collider)
+			return false;
+		return collider.gameObject.CompareTag("Player");
 	}
 
 	void OnDrawGizmos()

@@ -5,12 +5,15 @@ using UnityEngine;
 
 public class BlockScript : MonoBehaviour
 {
-	public List<GameObject> blocks = new ();
-	public List<SpriteRenderer> spriteRenderers = new ();
+	[SerializeField] private List<GameObject> blocks = new ();
+	[SerializeField] private List<SpriteRenderer> spriteRenderers = new ();
 	public List<BoxCollider2D> boxCollider2Ds = new ();
-	public List<Animator> animators = new ();
-	public Sprite orangeSprite;
-	public Sprite blueSprite;
+	[SerializeField] private List<Animator> animators = new ();
+	// public Sprite orangeSprite;
+	// public Sprite blueSprite;
+
+	[SerializeField] private LayerMask startLayer;
+	[SerializeField] private LayerMask placedLayer;
 
 	public Rigidbody2D rb2D;
 
@@ -62,6 +65,7 @@ public class BlockScript : MonoBehaviour
 		foreach (BoxCollider2D col in boxCollider2Ds)
 		{
 			col.isTrigger = true;
+			col.gameObject.layer = (int)Mathf.Log(startLayer.value, 2);;
 		}
 	}
 	public void StopHold ()
@@ -69,6 +73,7 @@ public class BlockScript : MonoBehaviour
 		foreach (BoxCollider2D col in boxCollider2Ds)
 		{
 			col.isTrigger = false;
+			col.gameObject.layer = (int)Mathf.Log(placedLayer.value, 2);;
 		}
 		holding = false;
 		rb2D.bodyType = RigidbodyType2D.Dynamic;
@@ -89,6 +94,11 @@ public class BlockScript : MonoBehaviour
 		foreach (Animator anim in animators)
 		{
 			anim.enabled = false;
+		}
+		foreach (BoxCollider2D col in boxCollider2Ds)
+		{
+			col.isTrigger = true;
+			col.gameObject.layer = (int)Mathf.Log(startLayer.value, 2);;
 		}
 	}
 

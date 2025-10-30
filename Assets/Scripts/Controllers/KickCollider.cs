@@ -16,5 +16,12 @@ public class KickCollider : MonoBehaviour
             
             playerController.AddImpulse(impulseDirection);
         }
+        else if (other.gameObject.CompareTag("Block") && !other.isTrigger)
+        {
+            Vector2 impulseDirection = forceDirection;
+            impulseDirection.x *= transform.lossyScale.x;
+
+            other.attachedRigidbody.linearVelocity = impulseDirection;
+        }
     }
 }

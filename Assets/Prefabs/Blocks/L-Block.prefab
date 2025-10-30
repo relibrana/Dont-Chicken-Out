@@ -69,8 +69,12 @@ MonoBehaviour:
   - {fileID: 2996803485057395320}
   - {fileID: 4788575018985413820}
   - {fileID: 6015957765036087628}
-  orangeSprite: {fileID: 1860017117, guid: 2ebf6df9990ad4327ac084d7509246ee, type: 3}
-  blueSprite: {fileID: 1260245099, guid: 2ebf6df9990ad4327ac084d7509246ee, type: 3}
+  startLayer:
+    serializedVersion: 2
+    m_Bits: 1
+  placedLayer:
+    serializedVersion: 2
+    m_Bits: 64
   rb2D: {fileID: -8103595136207827183}
   overlapping: 0
 --- !u!50 &-8103595136207827183
@@ -85,7 +89,7 @@ Rigidbody2D:
   m_Simulated: 1
   m_UseFullKinematicContacts: 0
   m_UseAutoMass: 0
-  m_Mass: 50
+  m_Mass: 20
   m_LinearDamping: 15
   m_AngularDamping: 0.05
   m_GravityScale: 4
