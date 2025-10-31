@@ -77,6 +77,7 @@ public class GameManager : MonoBehaviour
 	private void OnMenuState()
 	{
 		//RESETEAR TODO PARA PREPARARSE PARA OTRA SESIÓN
+		cameraRig.canMove = false;
 		gameState = GameState.Prepare;
 	}
 	
@@ -87,6 +88,7 @@ public class GameManager : MonoBehaviour
 	
 	private void OnGameState()
 	{
+		cameraRig.canMove = true;
 		for (int i = 0; i < playersAlive.Length; i++)
 		{
 			if(playersAlive[i] != null)

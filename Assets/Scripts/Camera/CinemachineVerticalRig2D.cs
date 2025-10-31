@@ -24,6 +24,7 @@ public class CinemachineVerticalRig2D : MonoBehaviour
     [SerializeField] private float shakeFrequency = 25f;
     [SerializeField] private bool shakeAffectsX = true;
     [SerializeField] private bool shakeAffectsY = true;
+    public bool canMove = false;
 
     // Estado interno
     public float MaxHeightReached { get; set; } = 0f;
@@ -78,7 +79,7 @@ public class CinemachineVerticalRig2D : MonoBehaviour
         }
         #endif
 
-        if (baseFollowTarget == null) return;
+        if (baseFollowTarget == null || !canMove) return;
 
         UpdateShakeOffset();
 

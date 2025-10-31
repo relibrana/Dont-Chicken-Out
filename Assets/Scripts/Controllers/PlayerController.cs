@@ -13,6 +13,7 @@ public class PlayerController : MonoBehaviour
 	private Vector2 currentVelocity;
 	private float velocitySmoothing;
 	[SerializeField] private KickCollider kickCollider;
+	[SerializeField] private Animator animator;
 
 	//Ground Checkers
 	[SerializeField] private float raycastDistance = 0.55f;
@@ -186,7 +187,9 @@ public class PlayerController : MonoBehaviour
 		RaycastHit2D hit2 = Physics2D.Raycast(new Vector2(pos.x, pos.y - spacingY - 0.07f), Vector2.down, raycastDistance, groundLayer);
 		RaycastHit2D hit3 = Physics2D.Raycast(new Vector2(pos.x + checkSpacing, pos.y - spacingY), Vector2.down, raycastDistance, groundLayer);
 
-		isGrounded = hit.collider|| hit2.collider || hit3.collider;
+		isGrounded = hit.collider || hit2.collider || hit3.collider;
+
+		animator.SetBool("OnGround", isGrounded);
 
 		RaycastHit2D hitH = Physics2D.Raycast(new Vector2(pos.x - checkSpacing, pos.y + headCheck), Vector2.up, raycastDistance, groundLayer);
 		RaycastHit2D hitH2 = Physics2D.Raycast(new Vector2(pos.x, pos.y + headCheck + 0.07f), Vector2.up, raycastDistance, groundLayer);
@@ -259,6 +262,8 @@ public class PlayerController : MonoBehaviour
 			ref velocitySmoothing,
 			smoothTime
 		);
+
+		animator.SetFloat("Speed", Mathf.Abs(currentVelocity.x));
 	}
 
 	public void AddImpulse(Vector2 impulseDirection)
@@ -285,8 +290,10 @@ public class PlayerController : MonoBehaviour
 		{
 			float glideMultiplier = isHoldingJump ? valuesSO.glideResistance : 0;
 
+			animator.SetBool("IsGliding", glideMultiplier != 0);
+
 			int fallLimit = isHoldingJump ? -4 : -25;
-			
+
 			float nextVelocityY = currentVelocity.y + calculatedGravity * (valuesSO.fallMultiplier - 1f - glideMultiplier) * Time.deltaTime;
 
 			currentVelocity.y = Mathf.Clamp(nextVelocityY, fallLimit, 50);
@@ -295,6 +302,8 @@ public class PlayerController : MonoBehaviour
 		{
 			currentVelocity.y += calculatedGravity * (valuesSO.lowJumpMultiplier - 1f) * Time.deltaTime;
 		}
+
+		animator.SetFloat("velocityY", currentVelocity.y);
 	}
 
 	private void OnDeath()
