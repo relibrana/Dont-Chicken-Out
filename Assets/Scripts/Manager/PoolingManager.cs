@@ -14,11 +14,23 @@ public class PoolingManager : MonoBehaviour
 		Initialize();
     }
     private void Initialize()
-	{
+    {
         // Create a parent for each object type
         foreach (PooledObject obj in pooledObjects)
-		{
+        {
             InitializePoolObjects(obj, parentTransform);
+        }
+    }
+    
+    public void ResetPool()
+    {
+        foreach (GameObject parent in parentTransform)
+        {
+            foreach (Transform item in parent.transform)
+            {
+                if(item.gameObject.activeSelf) 
+                    item.gameObject.SetActive(false);
+            }
         }
     }
 

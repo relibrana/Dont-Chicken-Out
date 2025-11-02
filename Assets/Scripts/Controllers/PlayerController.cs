@@ -3,7 +3,6 @@ using DG.Tweening;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
-public enum PlayerState { InLobby, InGame, Dead}
 public class PlayerController : MonoBehaviour
 {
 	[SerializeField] private PlatformerValuesSO valuesSO;
@@ -42,7 +41,7 @@ public class PlayerController : MonoBehaviour
 	private InputAction cluckInput;
 	public int playerIndex;
 	public bool isOnGame = false;
-	public PlayerState playerState = PlayerState.InLobby;
+	public int roundsWon;
 
 	//InputSystem
 	private PlayerInput playerInput;
@@ -51,13 +50,13 @@ public class PlayerController : MonoBehaviour
 	//Game Manager
 	public Action<PlayerController> onDeath;
 	public Action<PlayerController> onPlayerReady;
-
+	public Vector2 startPosition;
 	//Blocks
 	[SerializeField] private Transform blockPosition;
-	private BlockScript currentBlockHolding = null;
+	public BlockScript currentBlockHolding = null;
 	[SerializeField] private float blockPlaceCooldown = 1f;
-	private bool canPlaceBlock = false;
-	private bool isBlockLogicAvailable = true;
+	[SerializeField]private bool canPlaceBlock = false;
+	public bool isBlockLogicAvailable = true;
 	private bool isBlockOverlapping = false;
 
 
@@ -130,6 +129,7 @@ public class PlayerController : MonoBehaviour
 			currentBlockHolding.AnimateAppear();
 			SoundManager.instance.PlaySound("placeBlock");
 			currentBlockHolding = null;
+			canPlaceBlock = false;
 			isBlockLogicAvailable = false;
 			DOVirtual.DelayedCall(blockPlaceCooldown, () => isBlockLogicAvailable = true, false);
 		}
@@ -144,7 +144,7 @@ public class PlayerController : MonoBehaviour
 	private void OnCluckStarted(InputAction.CallbackContext context)
 	{
 		//!CLUCK SOUND
-		if (playerState == PlayerState.InLobby)
+		if (GameManager.instance.gameState == GameState.Menu)
 			onPlayerReady?.Invoke(this);
 	}
 
@@ -306,9 +306,8 @@ public class PlayerController : MonoBehaviour
 		animator.SetFloat("velocityY", currentVelocity.y);
 	}
 
-	private void OnDeath()
+	public void OnDeath()
 	{
-		//!LOGICA DE MUERTE
 		onDeath?.Invoke(this);
 	}
 
@@ -338,7 +337,6 @@ public class PlayerController : MonoBehaviour
 			int randomIndex = UnityEngine.Random.Range(0, GameManager.instance.blocksPool.pooledObjects.Count);
 			currentBlockHolding = GameManager.instance.blocksPool.GetPooledObject(randomIndex, blockPosition.position, 0).GetComponent<BlockScript>();
 			currentBlockHolding.StartHold();
-			canPlaceBlock = false;
 			DOVirtual.DelayedCall(0.3f, () => canPlaceBlock = true, false);
 		}
 		else

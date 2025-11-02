@@ -62,9 +62,13 @@ MonoBehaviour:
     m_Bits: 192
   playerIndex: 0
   isOnGame: 0
-  playerState: 0
+  roundsWon: 0
+  startPosition: {x: 0, y: 0}
   blockPosition: {fileID: 2331769227643709429}
+  currentBlockHolding: {fileID: 0}
   blockPlaceCooldown: 1
+  canPlaceBlock: 0
+  isBlockLogicAvailable: 1
 --- !u!50 &8124305224974726577
 Rigidbody2D:
   serializedVersion: 5
@@ -422,7 +426,7 @@ Transform:
   m_GameObject: {fileID: 5591565118438851532}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0.9, y: -1, z: 0}
+  m_LocalPosition: {x: 0.4, y: -1, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []

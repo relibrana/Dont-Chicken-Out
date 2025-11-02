@@ -44,7 +44,7 @@ public class PlayersManager : MonoBehaviour
 
     private bool IsPossibleToPair(InputControl control)
     {
-        if (GameManager.instance.gameState != GameState.Prepare)
+        if (GameManager.instance.gameState != GameState.Menu)
             return false;
 
         if (playerInputManager.maxPlayerCount > 0 && currPlayersInGame >= playerInputManager.maxPlayerCount)
@@ -127,10 +127,10 @@ public class PlayersManager : MonoBehaviour
             pairWithDevice: device
         );
 
-        newPlayer.transform.position = spawnPoints[currPlayersInGame].transform.position;
+        newPlayer.transform.position = spawnPoints[currPlayersInGame].position;
         PlayerController playerController = newPlayer.gameObject.GetComponent<PlayerController>();
         currPlayersInGame++;
-        GameManager.instance.AddPlayer(playerController);
+        GameManager.instance.AddPlayer(playerController, spawnPoints[currPlayersInGame].position);
 
         newPlayer.SendMessage("OnAssignedScheme", schemeName, SendMessageOptions.DontRequireReceiver);
         Debug.Log($"New player with device: {device.name} and scheme: {schemeName}");

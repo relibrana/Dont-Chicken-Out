@@ -2,13 +2,17 @@ using System.Collections;
 using UnityEngine;
 using System.Collections.Generic;
 using TMPro;
+using System;
 
-public enum PlayerUIState { WaitJoin, WaitReady, Ready, InGame, Dead, NotPlayer }
+[Serializable]
+public enum PlayerUIState { WaitJoin, Joined, Ready, InGame, Dead, Round, Results, NotPlayer }
 
 public class PlayerUI : MonoBehaviour
 {
     public int playerIndex;
-    private PlayerUIState uiState;
+    public int roundsWon;
+    public string place;
+    [SerializeField] private PlayerUIState uiState;
     [SerializeField] private TextMeshProUGUI InitialText;
     [SerializeField] private GameObject InGameBox;
     [SerializeField] private GameObject DeadBox;
@@ -34,7 +38,7 @@ public class PlayerUI : MonoBehaviour
                 InitialText.gameObject.SetActive(true);
                 InitialText.text = $"PLAYER {playerIndex} PRESS START";
                 break;
-            case PlayerUIState.WaitReady:
+            case PlayerUIState.Joined:
                 InitialText.gameObject.SetActive(true);
                 InitialText.text = "CLUCK CLUCK\nTO BE\nREADY STEADY";
                 break;
@@ -48,14 +52,16 @@ public class PlayerUI : MonoBehaviour
             case PlayerUIState.Dead:
                 DeadBox.SetActive(true);
                 break;
+            case PlayerUIState.Round:
+                InitialText.gameObject.SetActive(true);
+                InitialText.text = $"{roundsWon} Points";
+                break;
+            case PlayerUIState.Results:
+                InitialText.gameObject.SetActive(true);
+                InitialText.text = $"{place}";
+                break;
             default:
                 break;
         }
-    }
-
-    // Update is called once per frame
-    void Update()
-    {
-        
     }
 }

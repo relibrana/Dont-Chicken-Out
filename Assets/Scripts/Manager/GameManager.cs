@@ -1,7 +1,10 @@
 using UnityEngine;
 using System.Collections.Generic;
 using System.Linq;
+using System;
+using DG.Tweening;
 
+[Serializable]
 public enum GameState { Menu, Prepare, Game, Win }
 
 public class GameManager : MonoBehaviour
@@ -9,7 +12,6 @@ public class GameManager : MonoBehaviour
 	public static GameManager instance;
 
 	[Header ("References")]
-	public CameraController cameraController;
 	public PoolingManager blocksPool;
 	[SerializeField] private PlayersManager playersManager;
 
@@ -22,8 +24,12 @@ public class GameManager : MonoBehaviour
 	[Header ("Game Variables")]
 	public float autoMoveCameraSpeed = 0.2f;
 	// bool screenShakeTrigger=false;
-	private PlayerController[] inGamePlayers = new PlayerController[4];
-	private PlayerController[] playersAlive = new PlayerController[4];
+	[SerializeField] private PlayerController[] inGamePlayers = new PlayerController[4];
+	[SerializeField] private PlayerController[] playersAlive = new PlayerController[4];
+	[SerializeField] private Transform deathPos;
+	private PlayerController winner = null;
+	private bool needsAReset = false;
+	private bool triggerStartGame = false;
 
 
 	public GameState gameState = GameState.Menu;
@@ -65,6 +71,7 @@ public class GameManager : MonoBehaviour
 				OnGameState();
 				break;
 			case GameState.Win:
+				OnWinState();
 				break;
 		}
 	}
@@ -76,32 +83,92 @@ public class GameManager : MonoBehaviour
 
 	private void OnMenuState()
 	{
-		//RESETEAR TODO PARA PREPARARSE PARA OTRA SESIÓN
+		if(needsAReset) ResetValues();
 		cameraRig.canMove = false;
-		gameState = GameState.Prepare;
 	}
 	
-	private void OnPrepareState()
-    {
-		autoMoveCameraCurrentTime = startUpTime;
+	private void ResetValues()
+	{
+		blocksPool.ResetPool();
+		foreach (var player in inGamePlayers)
+		{
+			if (player == null)
+				continue;
+			player.roundsWon = 0;
+			ResetPlayer(player);
+		}
+		for (int i = 0; i < playersAlive.Length; i++)
+		{
+			playersAlive[i] = null;
+		}
+		cameraRig.ResetToGameplay();
+		needsAReset = false;
     }
-	
+
+	private void OnPrepareState()
+	{
+		foreach (var player in inGamePlayers)
+		{
+			if (player == null)
+				continue;
+
+			if (!player.gameObject.activeSelf)
+				player.gameObject.SetActive(true);
+
+			if (triggerStartGame)
+				ResetPlayer(player);
+		}
+
+		autoMoveCameraCurrentTime = startUpTime;
+
+		if (triggerStartGame)
+		{
+			winner = null;
+			blocksPool.ResetPool();
+			for (int i = 0; i < inGamePlayers.Length; i++)
+			{
+				playersAlive[i] = inGamePlayers[i];
+			}
+			cameraRig.canMove = false;
+			cameraRig.ResetToGameplay();
+			uiManager.StartInitialGameSequence(() =>
+			{
+				ChangeGameState(GameState.Game);
+				uiManager.OnGamePlayersUI();
+			});
+			triggerStartGame = false;
+		}
+	}
+
+	private void ResetPlayer(PlayerController player)
+	{
+		player.transform.position = player.startPosition;
+		player.isBlockLogicAvailable = true;
+		player.currentBlockHolding = null;
+		player.isOnGame = false;
+	}
+
 	private void OnGameState()
 	{
 		cameraRig.canMove = true;
 		for (int i = 0; i < playersAlive.Length; i++)
 		{
-			if(playersAlive[i] != null)
+			if (playersAlive[i] != null)
 				playersAlive[i].isOnGame = true;
 		}
-		
-        //CameraMovement
-         autoMoveCameraCurrentTime -= Time.deltaTime;
 
-         if (autoMoveCameraCurrentTime <= 0)
-         {
-         	cameraRig.MaxHeightReached += autoMoveCameraSpeed * Time.deltaTime;
-         }
+		//CameraMovement
+		autoMoveCameraCurrentTime -= Time.deltaTime;
+
+		if (autoMoveCameraCurrentTime <= 0)
+		{
+			cameraRig.MaxHeightReached += autoMoveCameraSpeed * Time.deltaTime;
+		}
+	}
+
+	private void OnWinState()
+    {
+        
     }
 
 	public float CheckPlayerCoordinates()
@@ -117,10 +184,11 @@ public class GameManager : MonoBehaviour
 		return lowestY;
     }
 
-	public void AddPlayer(PlayerController player)
+	public void AddPlayer(PlayerController player, Vector2 StartPos)
 	{
 		player.onDeath = OnPlayersDeath;
 		player.onPlayerReady = PlayerToggleReady;
+		player.startPosition = StartPos;
 		AddInGamePlayer(player);
 
 		uiManager.UpdateJoinedPlayers(inGamePlayers);
@@ -159,121 +227,75 @@ public class GameManager : MonoBehaviour
 	private void CheckIfAllPlayersReady()
 	{
 		int currPlayersAlive = 0;
-		List<PlayerController> playerControllers = new List<PlayerController>();
+		for (int i = 0; i < playersAlive.Length; i++)
+		{
+			if (playersAlive[i] != null)
+				currPlayersAlive++;
+		}
+
+		if (currPlayersAlive != playersManager.currPlayersInGame || currPlayersAlive < 2)
+		{
+			uiManager.StopInitialGameSequence();
+			ChangeGameState(GameState.Menu);
+			return;
+		}
+
+		triggerStartGame = true;
+		ChangeGameState(GameState.Prepare);
+
+    }
+
+	private void OnPlayersDeath(PlayerController player)
+	{
+		player.transform.position = player.startPosition;
+		player.gameObject.transform.position = deathPos.position;
+		player.currentBlockHolding.gameObject.SetActive(false);
+		player.currentBlockHolding = null;
+		player.isBlockLogicAvailable = false;
+		playersAlive[player.playerIndex] = null;
+
+		uiManager.UpdateDeadPlayer(player.playerIndex);
+		cameraRig.DoDeathShake();
+
+		CheckWinner();
+	}
+
+	private void CheckWinner()
+	{
+		int currPlayersAlive = 0;
 		for (int i = 0; i < playersAlive.Length; i++)
 		{
 			if (playersAlive[i] != null)
 			{
 				currPlayersAlive++;
-				playerControllers.Add(playersAlive[i]);
+				winner = playersAlive[i];
 			}
 		}
 
-		if (currPlayersAlive != playersManager.currPlayersInGame || currPlayersAlive < 2)
+		if (currPlayersAlive == 1)
 		{
-			uiManager.StopGameSequence();
-			return;
+			ChangeGameState(GameState.Win);
+			winner.roundsWon++;
+			cameraRig.FocusWinner(winner.transform);
+			uiManager.OnWinRound(inGamePlayers, wonGame => DOVirtual.DelayedCall(2f, () => CheckGameWon(wonGame), false));
 		}
-
-		uiManager.StartGameSequence(() =>
-		{
-			ChangeGameState(GameState.Game);
-			uiManager.OnGamePlayersUI();
-			foreach (PlayerController player in playerControllers)
-			{
-				player.playerState = PlayerState.InGame;
-			}
-		});
-    }
-
-	private void OnPlayersDeath(PlayerController player)
-	{
-		//AÑADIR LOGICA DE CUANDO MUERA REVISE QUIENES MURIERON Y QUIENES SIGUEN VIVOS, SI SOLO SIGUE 1 ENTONCES ESE VIVO GANÓ
 	}
 	
+	private void CheckGameWon(bool wonGame)
+    {
+		if (wonGame)
+		{
+			uiManager.ResetJoinedPlayers(inGamePlayers);
+			needsAReset = true;
+			ChangeGameState(GameState.Menu);
+		}
+		else
+		{
+			uiManager.UpdateReadyPlayers(inGamePlayers);
+			triggerStartGame = true;
+			ChangeGameState(GameState.Prepare);
+		}
+    }
+	
 	public void FreeKeyboardScheme(string schemeName) => playersManager.FreeKeyboardScheme(schemeName);
-
-	// void CheckPlayerCoordinates()
-	// {
-	// 	// foreach (Transform playerTransform in players)
-	// 	// {
-	// 	// 	Vector3 playerViewportPos = mainCamera.WorldToViewportPoint(playerTransform.position);
-
-	// 	// 	// Check if player is outside the viewport
-	// 	// 	if (playerViewportPos.x < 0 || playerViewportPos.x > 1 || playerViewportPos.y < 0 || playerViewportPos.y > 1)
-	// 	// 	{
-	// 	// 		playerTransform.gameObject.SetActive(false);
-	// 	// 	}
-	// 	// }
-	// 	CheckForDeathPlayers();
-	// }
-
-
-
-	// void CheckForDeathPlayers()
-    // {
-	// 	if(!player1.activeSelf && !player2.activeSelf)
-	// 	{
-	// 		if(screenShakeTrigger==false){
-	// 			CameraEffects.instance.DoScreenShake(0.5f,0.2f);
-	// 			screenShakeTrigger=true;
-	// 		}
-	// 		GameOver ();
-    //    		lose.SetActive(true);
-	// 		return;
-	// 	}
-
-	// 	if(!player1.activeSelf)
-	// 	{
-	// 		if(screenShakeTrigger==false){
-	// 			CameraEffects.instance.DoScreenShake(0.5f,0.2f);
-	// 			screenShakeTrigger=true;
-	// 		}
-	// 		GameOver ();
-	// 		p2wins.SetActive(true);
-	// 	}
-
-	// 	else if (!player2.activeSelf)
-	// 	{
-	// 		if(screenShakeTrigger==false)
-	// 		{
-	// 			CameraEffects.instance.DoScreenShake(0.5f,0.2f);
-	// 			screenShakeTrigger=true;
-	// 		}
-	// 		GameOver ();
-	// 		p1wins.SetActive(true);
-	// 	}
-    // }
-
-	// public void StartGame ()
-	// {
-	// 	Debug.Log ("Call Start Game");
-	// 	StartCoroutine (StartGameRoutine());
-	// }
-
-	// public void GameOver ()
-	// {
-	// 	Debug.Log ("Game Over");
-	// 	StartCoroutine (GameOverRoutine());
-	// }
-
-	// public void RestartScene ()
-	// {
-	// 	SceneManager.LoadScene (SceneManager.GetActiveScene().buildIndex);
-	// }
-
-
-	// IEnumerator StartGameRoutine ()
-	// {
-	// 	gameState = GameState.Prepare;
-	// 	yield return new WaitForSeconds (4);
-	// 	// Start Game
-	// 	autoMoveCameraCurrentTime = 0;
-	// 	gameState = GameState.Game;
-	// }
-	// IEnumerator GameOverRoutine ()
-	// {
-	// 	gameState = GameState.Win;
-	// 	yield return new WaitForSeconds (3f);
-	// }
 }
