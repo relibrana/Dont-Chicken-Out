@@ -22,12 +22,14 @@ public class UIManager : MonoBehaviour
         }
     }
 
-    public void ResetJoinedPlayers(PlayerController[] inGamePlayers)
+    public void ResetPlayers(PlayerController[] inGamePlayers)
     {
         for (int i = 0; i < playersUI.Length; i++)
         {
             if (inGamePlayers[i] != null)
                 playersUI[i].ChangeUIState(PlayerUIState.Joined);
+            else
+                playersUI[i].ChangeUIState(PlayerUIState.WaitJoin);
         }
     }
 

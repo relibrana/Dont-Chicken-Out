@@ -285,7 +285,7 @@ public class GameManager : MonoBehaviour
     {
 		if (wonGame)
 		{
-			uiManager.ResetJoinedPlayers(inGamePlayers);
+			uiManager.ResetPlayers(inGamePlayers);
 			needsAReset = true;
 			ChangeGameState(GameState.Menu);
 		}
