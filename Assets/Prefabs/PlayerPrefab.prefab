@@ -50,7 +50,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 270fff8dccd9746b3955966853cc3b7e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  valuesSO: {fileID: 11400000, guid: 7dd54a8ef4e502444b0e082693e12d69, type: 2}
+  valuesSO: {fileID: 11400000, guid: 956a695dde2a0554e9f86d3f34dbe37d, type: 2}
   kickCollider: {fileID: 6743993842517759247}
   animator: {fileID: 1085030237864803239}
   raycastDistance: 0.11
