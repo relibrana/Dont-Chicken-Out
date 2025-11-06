@@ -2633,6 +2633,7 @@ MonoBehaviour:
   - {fileID: 1005062006}
   - {fileID: 20636805}
   - {fileID: 1132217159}
+  materialsSO: {fileID: 11400000, guid: 995c18589a83ece46bbfbafba11f69d3, type: 2}
   playerPrefab: {fileID: 63502757195481365, guid: f90e3cd907493544c9d9e2c3a54db358, type: 3}
 --- !u!114 &202624585
 MonoBehaviour:

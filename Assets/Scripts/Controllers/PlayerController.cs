@@ -13,6 +13,7 @@ public class PlayerController : MonoBehaviour
 	private float velocitySmoothing;
 	[SerializeField] private KickCollider kickCollider;
 	[SerializeField] private Animator animator;
+	[SerializeField] private SpriteRenderer sprite;
 
 	//Ground Checkers
 	[SerializeField] private float raycastDistance = 0.55f;
@@ -55,9 +56,10 @@ public class PlayerController : MonoBehaviour
 	[SerializeField] private Transform blockPosition;
 	public BlockScript currentBlockHolding = null;
 	[SerializeField] private float blockPlaceCooldown = 1f;
-	[SerializeField]private bool canPlaceBlock = false;
+	[SerializeField] private bool canPlaceBlock = false;
 	public bool isBlockLogicAvailable = true;
 	private bool isBlockOverlapping = false;
+	private Material hayMaterial;
 
 
 	private void Awake()
@@ -274,6 +276,11 @@ public class PlayerController : MonoBehaviour
 		coyoteTimeTimer = 0f;
     }
 
+	public void SetMaterials(PlayerMaterial mats)
+    {
+		sprite.material = mats.playerMat;
+		hayMaterial = mats.hayMat;
+    }
 	private void HandleGravity()
 	{
 		if (isGrounded)
@@ -336,6 +343,7 @@ public class PlayerController : MonoBehaviour
 		{
 			int randomIndex = UnityEngine.Random.Range(0, GameManager.instance.blocksPool.pooledObjects.Count);
 			currentBlockHolding = GameManager.instance.blocksPool.GetPooledObject(randomIndex, blockPosition.position, 0).GetComponent<BlockScript>();
+			currentBlockHolding.SetMaterial(hayMaterial);
 			currentBlockHolding.StartHold();
 			DOVirtual.DelayedCall(0.3f, () => canPlaceBlock = true, false);
 		}

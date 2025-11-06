@@ -184,11 +184,12 @@ public class GameManager : MonoBehaviour
 		return lowestY;
     }
 
-	public void AddPlayer(PlayerController player, Vector2 StartPos)
+	public void AddPlayer(PlayerController player, Vector2 StartPos, PlayerMaterial playerMat)
 	{
 		player.onDeath = OnPlayersDeath;
 		player.onPlayerReady = PlayerToggleReady;
 		player.startPosition = StartPos;
+		player.SetMaterials(playerMat);
 		AddInGamePlayer(player);
 
 		uiManager.UpdateJoinedPlayers(inGamePlayers);

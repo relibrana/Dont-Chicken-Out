@@ -9,6 +9,7 @@ using UnityEngine.InputSystem.LowLevel;
 public class PlayersManager : MonoBehaviour
 {
     [SerializeField] private Transform[] spawnPoints;
+    [SerializeField] private MaterialsSO materialsSO;
     [SerializeField] private GameObject playerPrefab;
     [NonSerialized] public int currPlayersInGame;
     private PlayerInputManager playerInputManager;
@@ -129,8 +130,8 @@ public class PlayersManager : MonoBehaviour
 
         newPlayer.transform.position = spawnPoints[currPlayersInGame].position;
         PlayerController playerController = newPlayer.gameObject.GetComponent<PlayerController>();
+        GameManager.instance.AddPlayer(playerController, spawnPoints[currPlayersInGame].position, materialsSO.playerMaterials[currPlayersInGame]);
         currPlayersInGame++;
-        GameManager.instance.AddPlayer(playerController, spawnPoints[currPlayersInGame].position);
 
         newPlayer.SendMessage("OnAssignedScheme", schemeName, SendMessageOptions.DontRequireReceiver);
         Debug.Log($"New player with device: {device.name} and scheme: {schemeName}");
