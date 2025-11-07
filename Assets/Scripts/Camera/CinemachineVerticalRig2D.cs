@@ -182,12 +182,14 @@ public class CinemachineVerticalRig2D : MonoBehaviour
     /// </summary>
     public void ResetToGameplay()
     {
+        cineCam.Follow = baseFollowTarget;
         _focusWinner = false;
         _winner = null;
         _velY = 0f;
         _velZoom = 0f;
         LensOrthoSize = normalOrthoSize;
         MaxHeightReached = 0f;
+        
 
         if (baseFollowTarget != null) baseFollowTarget.position = Vector3.zero;
 

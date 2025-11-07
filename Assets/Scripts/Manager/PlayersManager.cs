@@ -9,6 +9,7 @@ using UnityEngine.InputSystem.LowLevel;
 public class PlayersManager : MonoBehaviour
 {
     [SerializeField] private Transform[] spawnPoints;
+    [SerializeField] private MaterialsSO materialsSO;
     [SerializeField] private GameObject playerPrefab;
     [NonSerialized] public int currPlayersInGame;
     private PlayerInputManager playerInputManager;
@@ -44,7 +45,7 @@ public class PlayersManager : MonoBehaviour
 
     private bool IsPossibleToPair(InputControl control)
     {
-        if (GameManager.instance.gameState != GameState.Prepare)
+        if (GameManager.instance.gameState != GameState.Menu)
             return false;
 
         if (playerInputManager.maxPlayerCount > 0 && currPlayersInGame >= playerInputManager.maxPlayerCount)
@@ -127,10 +128,10 @@ public class PlayersManager : MonoBehaviour
             pairWithDevice: device
         );
 
-        newPlayer.transform.position = spawnPoints[currPlayersInGame].transform.position;
+        newPlayer.transform.position = spawnPoints[currPlayersInGame].position;
         PlayerController playerController = newPlayer.gameObject.GetComponent<PlayerController>();
+        GameManager.instance.AddPlayer(playerController, spawnPoints[currPlayersInGame].position, materialsSO.playerMaterials[currPlayersInGame]);
         currPlayersInGame++;
-        GameManager.instance.AddPlayer(playerController);
 
         newPlayer.SendMessage("OnAssignedScheme", schemeName, SendMessageOptions.DontRequireReceiver);
         Debug.Log($"New player with device: {device.name} and scheme: {schemeName}");

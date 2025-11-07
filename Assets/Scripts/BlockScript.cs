@@ -1,6 +1,5 @@
 using System.Collections;
 using System.Collections.Generic;
-using Microsoft.Unity.VisualStudio.Editor;
 using UnityEngine;
 
 public class BlockScript : MonoBehaviour
@@ -24,8 +23,16 @@ public class BlockScript : MonoBehaviour
 	[HideInInspector] public bool overlapping = false;
 
 
-    void Start()
+	void Start()
+	{
+	}
+	
+	public void SetMaterial(Material material)
     {
+        for(int i = 0; i < spriteRenderers.Count; i++)
+        {
+            spriteRenderers[i].material = material;
+        }
     }
 
 	void Update ()
