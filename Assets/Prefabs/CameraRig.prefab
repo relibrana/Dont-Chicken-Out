@@ -173,13 +173,14 @@ MonoBehaviour:
   baseFollowTarget: {fileID: 0}
   cineCam: {fileID: 0}
   smoothTimeY: 0.5
-  minFollowHeight: 1
+  minFollowHeight: 0.25
   yOffset: 0
-  normalOrthoSize: 5
+  normalOrthoSize: 5.4
   winnerOrthoSize: 3
-  zoomSmooth: 0.4
+  zoomSmooth: 0.5
   defaultShakeDuration: 0.35
   defaultShakeAmplitude: 5
   shakeFrequency: 25
   shakeAffectsX: 1
   shakeAffectsY: 1
+  canMove: 0
