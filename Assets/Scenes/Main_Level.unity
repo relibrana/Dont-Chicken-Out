@@ -10057,7 +10057,7 @@ BoxCollider2D:
   m_Enabled: 1
   serializedVersion: 3
   m_Density: 1
-  m_Material: {fileID: 0}
+  m_Material: {fileID: 6200000, guid: 083b2fa883b2b6f44bded383a31c02d6, type: 2}
   m_IncludeLayers:
     serializedVersion: 2
     m_Bits: 0
@@ -18434,7 +18434,7 @@ BoxCollider2D:
   m_Enabled: 1
   serializedVersion: 3
   m_Density: 1
-  m_Material: {fileID: 0}
+  m_Material: {fileID: 6200000, guid: 083b2fa883b2b6f44bded383a31c02d6, type: 2}
   m_IncludeLayers:
     serializedVersion: 2
     m_Bits: 0
@@ -74227,7 +74227,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 1306948335560172110, guid: eb5ad07b62b54435ba110d7614a039e6, type: 3}
       propertyPath: pooledObjects.Array.size
-      value: 6
+      value: 5
       objectReference: {fileID: 0}
     - target: {fileID: 1306948335560172110, guid: eb5ad07b62b54435ba110d7614a039e6, type: 3}
       propertyPath: pooledObjects.Array.data[7].ammountToPool
@@ -74264,7 +74264,7 @@ PrefabInstance:
     - target: {fileID: 1306948335560172110, guid: eb5ad07b62b54435ba110d7614a039e6, type: 3}
       propertyPath: pooledObjects.Array.data[4].pooledObjPrefab
       value: 
-      objectReference: {fileID: 6827348509028659557, guid: 37116a7ccb798415699552d03b988dcc, type: 3}
+      objectReference: {fileID: 6534725237409436186, guid: 7f6cf830a7259402d862e91e0fed1873, type: 3}
     - target: {fileID: 1306948335560172110, guid: eb5ad07b62b54435ba110d7614a039e6, type: 3}
       propertyPath: pooledObjects.Array.data[5].pooledObjPrefab
       value: 

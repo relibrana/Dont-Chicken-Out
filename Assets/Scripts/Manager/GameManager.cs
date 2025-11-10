@@ -250,8 +250,11 @@ public class GameManager : MonoBehaviour
 	{
 		player.transform.position = player.startPosition;
 		player.gameObject.transform.position = deathPos.position;
-		player.currentBlockHolding.gameObject.SetActive(false);
-		player.currentBlockHolding = null;
+		if (player.currentBlockHolding)
+		{
+			player.currentBlockHolding.gameObject.SetActive(false);
+			player.currentBlockHolding = null;
+		}
 		player.isBlockLogicAvailable = false;
 		playersAlive[player.playerIndex] = null;
 
