@@ -61,6 +61,9 @@ MonoBehaviour:
   groundLayer:
     serializedVersion: 2
     m_Bits: 192
+  layersToDetect:
+    serializedVersion: 2
+    m_Bits: 193
   playerIndex: 0
   isOnGame: 0
   roundsWon: 0
@@ -131,8 +134,8 @@ CapsuleCollider2D:
   m_UsedByEffector: 0
   m_CompositeOperation: 0
   m_CompositeOrder: 0
-  m_Offset: {x: 0, y: 0}
-  m_Size: {x: 0.8, y: 2}
+  m_Offset: {x: 0, y: -0.048119783}
+  m_Size: {x: 0.8, y: 1.9037604}
   m_Direction: 0
 --- !u!114 &5960661316607681385
 MonoBehaviour:

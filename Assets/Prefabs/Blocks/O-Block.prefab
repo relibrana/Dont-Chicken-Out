@@ -71,7 +71,7 @@ MonoBehaviour:
   - {fileID: 722047484386974030}
   startLayer:
     serializedVersion: 2
-    m_Bits: 1
+    m_Bits: 256
   placedLayer:
     serializedVersion: 2
     m_Bits: 64

@@ -21,6 +21,7 @@ public class PlayerController : MonoBehaviour
 	[SerializeField] private float spacingY = 0.2f;
 	[SerializeField] private float headCheck = 0.2f;
 	[SerializeField] private LayerMask groundLayer;
+	[SerializeField] private LayerMask layersToDetect;
 	private bool isPlayerOnHead;
 
 	//Timers
@@ -367,7 +368,7 @@ public class PlayerController : MonoBehaviour
 		Vector2 centerCollider = collider.bounds.center;
 		Vector2 colliderSize = new Vector2((collider.size.x - 0.1f) * transform.lossyScale.x, (collider.size.y - 0.1f) * transform.lossyScale.y);
 
-		Collider2D[] overlappedColliders = Physics2D.OverlapBoxAll(centerCollider, colliderSize, 0f);
+		Collider2D[] overlappedColliders = Physics2D.OverlapBoxAll(centerCollider, colliderSize, 0f, layersToDetect);
 
 
 		foreach (var col in overlappedColliders)
