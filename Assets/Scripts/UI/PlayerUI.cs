@@ -17,8 +17,11 @@ public class PlayerUI : MonoBehaviour
     [SerializeField] private GameObject InGameBox;
     [SerializeField] private GameObject DeadBox;
 
+    private Coroutine waitJoinBlinkCoroutine;
+
     void Awake()
     {
+        waitJoinBlinkCoroutine = StartCoroutine(WaitJoinBlink());
         ChangeUIState(PlayerUIState.WaitJoin);
     }
 
@@ -39,6 +42,8 @@ public class PlayerUI : MonoBehaviour
                 InitialText.text = $"PLAYER {playerIndex} PRESS START";
                 break;
             case PlayerUIState.Joined:
+                StopCoroutine(waitJoinBlinkCoroutine);
+                InitialText.color= Color.white;
                 InitialText.gameObject.SetActive(true);
                 InitialText.text = "CLUCK CLUCK\nTO BE\nREADY STEADY";
                 break;
@@ -64,4 +69,29 @@ public class PlayerUI : MonoBehaviour
                 break;
         }
     }
+
+    private IEnumerator WaitJoinBlink()
+    {
+        float duration = 0.5f;
+        while (true)
+        {
+            // Fade in
+            for (float t = 0; t < duration; t += Time.deltaTime)
+            {
+                float alpha = Mathf.Lerp(0, 1, t / duration);
+                InitialText.color = new Color(InitialText.color.r, InitialText.color.g, InitialText.color.b, alpha);
+                yield return null;
+            }
+            InitialText.color = new Color(InitialText.color.r, InitialText.color.g, InitialText.color.b, 1);
+            // Fade out
+            for (float t = 0; t < duration; t += Time.deltaTime)
+            {
+                float alpha = Mathf.Lerp(1, 0, t / duration);
+                InitialText.color = new Color(InitialText.color.r, InitialText.color.g, InitialText.color.b, alpha);
+                yield return null;
+            }
+            InitialText.color = new Color(InitialText.color.r, InitialText.color.g, InitialText.color.b, 0);
+        }
+    }
+
 }
