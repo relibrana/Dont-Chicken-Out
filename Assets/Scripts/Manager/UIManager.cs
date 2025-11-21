@@ -10,11 +10,25 @@ public class UIManager : MonoBehaviour
     public PlayerUI[] playersUI = new PlayerUI[4];
     [SerializeField] private GameObject dimLayerBG;
     [SerializeField] private TextMeshProUGUI startGameTimerText;
+
+    [Header("Points Manage")]
+    [SerializeField] private Sprite eggPoint;
+    [SerializeField] private GameObject pointsPanelHUD;
+    private CanvasGroup pointsCanvasGroup;
+    private Tween pointsFadeTween;
+
     private Sequence startGameSequence;
     private static readonly string[] PUESTOS = { "FIRST", "SECOND", "THIRD", "FOURTH" };
 
     void Awake()
     {
+        pointsCanvasGroup = pointsPanelHUD.GetComponent<CanvasGroup>();
+
+        if (pointsPanelHUD != null)
+            pointsPanelHUD.SetActive(false);
+        if (pointsCanvasGroup != null)
+            pointsCanvasGroup.alpha = 0f;
+
         for (int i = 0; i < playersUI.Length; i++)
         {
             playersUI[i].playerIndex = i + 1;
@@ -31,6 +45,8 @@ public class UIManager : MonoBehaviour
             else
                 playersUI[i].ChangeUIState(PlayerUIState.WaitJoin);
         }
+
+        UpdatePointsHUDActiveStates(inGamePlayers);
     }
 
     public void UpdateJoinedPlayers(PlayerController[] inGamePlayers)
@@ -41,6 +57,17 @@ public class UIManager : MonoBehaviour
                 playersUI[i].ChangeUIState(PlayerUIState.WaitJoin);
             else if (playersUI[i].GetPlayerUIState() == PlayerUIState.WaitJoin)
                 playersUI[i].ChangeUIState(PlayerUIState.Joined);
+        }
+
+        UpdatePointsHUDActiveStates(inGamePlayers);
+    }
+
+    private void UpdatePointsHUDActiveStates(PlayerController[] inGamePlayers)
+    {
+        for (int i = 0; i < playersUI.Length; i++)
+        {
+            bool isActive = inGamePlayers != null && i < inGamePlayers.Length && inGamePlayers[i] != null;
+            playersUI[i].SetPointsHUDActive(isActive);
         }
     }
 
@@ -66,6 +93,9 @@ public class UIManager : MonoBehaviour
 
     public void OnWinRound(PlayerController[] inGamePlayers, Action<bool> callback)
     {
+        // Abrir panel de puntajes (Fade In)
+        ShowPointsPanel();
+
         bool didPlayerWonGame = false;
         for (int i = 0; i < playersUI.Length; i++)
         {
@@ -73,6 +103,10 @@ public class UIManager : MonoBehaviour
             {
                 playersUI[i].roundsWon = inGamePlayers[i].roundsWon;
                 playersUI[i].ChangeUIState(PlayerUIState.Round);
+
+                // Actualizar huevitos del jugador según sus puntos
+                playersUI[i].UpdatePointsHUD(eggPoint);
+
                 if (playersUI[i].roundsWon == 3)
                     didPlayerWonGame = true;
             }
@@ -82,7 +116,7 @@ public class UIManager : MonoBehaviour
             int[] roundsWon = new int[4];
             for (int i = 0; i < roundsWon.Length; i++)
             {
-                if(inGamePlayers[i] != null)
+                if (inGamePlayers[i] != null)
                     roundsWon[i] = inGamePlayers[i].roundsWon;
             }
 
@@ -105,6 +139,35 @@ public class UIManager : MonoBehaviour
         }
     }
 
+    private void ShowPointsPanel()
+    {
+        if (pointsPanelHUD == null || pointsCanvasGroup == null)
+            return;
+
+        if (pointsFadeTween != null && pointsFadeTween.IsActive())
+            pointsFadeTween.Kill();
+
+        pointsPanelHUD.SetActive(true);
+        pointsCanvasGroup.alpha = 0f;
+        pointsFadeTween = pointsCanvasGroup.DOFade(1f, 0.5f);
+    }
+
+    public void HidePointsPanel()
+    {
+        if (pointsPanelHUD == null || pointsCanvasGroup == null)
+            return;
+
+        if (pointsFadeTween != null && pointsFadeTween.IsActive())
+            pointsFadeTween.Kill();
+
+        pointsFadeTween = pointsCanvasGroup
+            .DOFade(0f, 0.5f)
+            .OnComplete(() =>
+            {
+                pointsPanelHUD.SetActive(false);
+            });
+    }
+
     private List<string> GetAssignedRanks(int[] scores)
     {
         List<string> ranks = new List<string>(4);
@@ -122,7 +185,7 @@ public class UIManager : MonoBehaviour
                     rank++;
                 }
             }
-            
+
             int rankIndex = rank - 1;
 
             if (rankIndex >= 0 && rankIndex < PUESTOS.Length)
@@ -149,7 +212,7 @@ public class UIManager : MonoBehaviour
     {
         if (startGameSequence != null)
             return;
-        
+
         StartGameText(callback);
     }
 
@@ -198,7 +261,7 @@ public class UIManager : MonoBehaviour
         });
 
     }
-    
+
     // public void PlayAgainButton ()
     // {
     //     SoundManager.instance.PlaySound("start");

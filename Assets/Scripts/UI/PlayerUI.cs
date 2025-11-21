@@ -1,8 +1,8 @@
 using System.Collections;
 using UnityEngine;
-using System.Collections.Generic;
 using TMPro;
 using System;
+using UnityEngine.UI;
 
 [Serializable]
 public enum PlayerUIState { WaitJoin, Joined, Ready, InGame, Dead, Round, Results, NotPlayer }
@@ -17,12 +17,27 @@ public class PlayerUI : MonoBehaviour
     [SerializeField] private GameObject InGameBox;
     [SerializeField] private GameObject DeadBox;
 
+    [Header("Points HUD")]
+    [SerializeField] private GameObject contentRoot;
+    [SerializeField] private Image[] pointsImages;
+
+    private Sprite[] defaultPointSprites;
     private Coroutine waitJoinBlinkCoroutine;
 
     void Awake()
     {
         waitJoinBlinkCoroutine = StartCoroutine(WaitJoinBlink());
         ChangeUIState(PlayerUIState.WaitJoin);
+
+        // Guardar sprites originales de los huevitos (estado "vacío")
+        if (pointsImages != null && pointsImages.Length > 0)
+        {
+            defaultPointSprites = new Sprite[pointsImages.Length];
+            for (int i = 0; i < pointsImages.Length; i++)
+            {
+                defaultPointSprites[i] = pointsImages[i].sprite;
+            }
+        }
     }
 
     public PlayerUIState GetPlayerUIState() => uiState;
@@ -35,7 +50,7 @@ public class PlayerUI : MonoBehaviour
 
         uiState = newState;
 
-        switch(uiState)
+        switch (uiState)
         {
             case PlayerUIState.WaitJoin:
                 InitialText.gameObject.SetActive(true);
@@ -43,7 +58,7 @@ public class PlayerUI : MonoBehaviour
                 break;
             case PlayerUIState.Joined:
                 StopCoroutine(waitJoinBlinkCoroutine);
-                InitialText.color= Color.white;
+                InitialText.color = Color.white;
                 InitialText.gameObject.SetActive(true);
                 InitialText.text = "CLUCK CLUCK\nTO BE\nREADY STEADY";
                 break;
@@ -67,6 +82,26 @@ public class PlayerUI : MonoBehaviour
                 break;
             default:
                 break;
+        }
+    }
+
+    // Encender/apagar el HUD de puntos de este jugador
+    public void SetPointsHUDActive(bool active)
+    {
+        if (contentRoot != null)
+            contentRoot.SetActive(active);
+    }
+
+    // Actualizar los huevitos según los puntos del jugador
+    public void UpdatePointsHUD(Sprite filledSprite)
+    {
+        if (pointsImages == null || pointsImages.Length == 0 || defaultPointSprites == null)
+            return;
+
+        for (int i = 0; i < pointsImages.Length; i++)
+        {
+            bool isFilled = i < roundsWon;
+            pointsImages[i].sprite = isFilled ? filledSprite : defaultPointSprites[i];
         }
     }
 
