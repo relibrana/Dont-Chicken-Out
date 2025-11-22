@@ -38,6 +38,7 @@ public class PlayerController : MonoBehaviour
 	private InputAction jumpInput;
 	private bool isGrounded;
 	private bool isHoldingJump;
+	private bool jumpLocked;
 	private InputAction placeBlockInput;
 	private InputAction kickInput;
 	private InputAction cluckInput;
@@ -124,29 +125,36 @@ public class PlayerController : MonoBehaviour
 		isHoldingJump = false;
 	}
 
+	public void StepSound() => AudioManager.Instance.MakeStepSound();
+
 	private void OnPlaceBlockStarted(InputAction.CallbackContext context)
 	{
-		if (isGrounded && canPlaceBlock && !isBlockOverlapping)
+		if (isGrounded && canPlaceBlock)
 		{
-			currentBlockHolding.StopHold();
-			currentBlockHolding.AnimateAppear();
-			SoundManager.instance.PlaySound("placeBlock");
-			currentBlockHolding = null;
-			canPlaceBlock = false;
-			isBlockLogicAvailable = false;
-			DOVirtual.DelayedCall(blockPlaceCooldown, () => isBlockLogicAvailable = true, false);
+			if(!isBlockOverlapping)
+            {
+				currentBlockHolding.StopHold();
+				currentBlockHolding.AnimateAppear();
+				AudioManager.Instance.PlaySound("block_placement");
+				currentBlockHolding = null;
+				canPlaceBlock = false;
+				isBlockLogicAvailable = false;
+				DOVirtual.DelayedCall(blockPlaceCooldown, () => isBlockLogicAvailable = true, false);
+            }
+            else
+				AudioManager.Instance.PlaySound("block_invalid");
 		}
 	}
 
 	private void OnKickStarted(InputAction.CallbackContext context)
 	{
-		kickCollider.gameObject.SetActive(true);
-		DOVirtual.DelayedCall(0.2f, () => kickCollider.gameObject.SetActive(false));
+		animator.Play("Kick");
+		AudioManager.Instance.PlaySound("player_kick");
 	}
 
 	private void OnCluckStarted(InputAction.CallbackContext context)
 	{
-		//!CLUCK SOUND
+		AudioManager.Instance.MakeCuackSound();
 		if (GameManager.instance.gameState == GameState.Menu)
 			onPlayerReady?.Invoke(this);
 	}
@@ -228,14 +236,16 @@ public class PlayerController : MonoBehaviour
 
 	private void HandleJump()
 	{
-		bool canJump = jumpBufferTimer > 0f && coyoteTimeTimer > 0f && !isPlayerOnHead;
+		bool canJump = jumpBufferTimer > 0f && coyoteTimeTimer > 0f && !isPlayerOnHead && !jumpLocked;
 
 		if (canJump)
 		{
 			currentVelocity.y = calculatedInitialJumpVelocity;
-			SoundManager.instance.PlaySound("jump");
+			AudioManager.Instance.PlaySound("player_jump");
 
 			isGrounded = false;
+			jumpLocked = true;
+			DOVirtual.DelayedCall(0.5f, () => jumpLocked = false);
 
 			jumpBufferTimer = 0f;
 			coyoteTimeTimer = 0f;

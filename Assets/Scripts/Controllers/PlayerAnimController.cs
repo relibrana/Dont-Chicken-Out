@@ -1,16 +1,14 @@
+using System;
+using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Events;
 
 public class PlayerAnimController : MonoBehaviour
 {
-    // Start is called once before the first execution of Update after the MonoBehaviour is created
-    void Start()
-    {
-        
-    }
+    public List<UnityEvent> animationEvents = new List<UnityEvent>();
 
-    // Update is called once per frame
-    void Update()
+    public void playAnimEvent(int id)
     {
-        
+        animationEvents[id].Invoke();
     }
 }
