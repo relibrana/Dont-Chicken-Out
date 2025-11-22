@@ -56,6 +56,7 @@ public class GameManager : MonoBehaviour
     void Start()
     {
         Bg.DOFade(0, 1f).SetDelay(3);
+        AudioManager.Instance.PlayMusic("Menu");
     }
 
     void Update()
@@ -93,6 +94,7 @@ public class GameManager : MonoBehaviour
 
     private void ResetValues()
     {
+        AudioManager.Instance.PlayMusic("Menu");
         blocksPool.ResetPool();
         foreach (var player in inGamePlayers)
         {
@@ -138,6 +140,7 @@ public class GameManager : MonoBehaviour
             uiManager.StartInitialGameSequence(() =>
             {
                 ChangeGameState(GameState.Game);
+                AudioManager.Instance.PlayMusic("Game");
                 uiManager.OnGamePlayersUI();
             });
             triggerStartGame = false;
