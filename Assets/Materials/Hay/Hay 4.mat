@@ -75,9 +75,9 @@ Material:
     - _OcclusionStrength: 1
     - _Parallax: 0.02
     - _Range1: 0.209
-    - _Range2: 0.079
-    - _Range3: 0.478
-    - _Range4: 0.49
+    - _Range2: 0.336
+    - _Range3: 0.261
+    - _Range4: 0.474
     - _SmoothnessTextureChannel: 0
     - _SpecularHighlights: 1
     - _SrcBlend: 1
@@ -89,10 +89,10 @@ Material:
     - _OriginalColor1: {r: 0.09411766, g: 0.027450982, b: 0.16862746, a: 1}
     - _OriginalColor2: {r: 0.8705883, g: 0.49411768, b: 0.19607845, a: 1}
     - _OriginalColor3: {r: 0.5176471, g: 0.098039225, b: 0.011764707, a: 1}
-    - _OriginalColor4: {r: 1, g: 0.7843138, b: 0.6156863, a: 1}
-    - _ReplacementColor1: {r: 0.16862746, g: 0.14901961, b: 0.0627451, a: 1}
-    - _ReplacementColor2: {r: 0.8867924, g: 0.7435569, b: 0.4141153, a: 1}
-    - _ReplacementColor3: {r: 0.6132076, g: 0.48807704, b: 0.19958171, a: 1}
-    - _ReplacementColor4: {r: 0.9339623, g: 0.8827148, b: 0.6828498, a: 1}
+    - _OriginalColor4: {r: 0.75294125, g: 0.75294125, b: 0.75294125, a: 1}
+    - _ReplacementColor1: {r: 0.22296822, g: 0.056069776, b: 0.26415092, a: 1}
+    - _ReplacementColor2: {r: 0.6678437, g: 0.2775454, b: 0.764151, a: 1}
+    - _ReplacementColor3: {r: 0.4155146, g: 0.12224099, b: 0.6320754, a: 1}
+    - _ReplacementColor4: {r: 0.9176471, g: 0.6156863, b: 0.9921569, a: 1}
   m_BuildTextureStacks: []
   m_AllowLocking: 1

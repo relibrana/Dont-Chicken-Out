@@ -92,9 +92,9 @@ Material:
     - _OriginalColor2: {r: 0.5058824, g: 0.5019608, b: 0.5058824, a: 1}
     - _OriginalColor3: {r: 0.04705883, g: 0.011764707, b: 0, a: 1}
     - _OriginalColor4: {r: 1, g: 1, b: 1, a: 1}
-    - _ReplacementColor1: {r: 1, g: 0.889536, b: 0.36320752, a: 1}
-    - _ReplacementColor2: {r: 0.9150943, g: 0.71920943, b: 0.21150766, a: 1}
-    - _ReplacementColor3: {r: 0.16981131, g: 0.1502441, b: 0.06327874, a: 1}
+    - _ReplacementColor1: {r: 0.9176471, g: 0.6156863, b: 0.9921569, a: 1}
+    - _ReplacementColor2: {r: 0.67058825, g: 0.36862746, b: 0.74509805, a: 1}
+    - _ReplacementColor3: {r: 0.051150106, g: 0.009300461, b: 0.103773594, a: 1}
     - _ReplacementColor4: {r: 1, g: 1, b: 1, a: 1}
     - _TargetColor: {r: 1, g: 1, b: 1, a: 1}
   m_BuildTextureStacks: []

@@ -20,6 +20,14 @@ public class UIManager : MonoBehaviour
     private Sequence startGameSequence;
     private static readonly string[] PUESTOS = { "FIRST", "SECOND", "THIRD", "FOURTH" };
 
+    [SerializeField] GameObject controls;
+    [SerializeField] Transform controlsStart;
+    [SerializeField] Transform controlsEnd;
+    [SerializeField] GameObject playersCount;
+    [SerializeField] Transform playersCountStart;
+    [SerializeField] Transform playersCountEnd;
+    [SerializeField] TextMeshProUGUI playersCountText;
+
     void Awake()
     {
         pointsCanvasGroup = pointsPanelHUD.GetComponent<CanvasGroup>();
@@ -45,20 +53,33 @@ public class UIManager : MonoBehaviour
             else
                 playersUI[i].ChangeUIState(PlayerUIState.WaitJoin);
         }
+        controls.SetActive(true);
+        playersCount.SetActive(true);
+        DOVirtual.DelayedCall(1f, () =>
+        {
+            controls.transform.DOMove(controlsStart.transform.position, 0.7f).SetEase(Ease.OutBack);
+            playersCount.transform.DOMove(playersCountStart.transform.position, 0.6f).SetEase(Ease.OutBack).SetDelay(0.15f);
+        });
 
         UpdatePointsHUDActiveStates(inGamePlayers);
     }
 
     public void UpdateJoinedPlayers(PlayerController[] inGamePlayers)
     {
+        int playersAmount = 0;
         for (int i = 0; i < playersUI.Length; i++)
         {
             if (inGamePlayers[i] == null)
                 playersUI[i].ChangeUIState(PlayerUIState.WaitJoin);
-            else if (playersUI[i].GetPlayerUIState() == PlayerUIState.WaitJoin)
-                playersUI[i].ChangeUIState(PlayerUIState.Joined);
+            else
+            {
+                playersAmount++;
+                if (playersUI[i].GetPlayerUIState() == PlayerUIState.WaitJoin)
+                    playersUI[i].ChangeUIState(PlayerUIState.Joined);
+            }
         }
 
+        playersCountText.text = $"{playersAmount} / 4";
         UpdatePointsHUDActiveStates(inGamePlayers);
     }
 
@@ -104,7 +125,7 @@ public class UIManager : MonoBehaviour
                 playersUI[i].roundsWon = inGamePlayers[i].roundsWon;
                 playersUI[i].ChangeUIState(PlayerUIState.Round);
 
-                // Actualizar huevitos del jugador según sus puntos
+                // Actualizar huevitos del jugador segï¿½n sus puntos
                 playersUI[i].UpdatePointsHUD(eggPoint);
 
                 if (playersUI[i].roundsWon == 3)
@@ -224,6 +245,10 @@ public class UIManager : MonoBehaviour
             startGameSequence = null;
             startGameTimerText.gameObject.SetActive(false);
             dimLayerBG.SetActive(true);
+            controls.SetActive(true);
+            playersCount.SetActive(true);
+            controls.transform.DOMove(controlsStart.transform.position, 0.7f).SetEase(Ease.OutBack);
+            playersCount.transform.DOMove(playersCountStart.transform.position, 0.6f).SetEase(Ease.OutBack).SetDelay(0.15f);
         }
     }
 
@@ -234,17 +259,32 @@ public class UIManager : MonoBehaviour
         {
             startGameTimerText.gameObject.SetActive(true);
             dimLayerBG.SetActive(false);
-            startGameTimerText.text = "Ready...";
+            startGameTimerText.text = "3";
         });
 
-        startGameSequence.AppendInterval(2f);
+        startGameSequence.AppendInterval(1.25f);
 
         startGameSequence.AppendCallback(() =>
         {
-            startGameTimerText.text = "Steady...";
+            startGameTimerText.text = "2";
         });
 
-        startGameSequence.AppendInterval(2f);
+        startGameSequence.AppendInterval(1.25f);
+
+        startGameSequence.AppendCallback(() =>
+        {
+            startGameTimerText.text = "1";
+            DOVirtual.DelayedCall(1.15f, () =>
+            {
+                controls.SetActive(false);
+                playersCount.SetActive(false);
+            });
+            controls.transform.DOMove(controlsEnd.transform.position, 0.7f).SetEase(Ease.InBack);
+            playersCount.transform.DOMove(playersCountEnd.transform.position, 0.6f).SetEase(Ease.InBack).SetDelay(0.15f);
+
+        });
+
+        startGameSequence.AppendInterval(1.25f);
 
         startGameSequence.AppendCallback(() =>
         {
