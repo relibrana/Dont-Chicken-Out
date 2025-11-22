@@ -20,6 +20,7 @@ public class GameManager : MonoBehaviour
     public CinemachineVerticalRig2D cameraRig;
     private float autoMoveCameraCurrentTime;
     private const float startUpTime = 3.5f;
+    [SerializeField] private SpriteRenderer Bg;
 
     [Header("Game Variables")]
     public float autoMoveCameraSpeed = 0.2f;
@@ -51,6 +52,10 @@ public class GameManager : MonoBehaviour
             instance = this;
         else
             Destroy(gameObject);
+    }
+    void Start()
+    {
+        Bg.DOFade(0, 1f).SetDelay(3);
     }
 
     void Update()
@@ -300,7 +305,7 @@ public class GameManager : MonoBehaviour
             ChangeGameState(GameState.Win);
             winner.roundsWon++;
 
-            // Solo acercar la cámara al ganador si GANÓ LA PARTIDA (por ejemplo, 3 puntos)
+            // Solo acercar la cï¿½mara al ganador si GANï¿½ LA PARTIDA (por ejemplo, 3 puntos)
             if (winner.roundsWon >= 3)
             {
                 cameraRig.FocusWinner(winner.transform);
