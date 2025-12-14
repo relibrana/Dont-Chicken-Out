@@ -5,7 +5,7 @@ using UnityEngine;
 
 public class CameraController : MonoBehaviour
 {
-	public List<Transform> players => GameManager.instance.players;
+	// public List<Transform> players => GameManager.instance.players;
 	// Height
 	[HideInInspector] public float maxHeightReached = 0;
 	float minimumHeightForCameraFollow = 1f;
@@ -23,30 +23,30 @@ public class CameraController : MonoBehaviour
 
     void Update()
     {
-		if (players != null && players.Count > 0 && GameManager.instance.gameState != GameManager.GameState.Over)
-		{
-			// Camera reach new height
-			foreach (Transform p in players)
-			{
-				try
-				{
-					if (p.transform.position.y > maxHeightReached)
-					{
-						maxHeightReached = p.transform.position.y;
-						gameManager.autoMoveCameraCurrentTime = gameManager.autoMoveCameraTime;
-					}
-				}
-				catch{}
-			}
+		// if (players != null && players.Count > 0 && GameManager.instance.gameState != GameManager.GameState.Over)
+		// {
+		// 	// Camera reach new height
+		// 	foreach (Transform p in players)
+		// 	{
+		// 		try
+		// 		{
+		// 			if (p.transform.position.y > maxHeightReached)
+		// 			{
+		// 				maxHeightReached = p.transform.position.y;
+		// 				gameManager.autoMoveCameraCurrentTime = gameManager.autoMoveCameraTime;
+		// 			}
+		// 		}
+		// 		catch{}
+		// 	}
 
-			// Camera Follow Vertical
-			if (maxHeightReached > minimumHeightForCameraFollow)
-			{
-				Vector3 desiredPosition = new Vector3(0, maxHeightReached, transform.position.z);
+		// 	// Camera Follow Vertical
+		// 	if (maxHeightReached > minimumHeightForCameraFollow)
+		// 	{
+		// 		Vector3 desiredPosition = new Vector3(0, maxHeightReached, transform.position.z);
 
-				transform.position = Vector3.Lerp(transform.position, desiredPosition, smoothness * Time.deltaTime);
-			}
-		}
+		// 		transform.position = Vector3.Lerp(transform.position, desiredPosition, smoothness * Time.deltaTime);
+		// 	}
+		// }
     }
 
 	private void OnDrawGizmos()

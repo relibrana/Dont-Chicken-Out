@@ -2,9 +2,10 @@
 %TAG !u! tag:unity3d.com,2011:
 --- !u!78 &1
 TagManager:
-  serializedVersion: 2
+  serializedVersion: 3
   tags:
   - Ground
+  - Block
   layers:
   - Default
   - TransparentFX
@@ -14,7 +15,7 @@ TagManager:
   - UI
   - Ground
   - Player
-  - 
+  - GroundStart
   - 
   - 
   - 
@@ -39,6 +40,9 @@ TagManager:
   - 
   - 
   m_SortingLayers:
+  - name: Bg
+    uniqueID: 2317011415
+    locked: 0
   - name: Default
     uniqueID: 0
     locked: 0
@@ -48,3 +52,5 @@ TagManager:
   - name: Characters
     uniqueID: 1152462753
     locked: 0
+  m_RenderingLayers:
+  - Default

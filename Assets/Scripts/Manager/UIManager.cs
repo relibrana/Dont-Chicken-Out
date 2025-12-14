@@ -1,12 +1,311 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
+using DG.Tweening;
+using TMPro;
 using UnityEngine;
 
 public class UIManager : MonoBehaviour
 {
-    public void PlayAgainButton ()
+    public PlayerUI[] playersUI = new PlayerUI[4];
+    [SerializeField] private GameObject dimLayerBG;
+    [SerializeField] private TextMeshProUGUI startGameTimerText;
+
+    [Header("Points Manage")]
+    [SerializeField] private Sprite eggPoint;
+    [SerializeField] private GameObject pointsPanelHUD;
+    private CanvasGroup pointsCanvasGroup;
+    private Tween pointsFadeTween;
+
+    private Sequence startGameSequence;
+    private static readonly string[] PUESTOS = { "FIRST", "SECOND", "THIRD", "FOURTH" };
+
+    [SerializeField] GameObject controls;
+    [SerializeField] Transform controlsStart;
+    [SerializeField] Transform controlsEnd;
+    [SerializeField] GameObject playersCount;
+    [SerializeField] Transform playersCountStart;
+    [SerializeField] Transform playersCountEnd;
+    [SerializeField] TextMeshProUGUI playersCountText;
+
+    void Awake()
     {
-        SoundManager.instance.PlaySound("start");
-        GameManager.instance.RestartScene ();
+        pointsCanvasGroup = pointsPanelHUD.GetComponent<CanvasGroup>();
+
+        if (pointsPanelHUD != null)
+            pointsPanelHUD.SetActive(false);
+        if (pointsCanvasGroup != null)
+            pointsCanvasGroup.alpha = 0f;
+
+        for (int i = 0; i < playersUI.Length; i++)
+        {
+            playersUI[i].playerIndex = i + 1;
+            playersUI[i].ChangeUIState(PlayerUIState.WaitJoin);
+        }
     }
+
+    public void ResetPlayers(PlayerController[] inGamePlayers)
+    {
+        for (int i = 0; i < playersUI.Length; i++)
+        {
+            if (inGamePlayers[i] != null)
+                playersUI[i].ChangeUIState(PlayerUIState.Joined);
+            else
+                playersUI[i].ChangeUIState(PlayerUIState.WaitJoin);
+        }
+        controls.SetActive(true);
+        playersCount.SetActive(true);
+        DOVirtual.DelayedCall(1f, () =>
+        {
+            controls.transform.DOMove(controlsStart.transform.position, 0.7f).SetEase(Ease.OutBack);
+            playersCount.transform.DOMove(playersCountStart.transform.position, 0.6f).SetEase(Ease.OutBack).SetDelay(0.15f);
+        });
+
+        UpdatePointsHUDActiveStates(inGamePlayers);
+    }
+
+    public void UpdateJoinedPlayers(PlayerController[] inGamePlayers)
+    {
+        int playersAmount = 0;
+        for (int i = 0; i < playersUI.Length; i++)
+        {
+            if (inGamePlayers[i] == null)
+                playersUI[i].ChangeUIState(PlayerUIState.WaitJoin);
+            else
+            {
+                playersAmount++;
+                if (playersUI[i].GetPlayerUIState() == PlayerUIState.WaitJoin)
+                    playersUI[i].ChangeUIState(PlayerUIState.Joined);
+            }
+        }
+
+        playersCountText.text = $"{playersAmount} / 4";
+        UpdatePointsHUDActiveStates(inGamePlayers);
+    }
+
+    private void UpdatePointsHUDActiveStates(PlayerController[] inGamePlayers)
+    {
+        for (int i = 0; i < playersUI.Length; i++)
+        {
+            bool isActive = inGamePlayers != null && i < inGamePlayers.Length && inGamePlayers[i] != null;
+            playersUI[i].SetPointsHUDActive(isActive);
+        }
+    }
+
+    public void UpdateReadyPlayers(PlayerController[] inGamePlayers)
+    {
+        for (int i = 0; i < playersUI.Length; i++)
+        {
+            if (inGamePlayers[i] != null)
+                playersUI[i].ChangeUIState(PlayerUIState.Ready);
+        }
+    }
+
+    public void UpdateReadyPlayer(int playerIndex, bool isReady)
+    {
+        PlayerUIState newState = isReady ? PlayerUIState.Ready : PlayerUIState.Joined;
+        playersUI[playerIndex].ChangeUIState(newState);
+    }
+
+    public void UpdateDeadPlayer(int playerIndex)
+    {
+        playersUI[playerIndex].ChangeUIState(PlayerUIState.Dead);
+    }
+
+    public void OnWinRound(PlayerController[] inGamePlayers, Action<bool> callback)
+    {
+        // Abrir panel de puntajes (Fade In)
+        ShowPointsPanel();
+
+        bool didPlayerWonGame = false;
+        for (int i = 0; i < playersUI.Length; i++)
+        {
+            if (inGamePlayers[i] != null)
+            {
+                playersUI[i].roundsWon = inGamePlayers[i].roundsWon;
+                playersUI[i].ChangeUIState(PlayerUIState.Round);
+
+                // Actualizar huevitos del jugador seg�n sus puntos
+                playersUI[i].UpdatePointsHUD(eggPoint);
+
+                if (playersUI[i].roundsWon == 3)
+                    didPlayerWonGame = true;
+            }
+        }
+        if (didPlayerWonGame)
+        {
+            int[] roundsWon = new int[4];
+            for (int i = 0; i < roundsWon.Length; i++)
+            {
+                if (inGamePlayers[i] != null)
+                    roundsWon[i] = inGamePlayers[i].roundsWon;
+            }
+
+            List<string> positions = GetAssignedRanks(roundsWon);
+
+            for (int i = 0; i < positions.Count; i++)
+            {
+                if (inGamePlayers[i] != null)
+                {
+                    playersUI[i].place = positions[i];
+                    playersUI[i].ChangeUIState(PlayerUIState.Results);
+                }
+            }
+
+            callback.Invoke(true);
+        }
+        else
+        {
+            callback.Invoke(false);
+        }
+    }
+
+    private void ShowPointsPanel()
+    {
+        if (pointsPanelHUD == null || pointsCanvasGroup == null)
+            return;
+
+        if (pointsFadeTween != null && pointsFadeTween.IsActive())
+            pointsFadeTween.Kill();
+
+        pointsPanelHUD.SetActive(true);
+        pointsCanvasGroup.alpha = 0f;
+        pointsFadeTween = pointsCanvasGroup.DOFade(1f, 0.5f);
+    }
+
+    public void HidePointsPanel()
+    {
+        if (pointsPanelHUD == null || pointsCanvasGroup == null)
+            return;
+
+        if (pointsFadeTween != null && pointsFadeTween.IsActive())
+            pointsFadeTween.Kill();
+
+        pointsFadeTween = pointsCanvasGroup
+            .DOFade(0f, 0.5f)
+            .OnComplete(() =>
+            {
+                pointsPanelHUD.SetActive(false);
+            });
+    }
+
+    private List<string> GetAssignedRanks(int[] scores)
+    {
+        List<string> ranks = new List<string>(4);
+
+        for (int i = 0; i < scores.Length; i++)
+        {
+            int currentScore = scores[i];
+            int rank = 1;
+            for (int j = 0; j < scores.Length; j++)
+            {
+                int otherScore = scores[j];
+
+                if (otherScore > currentScore)
+                {
+                    rank++;
+                }
+            }
+
+            int rankIndex = rank - 1;
+
+            if (rankIndex >= 0 && rankIndex < PUESTOS.Length)
+            {
+                ranks.Add(PUESTOS[rankIndex]);
+            }
+        }
+
+        return ranks;
+    }
+
+    public void OnGamePlayersUI()
+    {
+        for (int i = 0; i < playersUI.Length; i++)
+        {
+            if (playersUI[i].GetPlayerUIState() == PlayerUIState.Ready)
+                playersUI[i].ChangeUIState(PlayerUIState.InGame);
+            else
+                playersUI[i].ChangeUIState(PlayerUIState.NotPlayer);
+        }
+    }
+
+    public void StartInitialGameSequence(Action callback)
+    {
+        if (startGameSequence != null)
+            return;
+
+        StartGameText(callback);
+    }
+
+    public void StopInitialGameSequence()
+    {
+        if (startGameSequence != null)
+        {
+            startGameSequence.Kill();
+            startGameSequence = null;
+            startGameTimerText.gameObject.SetActive(false);
+            dimLayerBG.SetActive(true);
+            controls.SetActive(true);
+            playersCount.SetActive(true);
+            controls.transform.DOMove(controlsStart.transform.position, 0.7f).SetEase(Ease.OutBack);
+            playersCount.transform.DOMove(playersCountStart.transform.position, 0.6f).SetEase(Ease.OutBack).SetDelay(0.15f);
+        }
+    }
+
+    private void StartGameText(Action callback)
+    {
+        startGameSequence = DOTween.Sequence();
+        startGameSequence.AppendCallback(() =>
+        {
+            startGameTimerText.gameObject.SetActive(true);
+            dimLayerBG.SetActive(false);
+            startGameTimerText.text = "3";
+        });
+
+        startGameSequence.AppendInterval(1.25f);
+
+        startGameSequence.AppendCallback(() =>
+        {
+            startGameTimerText.text = "2";
+        });
+
+        startGameSequence.AppendInterval(1.25f);
+
+        startGameSequence.AppendCallback(() =>
+        {
+            startGameTimerText.text = "1";
+            DOVirtual.DelayedCall(1.15f, () =>
+            {
+                controls.SetActive(false);
+                playersCount.SetActive(false);
+            });
+            controls.transform.DOMove(controlsEnd.transform.position, 0.7f).SetEase(Ease.InBack);
+            playersCount.transform.DOMove(playersCountEnd.transform.position, 0.6f).SetEase(Ease.InBack).SetDelay(0.15f);
+
+        });
+
+        startGameSequence.AppendInterval(1.25f);
+
+        startGameSequence.AppendCallback(() =>
+        {
+            startGameTimerText.text = "GO!";
+            callback.Invoke();
+        });
+
+        startGameSequence.AppendInterval(1f);
+
+        startGameSequence.AppendCallback(() =>
+        {
+            startGameTimerText.gameObject.SetActive(false);
+            startGameSequence = null;
+        });
+
+    }
+
+    // public void PlayAgainButton ()
+    // {
+    //     SoundManager.instance.PlaySound("start");
+    //     GameManager.instance.RestartScene ();
+    // }
+
 }
