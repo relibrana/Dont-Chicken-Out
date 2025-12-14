@@ -13,6 +13,8 @@ public class PlatformerValuesSO : ScriptableObject
 
 
     [Header("Jump Values")]
+    [Tooltip("Player's Maximum Vertical Velocity")]
+    public float maxJumpSpeed = 16f;
     [Tooltip("Maximum Height the player can reach in a full jump")]
     public float peakHeight = 4f;
     [Tooltip("Time it takes to reach the Peak Height from the ground")]

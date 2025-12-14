@@ -63,6 +63,8 @@ public class PlayerController : MonoBehaviour
 	private bool isBlockOverlapping = false;
 	private Material hayMaterial;
 
+	[SerializeField] private bool dbgMode;
+
 
 	private void Awake()
 	{
@@ -257,7 +259,14 @@ public class PlayerController : MonoBehaviour
 		HandleHorizontalMovement();
 		HandleGravity();
 
+		currentVelocity.y = Mathf.Min(currentVelocity.y, valuesSO.maxJumpSpeed);
+
 		rb.linearVelocity = currentVelocity;
+
+		#if UNITY_EDITOR
+			if(dbgMode && Mathf.Abs(rb.linearVelocityX) + Mathf.Abs(rb.linearVelocityY) > 0.5f) 
+				Debug.LogWarning(rb.linearVelocity);
+		#endif
 	}
 
 	private void HandleHorizontalMovement()
@@ -308,7 +317,7 @@ public class PlayerController : MonoBehaviour
 		{
 			float glideMultiplier = isHoldingJump ? valuesSO.glideResistance : 0;
 
-			animator.SetBool("IsGliding", glideMultiplier != 0);
+			animator.SetBool("IsGliding", isHoldingJump);
 
 			int fallLimit = isHoldingJump ? -4 : -25;
 
