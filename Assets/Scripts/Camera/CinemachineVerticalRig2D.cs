@@ -118,21 +118,24 @@ public class CinemachineVerticalRig2D : MonoBehaviour
         var players = FindObjectsByType<PlayerController>(FindObjectsSortMode.None);
         if (players == null || players.Length == 0) return;
 
-        float highestY = float.NegativeInfinity;
+        float highestGroundedY = float.NegativeInfinity;
+
         foreach (var p in players)
         {
             if (p == null || !p.isActiveAndEnabled) continue;
-            highestY = Mathf.Max(highestY, p.transform.position.y);
-        }
-        if (highestY == float.NegativeInfinity) return;
+            if (!p.IsGrounded) continue;
 
-        if (highestY > minFollowHeight)
+            highestGroundedY = Mathf.Max(highestGroundedY, p.transform.position.y);
+        }
+
+        if (highestGroundedY != float.NegativeInfinity && highestGroundedY > minFollowHeight)
         {
-            MaxHeightReached = Mathf.Max(MaxHeightReached, highestY);
+            MaxHeightReached = Mathf.Max(MaxHeightReached, highestGroundedY);
         }
 
         FollowUpOnly(MaxHeightReached);
         ZoomTo(normalOrthoSize);
+
     }
 
     void FollowUpOnly(float targetY)
