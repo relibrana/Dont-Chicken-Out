@@ -65,8 +65,12 @@ public class PlayerController : MonoBehaviour
 
 	[SerializeField] private bool dbgMode;
 
+    // Properties
+    public bool IsGrounded => isGrounded;
 
-	private void Awake()
+
+
+    private void Awake()
 	{
 		playerInput = GetComponent<PlayerInput>();
 		InitializeInputActions();
