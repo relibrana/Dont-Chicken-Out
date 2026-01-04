@@ -12,6 +12,7 @@ GameObject:
   - component: {fileID: 1372063501630936787}
   - component: {fileID: 377270828065172132}
   - component: {fileID: 9070030752863707788}
+  - component: {fileID: 8946723558804369671}
   m_Layer: 0
   m_Name: ObjectCapsule
   m_TagString: Capsule
@@ -152,3 +153,20 @@ Rigidbody2D:
   m_SleepingMode: 1
   m_CollisionDetection: 0
   m_Constraints: 4
+--- !u!114 &8946723558804369671
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8153581683628303109}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c86e0efdbe1e5db4d875f634dc893ac2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  colors:
+  - {r: 1, g: 1, b: 1, a: 1}
+  - {r: 0.8980392, g: 0.11332175, b: 0.06274509, a: 1}
+  - {r: 0.8962264, g: 0.75548404, b: 0.097232126, a: 1}
+  sr: {fileID: 1372063501630936787}

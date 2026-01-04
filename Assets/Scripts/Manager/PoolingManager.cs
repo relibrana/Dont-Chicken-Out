@@ -24,7 +24,7 @@ public class PoolingManager : MonoBehaviour
         }
         foreach (PooledObject item in pooledItems)
         {
-            InitializePoolObjects(item, blockList);   
+            InitializePoolObjects(item, itemList);   
         }
     }
     

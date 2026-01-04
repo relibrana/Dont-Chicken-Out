@@ -34,6 +34,7 @@ public class ItemCapsule : IDamageable
             player.currentBlockHolding.gameObject.SetActive(false);
         }
         player.currentBlockHolding = randomItem.GetComponent<HoldableItem>();
+        player.currentBlockHolding.StartHold();
         gameObject.SetActive(false);
         life = baseLife;
         sr.color = Color.green;

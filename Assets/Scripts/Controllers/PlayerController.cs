@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using DG.Tweening;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -382,30 +383,34 @@ public class PlayerController : MonoBehaviour
 			currentBlockHolding.transform.localScale = new Vector3(transform.lossyScale.x, 1, 1);
 
 			isBlockOverlapping = false;
-			foreach (BoxCollider2D col in currentBlockHolding.GetColliders())
+			foreach (Collider2D col in currentBlockHolding.GetColliders())
 			{
 				if (CheckOverlapping(col))
+				{
 					isBlockOverlapping = true;
+				}
 			}
 			currentBlockHolding.overlapping = isBlockOverlapping;
 		}
 	}
 	
-	private bool CheckOverlapping(BoxCollider2D collider)
+	private bool CheckOverlapping(Collider2D collider)
 	{
-		Vector2 centerCollider = collider.bounds.center;
-		Vector2 colliderSize = new Vector2((collider.size.x - 0.1f) * transform.lossyScale.x, 
-			(collider.size.y - 0.1f) * transform.lossyScale.y);
+		ContactFilter2D filter = new ContactFilter2D();
+		filter.SetLayerMask(layersToDetect);
+		filter.useTriggers = false;
 
-		Collider2D[] overlappedColliders = Physics2D.OverlapBoxAll(centerCollider, colliderSize, 0f, layersToDetect);
+		List<Collider2D> results = new List<Collider2D>();
 
+		int count = collider.Overlap(filter, results);
 
-		foreach (var col in overlappedColliders)
+		for(int i = 0; i < count; i++)
 		{
-			if (col != collider)
+			if(results[i] != collider)
+			{
 				return true;
+			}
 		}
-
 		return false;
 	}
 }

@@ -5,29 +5,24 @@ using UnityEngine;
 public class HoldableItem : MonoBehaviour
 {
     protected bool holding;
-	Color holdColor = new Color (1f, 1f, 1f, 0.25f);
-	Color overlappingColor = new Color (1f, 0, 0, 0.25f);
-	[SerializeField] protected List<BoxCollider2D> colliders = new();
-	[SerializeField] protected List<Animator> animators = new();
+	[SerializeField] Color holdColor = new Color (1f, 1f, 1f, 0.25f);
+	[SerializeField] Color overlappingColor = new Color (1f, 0, 0, 0.25f);
+	[SerializeField] protected List<Collider2D> colliders = new();
     [SerializeField] protected Rigidbody2D rb2d;
 	[SerializeField] protected LayerMask startLayer;
 	[SerializeField] protected LayerMask placedLayer;
 	[HideInInspector] public bool overlapping = false;
     public List<SpriteRenderer> spriteRenderers = new();
 
-
-	private void OnDisable()
+	protected virtual void OnDisable()
 	{
-		foreach (Animator anim in animators)
-		{
-			anim.enabled = false;
-		}
-		foreach (BoxCollider2D col in colliders)
+		foreach (Collider2D col in colliders)
 		{
 			col.isTrigger = true;
 			col.gameObject.layer = (int)Mathf.Log(startLayer.value, 2);;
 		}
 	}
+	
 	public void StartHold ()
 	{
 		holding = true;
@@ -35,7 +30,7 @@ public class HoldableItem : MonoBehaviour
 
 		SetColor(holdColor);
 
-		foreach (BoxCollider2D col in colliders)
+		foreach (Collider2D col in colliders)
 		{
 			col.isTrigger = true;
 			col.gameObject.layer = (int)Mathf.Log(startLayer.value, 2);
@@ -43,7 +38,7 @@ public class HoldableItem : MonoBehaviour
 	}
 	public void StopHold ()
 	{
-		foreach (BoxCollider2D col in colliders)
+		foreach (Collider2D col in colliders)
 		{
 			col.isTrigger = false;
 			col.gameObject.layer = (int)Mathf.Log(placedLayer.value, 2);
@@ -54,7 +49,7 @@ public class HoldableItem : MonoBehaviour
 		AudioManager.Instance.PlaySound("block_placement");
 	}
 
-    public List<BoxCollider2D> GetColliders() => colliders;
+    public List<Collider2D> GetColliders() => colliders;
 
 
 	void Update ()
@@ -94,9 +89,11 @@ public class HoldableItem : MonoBehaviour
 
 	public virtual void AnimateAppear()
 	{
+		Color newColor = holdColor;
+		newColor.a = 1;
 		foreach (SpriteRenderer rend in spriteRenderers)
 		{
-			rend.color = Color.white;
+			rend.color = newColor;
 		}
 	}
 }

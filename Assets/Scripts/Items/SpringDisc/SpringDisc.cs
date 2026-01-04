@@ -1,6 +1,6 @@
 using UnityEngine;
 
-public class SpringDisc : MonoBehaviour
+public class SpringDisc : HoldableItem
 {
     [Header("Bounce Forces")]
     [SerializeField] private float bounceForce;

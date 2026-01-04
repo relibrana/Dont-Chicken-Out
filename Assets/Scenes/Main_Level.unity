@@ -1128,7 +1128,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 33567e31539b249a3be1622cfa6e546d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  blocksPool: {fileID: 1346740030}
+  poolManager: {fileID: 1346740030}
   playersManager: {fileID: 202624584}
   uiManager: {fileID: 872296592}
   cameraRig: {fileID: 770377908}
@@ -1381,7 +1381,7 @@ Transform:
   m_GameObject: {fileID: 317530160}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0, y: 31.065, z: 0}
+  m_LocalPosition: {x: 0, y: 31.1809, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -1436,7 +1436,7 @@ SpriteRenderer:
   m_FlipX: 0
   m_FlipY: 0
   m_DrawMode: 2
-  m_Size: {x: 19.2, y: 64}
+  m_Size: {x: 19.2, y: 64.2318}
   m_AdaptiveModeThreshold: 0.5
   m_SpriteTileMode: 0
   m_WasSpriteAssigned: 1
@@ -4557,13 +4557,13 @@ Transform:
   - {fileID: 1112842708}
   - {fileID: 899556917}
   - {fileID: 1439402266}
+  - {fileID: 1604058548}
+  - {fileID: 1361533617}
+  - {fileID: 561152227}
   - {fileID: 834943143}
   - {fileID: 264744294}
   - {fileID: 1584757511}
   - {fileID: 1636294650}
-  - {fileID: 1604058548}
-  - {fileID: 1361533617}
-  - {fileID: 561152227}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1323619983
@@ -9523,11 +9523,19 @@ PrefabInstance:
     m_TransformParent: {fileID: 0}
     m_Modifications:
     - target: {fileID: 1306948335560172110, guid: eb5ad07b62b54435ba110d7614a039e6, type: 3}
+      propertyPath: pooledItems.Array.size
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 1306948335560172110, guid: eb5ad07b62b54435ba110d7614a039e6, type: 3}
       propertyPath: pooledBlocks.Array.size
       value: 5
       objectReference: {fileID: 0}
     - target: {fileID: 1306948335560172110, guid: eb5ad07b62b54435ba110d7614a039e6, type: 3}
       propertyPath: pooledObjects.Array.size
+      value: 5
+      objectReference: {fileID: 0}
+    - target: {fileID: 1306948335560172110, guid: eb5ad07b62b54435ba110d7614a039e6, type: 3}
+      propertyPath: pooledItems.Array.data[0].ammountToPool
       value: 5
       objectReference: {fileID: 0}
     - target: {fileID: 1306948335560172110, guid: eb5ad07b62b54435ba110d7614a039e6, type: 3}
@@ -9550,6 +9558,10 @@ PrefabInstance:
       propertyPath: pooledBlocks.Array.data[4].ammountToPool
       value: 30
       objectReference: {fileID: 0}
+    - target: {fileID: 1306948335560172110, guid: eb5ad07b62b54435ba110d7614a039e6, type: 3}
+      propertyPath: pooledItems.Array.data[0].pooledObjPrefab
+      value: 
+      objectReference: {fileID: 8723323982620638141, guid: e9f0d56f280e4ad4ca88cdf415d08ed7, type: 3}
     - target: {fileID: 1306948335560172110, guid: eb5ad07b62b54435ba110d7614a039e6, type: 3}
       propertyPath: pooledObjects.Array.data[7].ammountToPool
       value: 30

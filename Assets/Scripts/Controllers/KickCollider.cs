@@ -8,14 +8,13 @@ public class KickCollider : MonoBehaviour
     private void OnTriggerEnter2D(Collider2D other)
     {
         //!LOGIC FOR BLOCKS
-        PlayerController playerController = other.gameObject.GetComponent<PlayerController>();
 
-        if (playerController != null)
+        if (other.TryGetComponent(out PlayerController playerCtrl))
         {
             Vector2 impulseDirection = forceDirection;
             impulseDirection.x *= transform.lossyScale.x;
             
-            playerController.AddImpulse(impulseDirection);
+            playerCtrl.AddImpulse(impulseDirection);
         }
         else if (!other.isTrigger && 
             (other.gameObject.CompareTag("Capsule") || other.gameObject.CompareTag("Block") || other.gameObject.CompareTag("Item")))
@@ -25,7 +24,7 @@ public class KickCollider : MonoBehaviour
 
             other.attachedRigidbody.linearVelocity = impulseDirection;
 
-            if(other.TryGetComponent<IDamageable>(out IDamageable damageable))
+            if(other.TryGetComponent(out IDamageable damageable))
             {
                 damageable.TakeDamage(1, playerController);
             }
