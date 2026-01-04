@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using DG.Tweening;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -56,7 +57,7 @@ public class PlayerController : MonoBehaviour
 	public Vector2 startPosition;
 	//Blocks
 	[SerializeField] private Transform blockPosition;
-	public BlockScript currentBlockHolding = null;
+	public HoldableItem currentBlockHolding = null;
 	[SerializeField] private float blockPlaceCooldown = 1f;
 	[SerializeField] private bool canPlaceBlock = false;
 	public bool isBlockLogicAvailable = true;
@@ -68,7 +69,7 @@ public class PlayerController : MonoBehaviour
     // Properties
     public bool IsGrounded => isGrounded;
 
-
+	public Vector2 GetBlockPosition() => blockPosition.position;
 
     private void Awake()
 	{
@@ -82,6 +83,7 @@ public class PlayerController : MonoBehaviour
 		CalculateValues();
 
 		kickCollider.forceDirection = valuesSO.kickForce;
+		kickCollider.playerController = this;
 	}
 
 	public void CalculateValues()
@@ -140,15 +142,15 @@ public class PlayerController : MonoBehaviour
 			if(!isBlockOverlapping)
             {
 				currentBlockHolding.StopHold();
-				currentBlockHolding.AnimateAppear();
-				AudioManager.Instance.PlaySound("block_placement");
 				currentBlockHolding = null;
 				canPlaceBlock = false;
 				isBlockLogicAvailable = false;
 				DOVirtual.DelayedCall(blockPlaceCooldown, () => isBlockLogicAvailable = true, false);
             }
             else
+			{
 				AudioManager.Instance.PlaySound("block_invalid");
+			}
 		}
 	}
 
@@ -162,7 +164,9 @@ public class PlayerController : MonoBehaviour
 	{
 		AudioManager.Instance.MakeCuackSound();
 		if (GameManager.instance.gameState == GameState.Menu)
+		{
 			onPlayerReady?.Invoke(this);
+		}
 	}
 
 	void Update()
@@ -365,8 +369,10 @@ public class PlayerController : MonoBehaviour
 
 		if (currentBlockHolding == null)
 		{
-			int randomIndex = UnityEngine.Random.Range(0, GameManager.instance.blocksPool.pooledObjects.Count);
-			currentBlockHolding = GameManager.instance.blocksPool.GetPooledObject(randomIndex, blockPosition.position, 0).GetComponent<BlockScript>();
+			PoolingManager poolManager = GameManager.instance.poolManager;
+			int randomIndex = UnityEngine.Random.Range(0, poolManager.pooledBlocks.Count);
+			GameObject randomBlock = poolManager.GetPooledBlock(randomIndex, blockPosition.position);
+			currentBlockHolding = randomBlock.GetComponent<HoldableItem>();
 			currentBlockHolding.SetMaterial(hayMaterial);
 			currentBlockHolding.StartHold();
 			DOVirtual.DelayedCall(0.3f, () => canPlaceBlock = true, false);
@@ -377,29 +383,34 @@ public class PlayerController : MonoBehaviour
 			currentBlockHolding.transform.localScale = new Vector3(transform.lossyScale.x, 1, 1);
 
 			isBlockOverlapping = false;
-			foreach (BoxCollider2D col in currentBlockHolding.boxCollider2Ds)
+			foreach (Collider2D col in currentBlockHolding.GetColliders())
 			{
 				if (CheckOverlapping(col))
+				{
 					isBlockOverlapping = true;
+				}
 			}
 			currentBlockHolding.overlapping = isBlockOverlapping;
 		}
 	}
 	
-	private bool CheckOverlapping(BoxCollider2D collider)
+	private bool CheckOverlapping(Collider2D collider)
 	{
-		Vector2 centerCollider = collider.bounds.center;
-		Vector2 colliderSize = new Vector2((collider.size.x - 0.1f) * transform.lossyScale.x, (collider.size.y - 0.1f) * transform.lossyScale.y);
+		ContactFilter2D filter = new ContactFilter2D();
+		filter.SetLayerMask(layersToDetect);
+		filter.useTriggers = false;
 
-		Collider2D[] overlappedColliders = Physics2D.OverlapBoxAll(centerCollider, colliderSize, 0f, layersToDetect);
+		List<Collider2D> results = new List<Collider2D>();
 
+		int count = collider.Overlap(filter, results);
 
-		foreach (var col in overlappedColliders)
+		for(int i = 0; i < count; i++)
 		{
-			if (col != collider)
+			if(results[i] != collider)
+			{
 				return true;
+			}
 		}
-
 		return false;
 	}
 }

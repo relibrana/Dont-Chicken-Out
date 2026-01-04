@@ -12,7 +12,7 @@ public class GameManager : MonoBehaviour
     public static GameManager instance;
 
     [Header("References")]
-    public PoolingManager blocksPool;
+    public PoolingManager poolManager;
     [SerializeField] private PlayersManager playersManager;
 
     [Header("UI")]
@@ -95,7 +95,7 @@ public class GameManager : MonoBehaviour
     private void ResetValues()
     {
         AudioManager.Instance.PlayMusic("Menu");
-        blocksPool.ResetPool();
+        poolManager.ResetPool();
         foreach (var player in inGamePlayers)
         {
             if (player == null)
@@ -130,7 +130,7 @@ public class GameManager : MonoBehaviour
         if (triggerStartGame)
         {
             winner = null;
-            blocksPool.ResetPool();
+            poolManager.ResetPool();
             for (int i = 0; i < inGamePlayers.Length; i++)
             {
                 playersAlive[i] = inGamePlayers[i];

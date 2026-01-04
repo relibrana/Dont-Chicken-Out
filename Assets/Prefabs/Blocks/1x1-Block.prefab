@@ -46,22 +46,20 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8b4715231a85f45f9b8172df037a7ef2, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  blocks:
-  - {fileID: 2259822549488208935}
-  spriteRenderers:
-  - {fileID: 42718062309058028}
-  boxCollider2Ds:
+  colliders:
   - {fileID: 5673246753019055015}
   animators:
   - {fileID: 4196338978467591438}
+  rb2d: {fileID: -8333948090115435712}
   startLayer:
     serializedVersion: 2
     m_Bits: 256
   placedLayer:
     serializedVersion: 2
     m_Bits: 64
-  rb2D: {fileID: -8333948090115435712}
   overlapping: 0
+  spriteRenderers:
+  - {fileID: 42718062309058028}
 --- !u!50 &-8333948090115435712
 Rigidbody2D:
   serializedVersion: 5
@@ -158,11 +156,6 @@ SpriteRenderer:
 --- !u!4 &482592750928765264 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 7895308326066533507, guid: 9baba22d8960d4b3da266d93b15486bd, type: 3}
-  m_PrefabInstance: {fileID: 7720091820816373203}
-  m_PrefabAsset: {fileID: 0}
---- !u!1 &2259822549488208935 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 8394646178700007924, guid: 9baba22d8960d4b3da266d93b15486bd, type: 3}
   m_PrefabInstance: {fileID: 7720091820816373203}
   m_PrefabAsset: {fileID: 0}
 --- !u!95 &4196338978467591438 stripped
