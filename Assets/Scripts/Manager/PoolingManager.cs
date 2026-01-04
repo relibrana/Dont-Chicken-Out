@@ -32,11 +32,12 @@ public class PoolingManager : MonoBehaviour
     {
         foreach (GameObject parent in blockList)
         {
-            foreach (Transform item in parent.transform)
+            foreach (Transform blockGroup in parent.transform)
             {
-                if(item.gameObject.activeSelf)
+                if(blockGroup.gameObject.activeSelf)
                 {
-                    item.gameObject.SetActive(false);
+                    blockGroup.gameObject.SetActive(false);
+                    ResetSingleBlocks(blockGroup.gameObject);
                 }
             }
         }
@@ -52,6 +53,26 @@ public class PoolingManager : MonoBehaviour
             }
         }
     }
+
+    public void ResetSingleBlocks(GameObject parent)
+    {
+        if (parent == null) return;
+
+        Transform parentTransform = parent.transform;
+
+        for (int i = 0; i < parentTransform.childCount; i++)
+        {
+            Transform child = parentTransform.GetChild(i);
+            GameObject block = child.gameObject;
+
+            if (!block.CompareTag("Block"))
+                continue;
+
+            if (!block.activeSelf)
+                block.SetActive(true);
+        }
+    }
+
 
     public GameObject GetPooledBlock(int _objIndex, Vector3 _spawnPosition)
 	{

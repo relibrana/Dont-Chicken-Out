@@ -189,7 +189,7 @@ MonoBehaviour:
   explosionImpulse: 60
   detectLayer:
     serializedVersion: 2
-    m_Bits: 128
+    m_Bits: 192
   startColor: {r: 0.3490566, g: 0.3490566, b: 0.3490566, a: 1}
   endColor: {r: 1, g: 0, b: 0, a: 1}
   explosionParticles: []

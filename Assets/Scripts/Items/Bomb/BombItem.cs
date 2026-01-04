@@ -1,4 +1,4 @@
-using System.Collections;
+ï»¿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -6,14 +6,14 @@ using UnityEngine;
 public sealed class BombItem : HoldableItem
 {
     [Header("Explosion")]
-    [SerializeField, Min(0f), Tooltip("El tiempo (en segundos) que tarda la bomba en explotar después de activar el fusible.")]
+    [SerializeField, Min(0f), Tooltip("El tiempo (en segundos) que tarda la bomba en explotar despuÃ©s de activar el fusible.")]
     private float fuseSeconds = 1.25f;
-    [SerializeField, Min(0f), Tooltip("El radio de la explosión que afecta a otros objetos.")]
+    [SerializeField, Min(0f), Tooltip("El radio de la explosiÃ³n que afecta a otros objetos.")]
     private float explosionRadius = 3f;
-    [SerializeField, Min(0f), Tooltip("La intensidad del impulso aplicado a los objetos afectados por la explosión.")] 
+    [SerializeField, Min(0f), Tooltip("La intensidad del impulso aplicado a los objetos afectados por la explosiÃ³n.")] 
     private float explosionImpulse = 12f;
 
-    [Header("Detection"), Tooltip("Las capas que la explosión puede afectar.")]
+    [Header("Detection"), Tooltip("Las capas que la explosiÃ³n puede afectar.")]
     [SerializeField] private LayerMask detectLayer;
 
     [Header("Visual Feedback (SpriteRenderer)")]
@@ -106,6 +106,13 @@ public sealed class BombItem : HoldableItem
             Collider2D col = hits[i];
             if (col == null) continue;
 
+            if (col.CompareTag("Block"))
+            {
+                Debug.Log("BombItem.Explode: Disabling block " + col.name);
+                DisableBlock(col);
+                continue;
+            }
+
             Rigidbody2D targetRb = col.attachedRigidbody;
             if (targetRb == null) continue;
             if (!_uniqueBodies.Add(targetRb)) continue;
@@ -115,13 +122,11 @@ public sealed class BombItem : HoldableItem
 
             Vector2 direction = distance > 0.0001f ? toTarget.normalized : Vector2.up;
 
-            float radiusSafe = Mathf.Max(0.0001f, explosionRadius);
-            float attenuation = Mathf.Clamp01(1f - (distance / radiusSafe));
+            float attenuation = Mathf.Clamp01(1f - (distance / explosionRadius));
             float impulse = explosionImpulse * attenuation;
 
             if (col.TryGetComponent<PlayerController>(out var player))
             {
-                // player.AddImpulse(direction * impulse);
                 player.OnDeath();
             }
             else
@@ -130,9 +135,14 @@ public sealed class BombItem : HoldableItem
             }
         }
 
-        // Acá podemos aplicar el pooling
         Destroy(gameObject);
     }
+
+    private static void DisableBlock(Collider2D col)
+    {
+        col.gameObject.SetActive(false);
+    }
+
 
     private void PlayExplosionFx()
     {
