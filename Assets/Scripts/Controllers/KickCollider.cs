@@ -24,6 +24,8 @@ public class KickCollider : MonoBehaviour
             Vector2 impulseDirection = forceDirection;
             impulseDirection.x *= transform.lossyScale.x;
 
+            other.GetComponent<SpringDisc>()?.OnKick();
+
             other.attachedRigidbody.linearVelocity = impulseDirection;
 
             if(other.TryGetComponent(out IDamageable damageable))
