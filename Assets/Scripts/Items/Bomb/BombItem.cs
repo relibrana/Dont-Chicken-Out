@@ -34,19 +34,20 @@ public sealed class BombItem : HoldableItem
         _spriteRenderers = GetComponentsInChildren<SpriteRenderer>(includeInactive: true);
     }
 
-    private void Update()
-    {
-#if UNITY_EDITOR
-        if (Input.GetKeyDown(KeyCode.K))
-        {
-            StartFuse();
-        }
-#endif
-    }
+//     private void Update()
+//     {
 
-    public new void StopHold()
+// #if UNITY_EDITOR
+//         if (Input.GetKeyDown(KeyCode.K))
+//         {
+//             StartFuse();
+//         }
+// #endif
+//     }
+
+    public override void PlaceHoldable()
     {
-        base.StopHold();
+        base.PlaceHoldable();
         StartFuse();
     }
 

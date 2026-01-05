@@ -141,7 +141,7 @@ public class PlayerController : MonoBehaviour
 		{
 			if(!isBlockOverlapping)
             {
-				currentBlockHolding.StopHold();
+				currentBlockHolding.PlaceHoldable();
 				currentBlockHolding = null;
 				canPlaceBlock = false;
 				isBlockLogicAvailable = false;

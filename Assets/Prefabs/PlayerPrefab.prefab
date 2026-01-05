@@ -63,7 +63,7 @@ MonoBehaviour:
     m_Bits: 192
   layersToDetect:
     serializedVersion: 2
-    m_Bits: 193
+    m_Bits: 705
   playerIndex: 0
   isOnGame: 0
   roundsWon: 0

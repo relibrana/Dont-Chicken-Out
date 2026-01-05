@@ -36,7 +36,7 @@ public class HoldableItem : MonoBehaviour
 			col.gameObject.layer = (int)Mathf.Log(startLayer.value, 2);
 		}
 	}
-	public void StopHold ()
+	public virtual void PlaceHoldable ()
 	{
 		foreach (Collider2D col in colliders)
 		{
