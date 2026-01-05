@@ -31,6 +31,7 @@ public class GameManager : MonoBehaviour
     private PlayerController winner = null;
     private bool needsAReset = false;
     private bool triggerStartGame = false;
+    private const float tieThresHold = 0.5f;
 
 
     public GameState gameState = GameState.Menu;
@@ -285,12 +286,30 @@ public class GameManager : MonoBehaviour
 
         if (currPlayersAlive == 1)
         {
-            ChangeGameState(GameState.Win);
-            winner.roundsWon++;
+            //DoWin();
             cameraRig.FocusWinner(winner.transform);
+            DOVirtual.DelayedCall(tieThresHold, () => DoWin(), false);
+        }
+        else if (currPlayersAlive == 0)
+        {
+            cameraRig.StopFocusWinner();
+            ChangeGameState(GameState.Win);
             uiManager.OnWinRound(inGamePlayers, wonGame => DOVirtual.DelayedCall(2f, () => CheckGameWon(wonGame), false));
         }
     }
+
+    private void DoWin()
+    {
+        if(gameState == GameState.Win)
+        {
+            return;
+        }
+        ChangeGameState(GameState.Win);
+        winner.roundsWon++;
+        cameraRig.FocusWinner(winner.transform);
+        uiManager.OnWinRound(inGamePlayers, wonGame => DOVirtual.DelayedCall(2f, () => CheckGameWon(wonGame), false));
+    }
+
     /*private void CheckWinner()
     {
         int currPlayersAlive = 0;

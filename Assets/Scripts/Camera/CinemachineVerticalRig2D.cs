@@ -227,6 +227,18 @@ public class CinemachineVerticalRig2D : MonoBehaviour
         _lastAppliedShake = Vector3.zero;
     }
 
+    /// <summary>
+    /// Quita el enfoque al jugador ganador, se utiliza para el empate.
+    /// </summary>
+    public void StopFocusWinner()
+    {
+        if (cineCam != null) cineCam.Follow = baseFollowTarget;
+        _focusWinner = false;
+        _winner = null;
+        _velY = 0f;
+        _velZoom = 0f;
+    }
+
     void OnDrawGizmos()
     {
         if (cineCam == null) return;
