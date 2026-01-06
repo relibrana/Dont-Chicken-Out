@@ -4,6 +4,7 @@ using UnityEngine;
 public class SpringDisc : HoldableItem
 {
     private Rigidbody2D _rb;
+    [SerializeField] private SpriteRenderer spriteRenderer;
 
     [Header("Bounce Forces")]
     [SerializeField] private float bounceForce;
@@ -18,6 +19,13 @@ public class SpringDisc : HoldableItem
     [SerializeField] private float animationDuration;
     [SerializeField] private float animationScaleAmount;
     [SerializeField] private Ease animationEasing;
+
+    [Header("Render recoil")]
+    [SerializeField] private float recoilDistance;
+    [SerializeField] private float recoilAnimationDuration;
+    [SerializeField] private Ease recoilAnimationEasing;
+    [SerializeField] private Ease recoilAnimationReturnEasing;
+    private Sequence recoilAnimation;
 
     void Awake()
     {
@@ -41,6 +49,7 @@ public class SpringDisc : HoldableItem
         player.AddImpulse(direction * bounceForce);
 
         TriggerAnimation();
+        RecoilAnimation(-direction);
     }
 
     private void AttenuationOfMovement()
@@ -71,5 +80,20 @@ public class SpringDisc : HoldableItem
         animationSequence.Append(transform.DOScale(animationScaleAmount, animationDuration / 2).From(1f).SetEase(animationEasing));
         animationSequence.Append(transform.DOScale(1f, animationDuration / 2).From(animationScaleAmount).SetEase(animationEasing));
         animationSequence.Play();
+    }
+
+    private void RecoilAnimation(Vector2 direction)
+    {
+        if (recoilAnimation != null && recoilAnimation.IsActive())
+        {
+            recoilAnimation.Kill();
+            spriteRenderer.transform.localPosition = Vector3.zero;
+        }
+
+        Vector3 targetPosition = direction.normalized * recoilDistance;
+        recoilAnimation = DOTween.Sequence();
+        recoilAnimation.Append(spriteRenderer.transform.DOLocalMove(targetPosition, recoilAnimationDuration / 2).SetEase(recoilAnimationEasing));
+        recoilAnimation.Append(spriteRenderer.transform.DOLocalMove(Vector3.zero, recoilAnimationDuration / 2).SetEase(recoilAnimationReturnEasing));
+        recoilAnimation.Play();
     }
 }

@@ -196,6 +196,7 @@ MonoBehaviour:
   overlapping: 0
   spriteRenderers:
   - {fileID: 2464309141000911678}
+  spriteRenderer: {fileID: 2464309141000911678}
   bounceForce: 25
   attenuationOnMovement: 5
   detectLayer:
@@ -204,6 +205,10 @@ MonoBehaviour:
   animationDuration: 0.25
   animationScaleAmount: 1.25
   animationEasing: 3
+  recoilDistance: 0.25
+  recoilAnimationDuration: 0.35
+  recoilAnimationEasing: 3
+  recoilAnimationReturnEasing: 2
 --- !u!58 &2193365588758325400
 CircleCollider2D:
   m_ObjectHideFlags: 0
