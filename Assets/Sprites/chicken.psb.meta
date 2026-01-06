@@ -1056,6 +1056,16 @@ ScriptedImporter:
     flatten: 0
     isImported: 0
     isVisible: 1
+  - name: L wing
+    spriteName: L wing
+    isGroup: 0
+    parentIndex: 0
+    spriteID: 4942caa9860ce764ba68285e49411377
+    layerID: 8
+    mosaicPosition: {x: 66, y: 104}
+    flatten: 0
+    isImported: 1
+    isVisible: 1
   - name: Hair
     spriteName: Hair
     isGroup: 0
@@ -1073,16 +1083,6 @@ ScriptedImporter:
     spriteID: ad811787cf3ccd740aacc70d3598f52d
     layerID: 9
     mosaicPosition: {x: 162, y: 4}
-    flatten: 0
-    isImported: 1
-    isVisible: 1
-  - name: L wing
-    spriteName: L wing
-    isGroup: 0
-    parentIndex: 0
-    spriteID: 4942caa9860ce764ba68285e49411377
-    layerID: 8
-    mosaicPosition: {x: 66, y: 104}
     flatten: 0
     isImported: 1
     isVisible: 1
