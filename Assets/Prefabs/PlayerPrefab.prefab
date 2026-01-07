@@ -73,6 +73,7 @@ MonoBehaviour:
   blockPlaceCooldown: 1
   canPlaceBlock: 0
   isBlockLogicAvailable: 1
+  dbgMode: 0
 --- !u!50 &8124305224974726577
 Rigidbody2D:
   serializedVersion: 5
