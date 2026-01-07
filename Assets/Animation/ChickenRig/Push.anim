@@ -279,7 +279,7 @@ AnimationClip:
         outWeight: {x: 0.33333334, y: 0.33333334, z: 0.33333334}
       - serializedVersion: 3
         time: 0.16666667
-        value: {x: 0, y: 0, z: 83.847}
+        value: {x: 0, y: 0, z: 114.67}
         inSlope: {x: 0, y: 0, z: 0}
         outSlope: {x: 0, y: 0, z: 0}
         tangentMode: 0
@@ -288,7 +288,7 @@ AnimationClip:
         outWeight: {x: 0.33333334, y: 0.33333334, z: 0.33333334}
       - serializedVersion: 3
         time: 0.33333334
-        value: {x: 0, y: 0, z: 100.729}
+        value: {x: 0, y: 0, z: 77.47}
         inSlope: {x: 0, y: 0, z: 0}
         outSlope: {x: 0, y: 0, z: 0}
         tangentMode: 0
@@ -298,8 +298,8 @@ AnimationClip:
       - serializedVersion: 3
         time: 0.5
         value: {x: 0, y: 0, z: 83.847}
-        inSlope: {x: 0, y: 0, z: 0}
-        outSlope: {x: 0, y: 0, z: 0}
+        inSlope: {x: 0, y: 0, z: 69.776985}
+        outSlope: {x: 0, y: 0, z: 69.776985}
         tangentMode: 0
         weightedMode: 0
         inWeight: {x: 0.33333334, y: 0.33333334, z: 0.33333334}
@@ -340,7 +340,7 @@ AnimationClip:
         outWeight: {x: 0.33333334, y: 0.33333334, z: 0.33333334}
       - serializedVersion: 3
         time: 0.6666667
-        value: {x: 0, y: 0, z: -166.531}
+        value: {x: 0, y: 0, z: -162.636}
         inSlope: {x: 0, y: 0, z: 0}
         outSlope: {x: 0, y: 0, z: 0}
         tangentMode: 0
@@ -366,17 +366,17 @@ AnimationClip:
       - serializedVersion: 3
         time: 0.33333334
         value: {x: 0, y: 0, z: 105.269}
-        inSlope: {x: 0, y: 0, z: 0}
-        outSlope: {x: 0, y: 0, z: 0}
+        inSlope: {x: 0, y: 0, z: 21.007996}
+        outSlope: {x: 0, y: 0, z: 21.007996}
         tangentMode: 0
         weightedMode: 0
         inWeight: {x: 0.33333334, y: 0.33333334, z: 0.33333334}
         outWeight: {x: 0.33333334, y: 0.33333334, z: 0.33333334}
       - serializedVersion: 3
         time: 0.5
-        value: {x: 0, y: 0, z: 85.486}
-        inSlope: {x: 0, y: 0, z: -104.18699}
-        outSlope: {x: 0, y: 0, z: -104.18699}
+        value: {x: 0, y: 0, z: 107.895}
+        inSlope: {x: 0, y: 0, z: 0}
+        outSlope: {x: 0, y: 0, z: 0}
         tangentMode: 0
         weightedMode: 0
         inWeight: {x: 0.33333334, y: 0.33333334, z: 0.33333334}
@@ -2594,7 +2594,7 @@ AnimationClip:
         outWeight: 0.33333334
       - serializedVersion: 3
         time: 0.16666667
-        value: 83.847
+        value: 114.67
         inSlope: 0
         outSlope: 0
         tangentMode: 136
@@ -2603,7 +2603,7 @@ AnimationClip:
         outWeight: 0.33333334
       - serializedVersion: 3
         time: 0.33333334
-        value: 100.729
+        value: 77.47
         inSlope: 0
         outSlope: 0
         tangentMode: 136
@@ -2613,8 +2613,8 @@ AnimationClip:
       - serializedVersion: 3
         time: 0.5
         value: 83.847
-        inSlope: 0
-        outSlope: 0
+        inSlope: 69.776985
+        outSlope: 69.776985
         tangentMode: 136
         weightedMode: 0
         inWeight: 0.33333334
@@ -2738,7 +2738,7 @@ AnimationClip:
         outWeight: 0.33333334
       - serializedVersion: 3
         time: 0.6666667
-        value: -166.531
+        value: -162.636
         inSlope: 0
         outSlope: 0
         tangentMode: 136
@@ -2865,17 +2865,17 @@ AnimationClip:
       - serializedVersion: 3
         time: 0.33333334
         value: 105.269
-        inSlope: 0
-        outSlope: 0
+        inSlope: 21.007996
+        outSlope: 21.007996
         tangentMode: 136
         weightedMode: 0
         inWeight: 0.33333334
         outWeight: 0.33333334
       - serializedVersion: 3
         time: 0.5
-        value: 85.486
-        inSlope: -104.18699
-        outSlope: -104.18699
+        value: 107.895
+        inSlope: 0
+        outSlope: 0
         tangentMode: 136
         weightedMode: 0
         inWeight: 0.33333334
@@ -3248,7 +3248,7 @@ AnimationClip:
       m_PostInfinity: 2
       m_RotationOrder: 4
     attribute: m_LocalEulerAngles.z
-    path: chicken/Bone_Body/Bone_Leg_Front
+    path: chicken/Bone_Body/Bone_Leg_Front/Bone_Feet_Front
     classID: 4
     script: {fileID: 0}
     flags: 0
@@ -3260,7 +3260,7 @@ AnimationClip:
       m_PostInfinity: 2
       m_RotationOrder: 4
     attribute: m_LocalEulerAngles.y
-    path: chicken/Bone_Body/Bone_Leg_Front
+    path: chicken/Bone_Body/Bone_Leg_Front/Bone_Feet_Front
     classID: 4
     script: {fileID: 0}
     flags: 0
@@ -3272,43 +3272,7 @@ AnimationClip:
       m_PostInfinity: 2
       m_RotationOrder: 4
     attribute: m_LocalEulerAngles.x
-    path: chicken/Bone_Body/Bone_Leg_Front
-    classID: 4
-    script: {fileID: 0}
-    flags: 0
-  - serializedVersion: 2
-    curve:
-      serializedVersion: 2
-      m_Curve: []
-      m_PreInfinity: 2
-      m_PostInfinity: 2
-      m_RotationOrder: 4
-    attribute: m_LocalEulerAngles.z
-    path: chicken/Bone_Body/Bone_Leg_Back/Bone_Feet_Back
-    classID: 4
-    script: {fileID: 0}
-    flags: 0
-  - serializedVersion: 2
-    curve:
-      serializedVersion: 2
-      m_Curve: []
-      m_PreInfinity: 2
-      m_PostInfinity: 2
-      m_RotationOrder: 4
-    attribute: m_LocalEulerAngles.y
-    path: chicken/Bone_Body/Bone_Leg_Back/Bone_Feet_Back
-    classID: 4
-    script: {fileID: 0}
-    flags: 0
-  - serializedVersion: 2
-    curve:
-      serializedVersion: 2
-      m_Curve: []
-      m_PreInfinity: 2
-      m_PostInfinity: 2
-      m_RotationOrder: 4
-    attribute: m_LocalEulerAngles.x
-    path: chicken/Bone_Body/Bone_Leg_Back/Bone_Feet_Back
+    path: chicken/Bone_Body/Bone_Leg_Front/Bone_Feet_Front
     classID: 4
     script: {fileID: 0}
     flags: 0
@@ -3356,42 +3320,6 @@ AnimationClip:
       m_PostInfinity: 2
       m_RotationOrder: 4
     attribute: m_LocalEulerAngles.z
-    path: chicken/Bone_Body/Bone_Wing_Back
-    classID: 4
-    script: {fileID: 0}
-    flags: 0
-  - serializedVersion: 2
-    curve:
-      serializedVersion: 2
-      m_Curve: []
-      m_PreInfinity: 2
-      m_PostInfinity: 2
-      m_RotationOrder: 4
-    attribute: m_LocalEulerAngles.y
-    path: chicken/Bone_Body/Bone_Wing_Back
-    classID: 4
-    script: {fileID: 0}
-    flags: 0
-  - serializedVersion: 2
-    curve:
-      serializedVersion: 2
-      m_Curve: []
-      m_PreInfinity: 2
-      m_PostInfinity: 2
-      m_RotationOrder: 4
-    attribute: m_LocalEulerAngles.x
-    path: chicken/Bone_Body/Bone_Wing_Back
-    classID: 4
-    script: {fileID: 0}
-    flags: 0
-  - serializedVersion: 2
-    curve:
-      serializedVersion: 2
-      m_Curve: []
-      m_PreInfinity: 2
-      m_PostInfinity: 2
-      m_RotationOrder: 4
-    attribute: m_LocalEulerAngles.z
     path: chicken/Bone_Body/Bone_Head
     classID: 4
     script: {fileID: 0}
@@ -3428,7 +3356,7 @@ AnimationClip:
       m_PostInfinity: 2
       m_RotationOrder: 4
     attribute: m_LocalEulerAngles.z
-    path: chicken/Bone_Body/Bone_Leg_Front/Bone_Feet_Front
+    path: chicken/Bone_Body/Bone_Tail
     classID: 4
     script: {fileID: 0}
     flags: 0
@@ -3440,7 +3368,7 @@ AnimationClip:
       m_PostInfinity: 2
       m_RotationOrder: 4
     attribute: m_LocalEulerAngles.y
-    path: chicken/Bone_Body/Bone_Leg_Front/Bone_Feet_Front
+    path: chicken/Bone_Body/Bone_Tail
     classID: 4
     script: {fileID: 0}
     flags: 0
@@ -3452,7 +3380,7 @@ AnimationClip:
       m_PostInfinity: 2
       m_RotationOrder: 4
     attribute: m_LocalEulerAngles.x
-    path: chicken/Bone_Body/Bone_Leg_Front/Bone_Feet_Front
+    path: chicken/Bone_Body/Bone_Tail
     classID: 4
     script: {fileID: 0}
     flags: 0
@@ -3499,7 +3427,43 @@ AnimationClip:
       m_PreInfinity: 2
       m_PostInfinity: 2
       m_RotationOrder: 4
+    attribute: m_LocalEulerAngles.z
+    path: chicken/Bone_Body/Bone_Leg_Front
+    classID: 4
+    script: {fileID: 0}
+    flags: 0
+  - serializedVersion: 2
+    curve:
+      serializedVersion: 2
+      m_Curve: []
+      m_PreInfinity: 2
+      m_PostInfinity: 2
+      m_RotationOrder: 4
+    attribute: m_LocalEulerAngles.y
+    path: chicken/Bone_Body/Bone_Leg_Front
+    classID: 4
+    script: {fileID: 0}
+    flags: 0
+  - serializedVersion: 2
+    curve:
+      serializedVersion: 2
+      m_Curve: []
+      m_PreInfinity: 2
+      m_PostInfinity: 2
+      m_RotationOrder: 4
     attribute: m_LocalEulerAngles.x
+    path: chicken/Bone_Body/Bone_Leg_Front
+    classID: 4
+    script: {fileID: 0}
+    flags: 0
+  - serializedVersion: 2
+    curve:
+      serializedVersion: 2
+      m_Curve: []
+      m_PreInfinity: 2
+      m_PostInfinity: 2
+      m_RotationOrder: 4
+    attribute: m_LocalEulerAngles.z
     path: chicken/Bone_Body/Bone_Wing_Front
     classID: 4
     script: {fileID: 0}
@@ -3523,7 +3487,7 @@ AnimationClip:
       m_PreInfinity: 2
       m_PostInfinity: 2
       m_RotationOrder: 4
-    attribute: m_LocalEulerAngles.z
+    attribute: m_LocalEulerAngles.x
     path: chicken/Bone_Body/Bone_Wing_Front
     classID: 4
     script: {fileID: 0}
@@ -3535,8 +3499,8 @@ AnimationClip:
       m_PreInfinity: 2
       m_PostInfinity: 2
       m_RotationOrder: 4
-    attribute: m_LocalEulerAngles.x
-    path: chicken/Bone_Body/Bone_Tail
+    attribute: m_LocalEulerAngles.z
+    path: chicken/Bone_Body/Bone_Wing_Back
     classID: 4
     script: {fileID: 0}
     flags: 0
@@ -3548,7 +3512,43 @@ AnimationClip:
       m_PostInfinity: 2
       m_RotationOrder: 4
     attribute: m_LocalEulerAngles.y
-    path: chicken/Bone_Body/Bone_Tail
+    path: chicken/Bone_Body/Bone_Wing_Back
+    classID: 4
+    script: {fileID: 0}
+    flags: 0
+  - serializedVersion: 2
+    curve:
+      serializedVersion: 2
+      m_Curve: []
+      m_PreInfinity: 2
+      m_PostInfinity: 2
+      m_RotationOrder: 4
+    attribute: m_LocalEulerAngles.x
+    path: chicken/Bone_Body/Bone_Wing_Back
+    classID: 4
+    script: {fileID: 0}
+    flags: 0
+  - serializedVersion: 2
+    curve:
+      serializedVersion: 2
+      m_Curve: []
+      m_PreInfinity: 2
+      m_PostInfinity: 2
+      m_RotationOrder: 4
+    attribute: m_LocalEulerAngles.x
+    path: chicken/Bone_Body/Bone_Leg_Back/Bone_Feet_Back
+    classID: 4
+    script: {fileID: 0}
+    flags: 0
+  - serializedVersion: 2
+    curve:
+      serializedVersion: 2
+      m_Curve: []
+      m_PreInfinity: 2
+      m_PostInfinity: 2
+      m_RotationOrder: 4
+    attribute: m_LocalEulerAngles.y
+    path: chicken/Bone_Body/Bone_Leg_Back/Bone_Feet_Back
     classID: 4
     script: {fileID: 0}
     flags: 0
@@ -3560,7 +3560,7 @@ AnimationClip:
       m_PostInfinity: 2
       m_RotationOrder: 4
     attribute: m_LocalEulerAngles.z
-    path: chicken/Bone_Body/Bone_Tail
+    path: chicken/Bone_Body/Bone_Leg_Back/Bone_Feet_Back
     classID: 4
     script: {fileID: 0}
     flags: 0
