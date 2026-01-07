@@ -24,6 +24,12 @@ public class ItemCapsule : IDamageable
         }
     }
 
+    void OnDisable()
+    {
+        life = baseLife;
+        sr.color = Color.green;
+    }
+
     private void Break(PlayerController player)
     {
         PoolingManager poolManager = GameManager.instance.poolManager;
@@ -36,7 +42,5 @@ public class ItemCapsule : IDamageable
         player.currentBlockHolding = randomItem.GetComponent<HoldableItem>();
         player.currentBlockHolding.StartHold();
         gameObject.SetActive(false);
-        life = baseLife;
-        sr.color = Color.green;
     }
 }
