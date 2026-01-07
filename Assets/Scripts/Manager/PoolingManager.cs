@@ -7,9 +7,11 @@ public class PoolingManager : MonoBehaviour
 
     public List<PooledObject> pooledBlocks = new List<PooledObject>();
     public List<PooledObject> pooledItems = new List<PooledObject>();
+    public PooledObject itemCapsule;
     [HideInInspector] public List<GameObject> blockList = new List<GameObject>();
     [HideInInspector] public List<GameObject> itemList = new List<GameObject>();
-
+    [HideInInspector] public List<GameObject> capsuleList = new List<GameObject>();
+    private GameObject capsuleParent;
 
     private void Awake()
 	{
@@ -26,6 +28,7 @@ public class PoolingManager : MonoBehaviour
         {
             InitializePoolObjects(item, itemList);   
         }
+        InitializePoolObject(itemCapsule, capsuleList);
     }
     
     public void ResetPool()
@@ -51,6 +54,11 @@ public class PoolingManager : MonoBehaviour
                     item.gameObject.SetActive(false);
                 }
             }
+        }
+
+        foreach (GameObject capsule in capsuleList)
+        {
+            capsule.SetActive(false);
         }
     }
 
@@ -108,7 +116,38 @@ public class PoolingManager : MonoBehaviour
 		pObject.transform.SetSiblingIndex(pObject.transform.parent.childCount);
         return pObject;
     }
+    
+    public GameObject GetCapsule()
+	{
+		GameObject pObject = capsuleList[0];
 
+		if (pObject.activeSelf)
+		{
+			Debug.Log ("All instances are busy, spawn new one");
+			pObject = Instantiate(itemCapsule.pooledObjPrefab, capsuleParent.transform);
+		}
+
+		pObject.SetActive(false);
+		pObject.SetActive(true);
+		pObject.transform.localScale = Vector3.one;
+		pObject.transform.SetSiblingIndex(pObject.transform.parent.childCount);
+        return pObject;
+    }
+    
+    private void InitializePoolObject(PooledObject _pooledObject, List<GameObject> _list)
+	{
+        capsuleParent = new GameObject();
+        capsuleParent.name = _pooledObject.pooledObjPrefab.ToString();
+        capsuleParent.transform.parent = transform;
+        // Spawn the gameObject clones inside the parent
+        for (int i = 0; i < _pooledObject.ammountToPool; i++)
+		{
+            GameObject spawnedObject = GameObject.Instantiate(_pooledObject.pooledObjPrefab);
+            spawnedObject.transform.parent = capsuleParent.transform;
+            spawnedObject.SetActive(false);
+            _list.Add(spawnedObject);
+        }
+    }
     private void InitializePoolObjects(PooledObject _pooledObject, List<GameObject> _list)
 	{
         GameObject pooledObjectsParent = new GameObject();

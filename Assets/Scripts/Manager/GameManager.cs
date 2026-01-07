@@ -23,6 +23,8 @@ public class GameManager : MonoBehaviour
     [SerializeField] private SpriteRenderer Bg;
 
     [Header("Game Variables")]
+    public Action OnGame;
+    public Action OnGameEnd;
     public float autoMoveCameraSpeed = 0.2f;
     // bool screenShakeTrigger=false;
     [SerializeField] private PlayerController[] inGamePlayers = new PlayerController[4];
@@ -85,6 +87,18 @@ public class GameManager : MonoBehaviour
     private void ChangeGameState(GameState newGameState)
     {
         gameState = newGameState;
+        switch(newGameState)
+        {
+            case GameState.Game:
+                OnGame?.Invoke();
+                break;
+            case GameState.Menu:
+            case GameState.Win:
+                OnGameEnd?.Invoke();
+                break;
+            default:
+                break;
+        }
     }
 
     private void OnMenuState()
