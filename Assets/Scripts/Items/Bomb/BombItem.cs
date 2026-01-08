@@ -6,56 +6,88 @@ using UnityEngine;
 public sealed class BombItem : HoldableItem
 {
     [Header("Explosion")]
-    [SerializeField, Tooltip("El punto central de la explosión.")]
-    private Transform explosionCenter;
+    [SerializeField, Tooltip("Transform del punto de explosión")]
+    private Transform explosionPoint;
 
-    [SerializeField, Min(0f), Tooltip("El tiempo (en segundos) que tarda la bomba en explotar después de activar el fusible.")]
+    [SerializeField, Min(0f), Tooltip("Tiempo (segundos) desde que se activa el fusible hasta que explota.")]
     private float fuseSeconds = 1.25f;
-    [SerializeField, Min(0f), Tooltip("El radio de la explosión que afecta a otros objetos.")]
+
+    [SerializeField, Min(0f), Tooltip("Radio de la explosión.")]
     private float explosionRadius = 3f;
-    [SerializeField, Min(0f), Tooltip("La intensidad del impulso aplicado a los objetos afectados por la explosión.")] 
+
+    [SerializeField, Min(0f), Tooltip("Impulso máximo aplicado a los cuerpos afectados.")]
     private float explosionImpulse = 12f;
 
-    [Header("Detection"), Tooltip("Las capas que la explosión puede afectar.")]
-    [SerializeField] private LayerMask detectLayer;
+    [SerializeField, Min(0f), Tooltip("Delay para destruir luego de explotar (para que se vea el final de la animación).")]
+    private float destroyDelay = 0.5f;
 
-    [Header("Visual Feedback (SpriteRenderer)")]
+    [Header("Detection")]
+    [SerializeField, Tooltip("Capas afectadas por la explosión.")]
+    private LayerMask detectLayer;
+
+    [Header("Visual Feedback")]
     [SerializeField] private Color startColor = Color.white;
     [SerializeField] private Color endColor = Color.red;
+
+    [Header("Animator")]
+    [SerializeField] private Animator animator;
 
     [Header("Optional FX")]
     [SerializeField] private ParticleSystem[] explosionParticles;
     [SerializeField] private AudioClip explosionSfx;
 
-    private SpriteRenderer[] _spriteRenderers;
-    private Coroutine _fuseRoutine;
+    private SpriteRenderer[] cachedSpriteRenderers;
+    private Coroutine fuseRoutine;
 
-    private readonly HashSet<Rigidbody2D> _uniqueBodies = new();
+    private bool hasExploded;
+
+    private readonly HashSet<Rigidbody2D> uniqueBodies = new HashSet<Rigidbody2D>();
+
+    private static readonly int PrepareHash = Animator.StringToHash("Prepare");
+    private static readonly int BoomHash = Animator.StringToHash("Boom");
 
     private void Awake()
     {
-        explosionCenter = GetComponentInChildren<Transform>();
-        _spriteRenderers = GetComponentsInChildren<SpriteRenderer>(includeInactive: true);
+        cachedSpriteRenderers = GetComponentsInChildren<SpriteRenderer>(includeInactive: true);
+    }
+
+    private void Update()
+    {
+#if UNITY_EDITOR
+        if (Input.GetKeyDown(KeyCode.K))
+        {
+            StartFuse();
+        }
+#endif
     }
 
     public override void PlaceHoldable()
     {
         base.PlaceHoldable();
-        StartFuse();
+
+        if (fuseRoutine == null && !hasExploded)
+            StartFuse();
     }
 
     private void StartFuse()
     {
-        if (_fuseRoutine != null)
-            StopCoroutine(_fuseRoutine);
+        if (fuseRoutine != null)
+            StopCoroutine(fuseRoutine);
 
-        _fuseRoutine = StartCoroutine(FuseRoutine());
+        Prepare();
+        fuseRoutine = StartCoroutine(FuseRoutine());
+    }
+
+    private void Prepare()
+    {
+        if (animator != null)
+            animator.SetTrigger(PrepareHash);
+
+        SetSpriteColor(startColor);
     }
 
     private IEnumerator FuseRoutine()
     {
-        SetSpriteColor(startColor);
-
         float elapsed = 0f;
         float fuseSafe = Mathf.Max(0.0001f, fuseSeconds);
 
@@ -63,37 +95,41 @@ public sealed class BombItem : HoldableItem
         {
             elapsed += Time.deltaTime;
             float t = Mathf.Clamp01(elapsed / fuseSafe);
-
             SetSpriteColor(Color.Lerp(startColor, endColor, t));
             yield return null;
         }
 
-        Explode();
+        Explosion();
+
+        if (destroyDelay > 0f)
+            yield return new WaitForSeconds(destroyDelay);
+
+        Destroy(gameObject);
     }
 
-    private void SetSpriteColor(Color color)
+    private void Explosion()
     {
-        if (_spriteRenderers == null) return;
+        if (hasExploded) return;
+        hasExploded = true;
 
-        for (int i = 0; i < _spriteRenderers.Length; i++)
-        {
-            SpriteRenderer sr = _spriteRenderers[i];
-            if (sr != null)
-                sr.color = color;
-        }
-    }
+        if (animator != null)
+            animator.SetTrigger(BoomHash);
 
-    private void Explode()
-    {
         PlayExplosionFx();
 
+        for (int i = 0; i < colliders.Count; i++)
+        {
+            if (colliders[i] != null)
+                colliders[i].enabled = false;
+        }
+
         Collider2D[] hits = Physics2D.OverlapCircleAll(
-            (Vector2)explosionCenter.position,
+            (Vector2)explosionPoint.position,
             explosionRadius,
             detectLayer
         );
 
-        _uniqueBodies.Clear();
+        uniqueBodies.Clear();
 
         for (int i = 0; i < hits.Length; i++)
         {
@@ -102,21 +138,21 @@ public sealed class BombItem : HoldableItem
 
             if (col.CompareTag("Block"))
             {
-                Debug.Log("BombItem.Explode: Disabling block " + col.name);
                 DisableBlock(col);
                 continue;
             }
 
             Rigidbody2D targetRb = col.attachedRigidbody;
             if (targetRb == null) continue;
-            if (!_uniqueBodies.Add(targetRb)) continue;
+            if (!uniqueBodies.Add(targetRb)) continue;
 
             Vector2 toTarget = (Vector2)(targetRb.transform.position - transform.position);
             float distance = toTarget.magnitude;
 
-            Vector2 direction = distance > 0.0001f ? toTarget.normalized : Vector2.up;
+            Vector2 direction = distance > 0.0001f ? (toTarget / distance) : Vector2.up;
 
-            float attenuation = Mathf.Clamp01(1f - (distance / explosionRadius));
+            float radiusSafe = Mathf.Max(0.0001f, explosionRadius);
+            float attenuation = Mathf.Clamp01(1f - (distance / radiusSafe));
             float impulse = explosionImpulse * attenuation;
 
             if (col.TryGetComponent<PlayerController>(out var player))
@@ -128,15 +164,30 @@ public sealed class BombItem : HoldableItem
                 targetRb.AddForce(direction * impulse, ForceMode2D.Impulse);
             }
         }
-
-        Destroy(gameObject);
     }
 
     private static void DisableBlock(Collider2D col)
     {
-        col.gameObject.SetActive(false);
+        Collider2D[] colliders2D = col.GetComponentsInChildren<Collider2D>(includeInactive: true);
+        for (int i = 0; i < colliders2D.Length; i++)
+            colliders2D[i].enabled = false;
+
+        SpriteRenderer[] srs = col.GetComponentsInChildren<SpriteRenderer>(includeInactive: true);
+        for (int i = 0; i < srs.Length; i++)
+            srs[i].enabled = false;
     }
 
+    private void SetSpriteColor(Color color)
+    {
+        if (cachedSpriteRenderers == null) return;
+
+        for (int i = 0; i < cachedSpriteRenderers.Length; i++)
+        {
+            SpriteRenderer sr = cachedSpriteRenderers[i];
+            if (sr != null)
+                sr.color = color;
+        }
+    }
 
     private void PlayExplosionFx()
     {
@@ -156,7 +207,7 @@ public sealed class BombItem : HoldableItem
 #if UNITY_EDITOR
     private void OnDrawGizmosSelected()
     {
-        Gizmos.DrawWireSphere(explosionCenter.position, explosionRadius);
+        Gizmos.DrawWireSphere(explosionPoint.position, explosionRadius);
     }
 #endif
 }

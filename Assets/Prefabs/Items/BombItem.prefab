@@ -11,6 +11,7 @@ GameObject:
   - component: {fileID: 8006819928533086999}
   - component: {fileID: 4093260496131078878}
   - component: {fileID: 8437251640968152340}
+  - component: {fileID: 8064756802529601347}
   m_Layer: 0
   m_Name: BombSprite
   m_TagString: Item
@@ -27,8 +28,8 @@ Transform:
   m_GameObject: {fileID: 6462312441191344372}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 1, y: 1, z: 0}
-  m_LocalScale: {x: 2, y: 2, z: 2}
+  m_LocalPosition: {x: 1.27, y: 1.16, z: 0}
+  m_LocalScale: {x: 1.18682, y: 1.18682, z: 1.18682}
   m_ConstrainProportionsScale: 1
   m_Children: []
   m_Father: {fileID: 6253117043137156975}
@@ -76,9 +77,9 @@ SpriteRenderer:
   m_LightmapParameters: {fileID: 0}
   m_SortingLayerID: 0
   m_SortingLayer: 0
-  m_SortingOrder: 0
-  m_Sprite: {fileID: -2413806693520163455, guid: a86470a33a6bf42c4b3595704624658b, type: 3}
-  m_Color: {r: 0.34901962, g: 0.34901962, b: 0.34901962, a: 1}
+  m_SortingOrder: 1
+  m_Sprite: {fileID: -1407352606, guid: 0ffc5fab8be73d04497bd11583456948, type: 3}
+  m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
   m_FlipY: 0
   m_DrawMode: 0
@@ -122,8 +123,30 @@ CircleCollider2D:
   m_UsedByEffector: 0
   m_CompositeOperation: 0
   m_CompositeOrder: 0
-  m_Offset: {x: 0, y: 0}
-  m_Radius: 0.5
+  m_Offset: {x: -0.21, y: -0.12}
+  m_Radius: 0.8
+--- !u!95 &8064756802529601347
+Animator:
+  serializedVersion: 7
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6462312441191344372}
+  m_Enabled: 1
+  m_Avatar: {fileID: 0}
+  m_Controller: {fileID: 9100000, guid: c11eebdb09fa9e2439153dc716eb766b, type: 2}
+  m_CullingMode: 0
+  m_UpdateMode: 0
+  m_ApplyRootMotion: 0
+  m_LinearVelocityBlending: 0
+  m_StabilizeFeet: 0
+  m_AnimatePhysics: 0
+  m_WarningMessage: 
+  m_HasTransformHierarchy: 1
+  m_AllowConstantClipSamplingOptimization: 1
+  m_KeepAnimatorStateOnDisable: 0
+  m_WriteDefaultValuesOnDisable: 0
 --- !u!1 &7813419518495331685
 GameObject:
   m_ObjectHideFlags: 0
@@ -170,7 +193,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: bc148fb77e0f0064d92f23b3ea69e67f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  holdColor: {r: 0.34901962, g: 0.34901962, b: 0.34901962, a: 0.25}
+  holdColor: {r: 1, g: 1, b: 1, a: 0.25}
   overlappingColor: {r: 1, g: 0, b: 0, a: 0.25}
   colliders:
   - {fileID: 8437251640968152340}
@@ -184,15 +207,17 @@ MonoBehaviour:
   overlapping: 0
   spriteRenderers:
   - {fileID: 4093260496131078878}
-  explosionCenter: {fileID: 8006819928533086999}
-  fuseSeconds: 5
+  explosionPoint: {fileID: 8006819928533086999}
+  fuseSeconds: 4
   explosionRadius: 3
   explosionImpulse: 60
+  destroyDelay: 0.4
   detectLayer:
     serializedVersion: 2
     m_Bits: 192
-  startColor: {r: 0.3490566, g: 0.3490566, b: 0.3490566, a: 1}
-  endColor: {r: 1, g: 0, b: 0, a: 1}
+  startColor: {r: 1, g: 1, b: 1, a: 1}
+  endColor: {r: 1, g: 1, b: 1, a: 1}
+  animator: {fileID: 8064756802529601347}
   explosionParticles: []
   explosionSfx: {fileID: 0}
 --- !u!50 &732177368487052202
