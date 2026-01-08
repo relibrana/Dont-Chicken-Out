@@ -832,7 +832,7 @@ MonoBehaviour:
   videoRoot: {fileID: 116393610}
   videoPlayer: {fileID: 892589828}
   videoOutput: {fileID: 670042164}
-  fadeDuration: 2
+  fadeDuration: 5
 --- !u!1 &607099507
 GameObject:
   m_ObjectHideFlags: 0
@@ -955,6 +955,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   minigame: {fileID: 11400000, guid: d40520355bb60114ba26dcba13fa56c9, type: 2}
+  firstSelected: {fileID: 1877921875}
+  selectDelay: 0
 --- !u!1 &670042162
 GameObject:
   m_ObjectHideFlags: 0
@@ -1822,8 +1824,8 @@ MonoBehaviour:
   circleRect: {fileID: 930428514}
   minSize: 0
   maxSize: 4000
-  closeDuration: 0.4
-  openDuration: 0.4
+  closeDuration: 0.7
+  openDuration: 0.7
 --- !u!1 &1092531463
 GameObject:
   m_ObjectHideFlags: 0
@@ -2782,7 +2784,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 76c392e42b5098c458856cdf6ecaaaa1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  m_FirstSelected: {fileID: 0}
+  m_FirstSelected: {fileID: 1877921875}
   m_sendNavigationEvents: 1
   m_DragThreshold: 10
 --- !u!4 &1999173784

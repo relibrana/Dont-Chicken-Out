@@ -30,6 +30,10 @@ public class GameManager : MonoBehaviour
     [SerializeField] private PlayerController[] inGamePlayers = new PlayerController[4];
     [SerializeField] private PlayerController[] playersAlive = new PlayerController[4];
     [SerializeField] private Transform deathPos;
+
+    [Header("End Game")]
+    [SerializeField, Min(0f)] private float resultsHoldTime = 1.25f;
+
     private PlayerController winner = null;
     private bool needsAReset = false;
     private bool triggerStartGame = false;
@@ -376,21 +380,25 @@ public class GameManager : MonoBehaviour
         if (wonGame)
         {
             uiManager.ResetPlayers(inGamePlayers);
-            uiManager.HidePointsPanel();
-            needsAReset = true;
-            ChangeGameState(GameState.Menu);
-        }
-        else
-        {
-            cameraRig.ResetToGameplay();
 
-            uiManager.HidePointsPanel();
+            DOVirtual.DelayedCall(resultsHoldTime, () =>
+            {
+                uiManager.HidePointsPanel();
+                needsAReset = true;
 
-            uiManager.UpdateReadyPlayers(inGamePlayers);
-            triggerStartGame = true;
-            ChangeGameState(GameState.Prepare);
+                SceneTransitionService.Instance.LoadMenu();
+            }, false);
+
+            return;
         }
+
+        cameraRig.ResetToGameplay();
+        uiManager.HidePointsPanel();
+        uiManager.UpdateReadyPlayers(inGamePlayers);
+        triggerStartGame = true;
+        ChangeGameState(GameState.Prepare);
     }
+
 
 
     public void FreeKeyboardScheme(string schemeName) => playersManager.FreeKeyboardScheme(schemeName);

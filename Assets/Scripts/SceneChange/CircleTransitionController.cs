@@ -1,4 +1,3 @@
-// CircleTransitionController.cs
 using System.Collections;
 using UnityEngine;
 

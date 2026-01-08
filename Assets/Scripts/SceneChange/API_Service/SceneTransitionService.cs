@@ -1,5 +1,4 @@
-﻿// SceneTransitionService.cs
-using System.Collections;
+﻿using System.Collections;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -48,6 +47,15 @@ public sealed class SceneTransitionService : MonoBehaviour
 
         isTransitioning = true;
         StartTransition(MinigameToMenuRoutine(menuSceneName));
+    }
+
+    public void LoadSpecificScene(string sceneName)
+    {
+        if (isTransitioning) return;
+        if (circleTransition == null) return;
+
+        isTransitioning = true;
+        StartTransition(MinigameToMenuRoutine(sceneName));
     }
 
     // Menú -> Minijuego
