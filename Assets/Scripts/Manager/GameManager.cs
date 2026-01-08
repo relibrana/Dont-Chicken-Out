@@ -20,7 +20,6 @@ public class GameManager : MonoBehaviour
     public CinemachineVerticalRig2D cameraRig;
     private float autoMoveCameraCurrentTime;
     private const float startUpTime = 3.5f;
-    [SerializeField] private SpriteRenderer Bg;
 
     [Header("Game Variables")]
     public Action OnGame;
@@ -62,7 +61,6 @@ public class GameManager : MonoBehaviour
     }
     void Start()
     {
-        Bg.DOFade(0, 1f).SetDelay(3);
         AudioManager.Instance.PlayMusic("Menu");
     }
 
