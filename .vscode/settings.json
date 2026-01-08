@@ -52,5 +52,5 @@
         "Temp/": true
     },
     "dotnet.preferCSharpExtension": true,
-    "dotnet.defaultSolution": "Dont-Chicken-Out.sln"
+    "dotnet.defaultSolution": "Meowtris.sln"
 }

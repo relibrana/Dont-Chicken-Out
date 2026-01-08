@@ -12,7 +12,7 @@ public class GameManager : MonoBehaviour
     public static GameManager instance;
 
     [Header("References")]
-    public PoolingManager blocksPool;
+    public PoolingManager poolManager;
     [SerializeField] private PlayersManager playersManager;
 
     [Header("UI")]
@@ -20,17 +20,23 @@ public class GameManager : MonoBehaviour
     public CinemachineVerticalRig2D cameraRig;
     private float autoMoveCameraCurrentTime;
     private const float startUpTime = 3.5f;
-    [SerializeField] private SpriteRenderer Bg;
 
     [Header("Game Variables")]
+    public Action OnGame;
+    public Action OnGameEnd;
     public float autoMoveCameraSpeed = 0.2f;
     // bool screenShakeTrigger=false;
     [SerializeField] private PlayerController[] inGamePlayers = new PlayerController[4];
     [SerializeField] private PlayerController[] playersAlive = new PlayerController[4];
     [SerializeField] private Transform deathPos;
+
+    [Header("End Game")]
+    [SerializeField, Min(0f)] private float resultsHoldTime = 1.25f;
+
     private PlayerController winner = null;
     private bool needsAReset = false;
     private bool triggerStartGame = false;
+    private const float tieThresHold = 0.5f;
 
 
     public GameState gameState = GameState.Menu;
@@ -55,7 +61,6 @@ public class GameManager : MonoBehaviour
     }
     void Start()
     {
-        Bg.DOFade(0, 1f).SetDelay(3);
         AudioManager.Instance.PlayMusic("Menu");
     }
 
@@ -84,6 +89,18 @@ public class GameManager : MonoBehaviour
     private void ChangeGameState(GameState newGameState)
     {
         gameState = newGameState;
+        switch(newGameState)
+        {
+            case GameState.Game:
+                OnGame?.Invoke();
+                break;
+            case GameState.Menu:
+            case GameState.Win:
+                OnGameEnd?.Invoke();
+                break;
+            default:
+                break;
+        }
     }
 
     private void OnMenuState()
@@ -95,7 +112,7 @@ public class GameManager : MonoBehaviour
     private void ResetValues()
     {
         AudioManager.Instance.PlayMusic("Menu");
-        blocksPool.ResetPool();
+        poolManager.ResetPool();
         foreach (var player in inGamePlayers)
         {
             if (player == null)
@@ -130,7 +147,7 @@ public class GameManager : MonoBehaviour
         if (triggerStartGame)
         {
             winner = null;
-            blocksPool.ResetPool();
+            poolManager.ResetPool();
             for (int i = 0; i < inGamePlayers.Length; i++)
             {
                 playersAlive[i] = inGamePlayers[i];
@@ -285,12 +302,30 @@ public class GameManager : MonoBehaviour
 
         if (currPlayersAlive == 1)
         {
-            ChangeGameState(GameState.Win);
-            winner.roundsWon++;
+            //DoWin();
             cameraRig.FocusWinner(winner.transform);
+            DOVirtual.DelayedCall(tieThresHold, () => DoWin(), false);
+        }
+        else if (currPlayersAlive == 0)
+        {
+            cameraRig.StopFocusWinner();
+            ChangeGameState(GameState.Win);
             uiManager.OnWinRound(inGamePlayers, wonGame => DOVirtual.DelayedCall(2f, () => CheckGameWon(wonGame), false));
         }
     }
+
+    private void DoWin()
+    {
+        if(gameState == GameState.Win)
+        {
+            return;
+        }
+        ChangeGameState(GameState.Win);
+        winner.roundsWon++;
+        cameraRig.FocusWinner(winner.transform);
+        uiManager.OnWinRound(inGamePlayers, wonGame => DOVirtual.DelayedCall(2f, () => CheckGameWon(wonGame), false));
+    }
+
     /*private void CheckWinner()
     {
         int currPlayersAlive = 0;
@@ -343,21 +378,25 @@ public class GameManager : MonoBehaviour
         if (wonGame)
         {
             uiManager.ResetPlayers(inGamePlayers);
-            uiManager.HidePointsPanel();
-            needsAReset = true;
-            ChangeGameState(GameState.Menu);
-        }
-        else
-        {
-            cameraRig.ResetToGameplay();
 
-            uiManager.HidePointsPanel();
+            DOVirtual.DelayedCall(resultsHoldTime, () =>
+            {
+                uiManager.HidePointsPanel();
+                needsAReset = true;
 
-            uiManager.UpdateReadyPlayers(inGamePlayers);
-            triggerStartGame = true;
-            ChangeGameState(GameState.Prepare);
+                SceneTransitionService.Instance.LoadMenu();
+            }, false);
+
+            return;
         }
+
+        cameraRig.ResetToGameplay();
+        uiManager.HidePointsPanel();
+        uiManager.UpdateReadyPlayers(inGamePlayers);
+        triggerStartGame = true;
+        ChangeGameState(GameState.Prepare);
     }
+
 
 
     public void FreeKeyboardScheme(string schemeName) => playersManager.FreeKeyboardScheme(schemeName);
