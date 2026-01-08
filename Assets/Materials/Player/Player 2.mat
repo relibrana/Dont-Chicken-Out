@@ -30,5 +30,6 @@ Material:
     - _ReplacementColor1: {r: 0.78823537, g: 0.8352942, b: 0.16862746, a: 1}
     - _ReplacementColor2: {r: 0.5372549, g: 0.5764706, b: 0, a: 1}
     - _ReplacementColor3: {r: 0.10741247, g: 0.16981131, b: 0.0072089676, a: 1}
+    - _ReplacementColor4: {r: 0.9102756, g: 0.9150943, b: 0.26330543, a: 1}
   m_BuildTextureStacks: []
   m_AllowLocking: 1

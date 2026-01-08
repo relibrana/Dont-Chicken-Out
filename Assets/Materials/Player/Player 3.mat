@@ -95,7 +95,7 @@ Material:
     - _ReplacementColor1: {r: 0.59607846, g: 0.7843138, b: 0.98823535, a: 1}
     - _ReplacementColor2: {r: 0.34901962, g: 0.5372549, b: 0.7411765, a: 1}
     - _ReplacementColor3: {r: 0.030838378, g: 0.04576536, b: 0.1981132, a: 1}
-    - _ReplacementColor4: {r: 1, g: 1, b: 1, a: 1}
+    - _ReplacementColor4: {r: 0.6944642, g: 0.8693143, b: 0.9622642, a: 1}
     - _TargetColor: {r: 1, g: 1, b: 1, a: 1}
   m_BuildTextureStacks: []
   m_AllowLocking: 1

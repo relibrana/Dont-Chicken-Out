@@ -14,7 +14,8 @@ public class PlayerController : MonoBehaviour
 	private float velocitySmoothing;
 	[SerializeField] private KickCollider kickCollider;
 	[SerializeField] private Animator animator;
-	[SerializeField] private SpriteRenderer sprite;
+	[SerializeField] private List<SpriteRenderer> spriteRenderers = new();
+	// [SerializeField] private SpriteRenderer sprite;
 
 	//Ground Checkers
 	[SerializeField] private float raycastDistance = 0.55f;
@@ -306,7 +307,11 @@ public class PlayerController : MonoBehaviour
 
 	public void SetMaterials(PlayerMaterial mats)
     {
-		sprite.material = mats.playerMat;
+		foreach (SpriteRenderer sr in spriteRenderers)
+		{
+			sr.material = mats.playerMat;
+		}
+		// sprite.material = mats.playerMat;
 		hayMaterial = mats.hayMat;
     }
 	private void HandleGravity()
