@@ -6,6 +6,9 @@ using UnityEngine;
 public sealed class BombItem : HoldableItem
 {
     [Header("Explosion")]
+    [SerializeField, Tooltip("El punto central de la explosión.")]
+    private Transform explosionCenter;
+
     [SerializeField, Min(0f), Tooltip("El tiempo (en segundos) que tarda la bomba en explotar después de activar el fusible.")]
     private float fuseSeconds = 1.25f;
     [SerializeField, Min(0f), Tooltip("El radio de la explosión que afecta a otros objetos.")]
@@ -31,19 +34,9 @@ public sealed class BombItem : HoldableItem
 
     private void Awake()
     {
+        explosionCenter = GetComponentInChildren<Transform>();
         _spriteRenderers = GetComponentsInChildren<SpriteRenderer>(includeInactive: true);
     }
-
-//     private void Update()
-//     {
-
-// #if UNITY_EDITOR
-//         if (Input.GetKeyDown(KeyCode.K))
-//         {
-//             StartFuse();
-//         }
-// #endif
-//     }
 
     public override void PlaceHoldable()
     {
@@ -95,7 +88,7 @@ public sealed class BombItem : HoldableItem
         PlayExplosionFx();
 
         Collider2D[] hits = Physics2D.OverlapCircleAll(
-            (Vector2)transform.position,
+            (Vector2)explosionCenter.position,
             explosionRadius,
             detectLayer
         );
@@ -163,7 +156,7 @@ public sealed class BombItem : HoldableItem
 #if UNITY_EDITOR
     private void OnDrawGizmosSelected()
     {
-        Gizmos.DrawWireSphere(transform.position, explosionRadius);
+        Gizmos.DrawWireSphere(explosionCenter.position, explosionRadius);
     }
 #endif
 }

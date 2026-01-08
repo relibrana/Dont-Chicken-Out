@@ -77,7 +77,7 @@ SpriteRenderer:
   m_SortingLayerID: 0
   m_SortingLayer: 0
   m_SortingOrder: 0
-  m_Sprite: {fileID: 21300000, guid: 339ef286a3b565048b6bb5068418c618, type: 3}
+  m_Sprite: {fileID: -2413806693520163455, guid: a86470a33a6bf42c4b3595704624658b, type: 3}
   m_Color: {r: 0.34901962, g: 0.34901962, b: 0.34901962, a: 1}
   m_FlipX: 0
   m_FlipY: 0
@@ -184,6 +184,7 @@ MonoBehaviour:
   overlapping: 0
   spriteRenderers:
   - {fileID: 4093260496131078878}
+  explosionCenter: {fileID: 8006819928533086999}
   fuseSeconds: 5
   explosionRadius: 3
   explosionImpulse: 60
