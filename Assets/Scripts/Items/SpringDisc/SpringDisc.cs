@@ -26,10 +26,12 @@ public class SpringDisc : HoldableItem
     [SerializeField] private Ease recoilAnimationEasing;
     [SerializeField] private Ease recoilAnimationReturnEasing;
     private Sequence recoilAnimation;
+    private Vector3 spriteInitialPos;
 
     void Awake()
     {
         _rb = GetComponent<Rigidbody2D>();
+        spriteInitialPos = spriteRenderer.transform.localPosition;
     }
 
     void FixedUpdate()
@@ -45,7 +47,7 @@ public class SpringDisc : HoldableItem
         PlayerController player = collision.gameObject.GetComponent<PlayerController>();
         if (rb == null || player == null) return;
 
-        Vector2 direction = ((Vector2)(collision.gameObject.transform.position - transform.position)).normalized;
+        Vector2 direction = ((Vector2)(collision.gameObject.transform.position - spriteRenderer.transform.position)).normalized;
         player.AddImpulse(direction * bounceForce);
 
         TriggerAnimation();
@@ -87,13 +89,13 @@ public class SpringDisc : HoldableItem
         if (recoilAnimation != null && recoilAnimation.IsActive())
         {
             recoilAnimation.Kill();
-            spriteRenderer.transform.localPosition = Vector3.zero;
+            spriteRenderer.transform.localPosition = spriteInitialPos;
         }
 
         Vector3 targetPosition = direction.normalized * recoilDistance;
         recoilAnimation = DOTween.Sequence();
         recoilAnimation.Append(spriteRenderer.transform.DOLocalMove(targetPosition, recoilAnimationDuration / 2).SetEase(recoilAnimationEasing));
-        recoilAnimation.Append(spriteRenderer.transform.DOLocalMove(Vector3.zero, recoilAnimationDuration / 2).SetEase(recoilAnimationReturnEasing));
+        recoilAnimation.Append(spriteRenderer.transform.DOLocalMove(spriteInitialPos, recoilAnimationDuration / 2).SetEase(recoilAnimationReturnEasing));
         recoilAnimation.Play();
     }
 }

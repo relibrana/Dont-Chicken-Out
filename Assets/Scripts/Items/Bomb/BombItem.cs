@@ -111,6 +111,8 @@ public sealed class BombItem : HoldableItem
     {
         if (hasExploded) return;
         hasExploded = true;
+        
+		rb2d.bodyType = RigidbodyType2D.Kinematic;
 
         if (animator != null)
             animator.SetTrigger(BoomHash);
