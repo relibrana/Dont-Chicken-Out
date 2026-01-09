@@ -27,6 +27,7 @@ public class SpringDisc : HoldableItem
     [SerializeField] private Ease recoilAnimationReturnEasing;
     private Sequence recoilAnimation;
     private Vector3 spriteInitialPos;
+    private int objectDirection;
 
     void Awake()
     {
@@ -52,6 +53,11 @@ public class SpringDisc : HoldableItem
 
         TriggerAnimation();
         RecoilAnimation(-direction);
+    }
+    public override void PlaceHoldable()
+    {
+        base.PlaceHoldable();
+        objectDirection = (int)Mathf.Sign(transform.localScale.x);
     }
 
     private void AttenuationOfMovement()
@@ -79,8 +85,10 @@ public class SpringDisc : HoldableItem
     private void TriggerAnimation()
     {
         Sequence animationSequence = DOTween.Sequence();
-        animationSequence.Append(transform.DOScale(animationScaleAmount, animationDuration / 2).From(1f).SetEase(animationEasing));
-        animationSequence.Append(transform.DOScale(1f, animationDuration / 2).From(animationScaleAmount).SetEase(animationEasing));
+        animationSequence.Append(transform.DOScaleY(animationScaleAmount, animationDuration / 2).From(1f).SetEase(animationEasing));
+        animationSequence.Join(transform.DOScaleX(animationScaleAmount * objectDirection, animationDuration / 2).From(objectDirection).SetEase(animationEasing));
+        animationSequence.Append(transform.DOScaleY(1f, animationDuration / 2).From(animationScaleAmount).SetEase(animationEasing));
+        animationSequence.Join(transform.DOScaleX(objectDirection, animationDuration / 2).From(animationScaleAmount * objectDirection).SetEase(animationEasing));
         animationSequence.Play();
     }
 
@@ -92,7 +100,8 @@ public class SpringDisc : HoldableItem
             spriteRenderer.transform.localPosition = spriteInitialPos;
         }
 
-        Vector3 targetPosition = direction.normalized * recoilDistance;
+        spriteInitialPos = spriteRenderer.transform.localPosition;
+        Vector3 targetPosition = spriteInitialPos + (Vector3)(direction.normalized * recoilDistance);
         recoilAnimation = DOTween.Sequence();
         recoilAnimation.Append(spriteRenderer.transform.DOLocalMove(targetPosition, recoilAnimationDuration / 2).SetEase(recoilAnimationEasing));
         recoilAnimation.Append(spriteRenderer.transform.DOLocalMove(spriteInitialPos, recoilAnimationDuration / 2).SetEase(recoilAnimationReturnEasing));
