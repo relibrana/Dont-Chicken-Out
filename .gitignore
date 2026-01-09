@@ -75,4 +75,4 @@ crashlytics-build.properties
 /[Aa]ssets/[Ss]treamingAssets/aa/*
 
 # Ignore .vscode folder
-/.vscode/
+.vscode/

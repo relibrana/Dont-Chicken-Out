@@ -92,7 +92,8 @@ public class SpringDisc : HoldableItem
             spriteRenderer.transform.localPosition = spriteInitialPos;
         }
 
-        Vector3 targetPosition = direction.normalized * recoilDistance;
+        spriteInitialPos = spriteRenderer.transform.localPosition;
+        Vector3 targetPosition = spriteInitialPos + (Vector3)(direction.normalized * recoilDistance);
         recoilAnimation = DOTween.Sequence();
         recoilAnimation.Append(spriteRenderer.transform.DOLocalMove(targetPosition, recoilAnimationDuration / 2).SetEase(recoilAnimationEasing));
         recoilAnimation.Append(spriteRenderer.transform.DOLocalMove(spriteInitialPos, recoilAnimationDuration / 2).SetEase(recoilAnimationReturnEasing));
