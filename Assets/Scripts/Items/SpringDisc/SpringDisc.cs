@@ -51,6 +51,8 @@ public class SpringDisc : HoldableItem
         Vector2 direction = ((Vector2)(collision.gameObject.transform.position - spriteRenderer.transform.position)).normalized;
         player.AddImpulse(direction * bounceForce);
 
+        AudioManager.Instance.PlaySound("tire_bounce");
+
         TriggerAnimation();
         RecoilAnimation(-direction);
     }

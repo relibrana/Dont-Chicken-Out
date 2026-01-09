@@ -182,7 +182,11 @@ MonoBehaviour:
     id: block_pushing
     volume: 0
     loop: 0
-  itemSfxs: []
+  itemSfxs:
+  - clip: {fileID: 8300000, guid: 7bfbb92e2674a664c93991d638319e04, type: 3}
+    id: tire_bounce
+    volume: 0.6
+    loop: 0
   miscsSfxs:
   - clip: {fileID: 8300000, guid: e18f36faa57ac014a8cfaa5459e96daf, type: 3}
     id: Title
