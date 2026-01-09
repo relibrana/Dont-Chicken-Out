@@ -11,4 +11,9 @@ public class PlayerAnimController : MonoBehaviour
     {
         animationEvents[id].Invoke();
     }
+
+    public void PlaySFX(string sfxName)
+    {
+        AudioManager.Instance.PlaySound(sfxName);
+    }
 }

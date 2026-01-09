@@ -39,6 +39,8 @@ public class AudioManager : MonoBehaviour
     [SerializeField] private List<Sound> playerCockSfxs;
     [SerializeField] private List<Sound> playerStepSfxs;
     [SerializeField] private List<Sound> blocksSfxs;
+    [SerializeField] private List<Sound> itemSfxs;
+    [SerializeField] private List<Sound> miscsSfxs;
     private Dictionary<string, Sound> sfxMap = new();
 
     private Stack<AudioSource> freeSources = new();
@@ -92,6 +94,14 @@ public class AudioManager : MonoBehaviour
             sfxMap.Add(item.id, item);
         }
         foreach (var item in blocksSfxs)
+        {
+            sfxMap.Add(item.id, item);
+        }
+        foreach (var item in itemSfxs)
+        {
+            sfxMap.Add(item.id, item);
+        }
+        foreach (var item in miscsSfxs)
         {
             sfxMap.Add(item.id, item);
         }
