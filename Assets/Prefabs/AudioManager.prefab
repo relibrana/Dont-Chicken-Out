@@ -72,6 +72,10 @@ MonoBehaviour:
     volume: 0.6
     loop: 0
   playerCockSfxs:
+  - clip: {fileID: 8300000, guid: cf1d6cef5fc67ce4099aacc0746be71a, type: 3}
+    id: cuack0
+    volume: 0.6
+    loop: 0
   - clip: {fileID: 8300000, guid: 0cf4ac7f1694ef44093093fc9be5f1da, type: 3}
     id: cuack1
     volume: 0.6
@@ -148,25 +152,21 @@ MonoBehaviour:
     id: cuack19
     volume: 0.6
     loop: 0
-  - clip: {fileID: 8300000, guid: cf1d6cef5fc67ce4099aacc0746be71a, type: 3}
-    id: cuack20
-    volume: 0.6
-    loop: 0
   playerStepSfxs:
   - clip: {fileID: 8300000, guid: 5719ad1efcb58b940b81faf42a95fc45, type: 3}
-    id: steps1
+    id: step0
     volume: 0.3
     loop: 0
   - clip: {fileID: 8300000, guid: c4651eaee1684db429bed946a29dabf3, type: 3}
-    id: steps2
+    id: step1
     volume: 0.3
     loop: 0
   - clip: {fileID: 8300000, guid: c4651eaee1684db429bed946a29dabf3, type: 3}
-    id: steps3
+    id: step2
     volume: 0.3
     loop: 0
   - clip: {fileID: 8300000, guid: 5719ad1efcb58b940b81faf42a95fc45, type: 3}
-    id: steps4
+    id: step3
     volume: 0.3
     loop: 0
   blocksSfxs:
@@ -185,6 +185,14 @@ MonoBehaviour:
   itemSfxs:
   - clip: {fileID: 8300000, guid: 7bfbb92e2674a664c93991d638319e04, type: 3}
     id: tire_bounce
+    volume: 0.6
+    loop: 0
+  - clip: {fileID: 8300000, guid: 34f1e4f2d8286f849826778339f96fab, type: 3}
+    id: bomb_lighter
+    volume: 0.6
+    loop: 1
+  - clip: {fileID: 8300000, guid: d9d827584209ad941a51a0a7d14b6953, type: 3}
+    id: bomb_explosion
     volume: 0.6
     loop: 0
   miscsSfxs:

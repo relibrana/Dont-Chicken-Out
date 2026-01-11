@@ -48,8 +48,8 @@ public class AudioManager : MonoBehaviour
     private AudioSource musicSource;
 
 	//Sounds
-	private int currentStep;
-	private int currentCuack;
+	private int currentStep = 0;
+	private int currentCuack = 0;
 
 
     protected void Awake()
@@ -187,8 +187,11 @@ public class AudioManager : MonoBehaviour
     public AudioSource PlaySound(string id)
     {
         sfxMap.TryGetValue(id, out Sound sfx);
-        if (sfx == null) 
+        if (sfx == null)
+        {
+            Debug.LogWarning($"AudioManager => {id}: IsNull");
             return null;
+        }
 
         var src = GetSource();
         src.clip = sfx.clip;
@@ -214,8 +217,11 @@ public class AudioManager : MonoBehaviour
     public void Stop(string id)
     {
         sfxMap.TryGetValue(id, out Sound sfx);
-        if (sfx == null) 
+        if (sfx == null)
+        {
+            Debug.LogWarning($"AudioManager => {id}: IsNull");
             return;
+        }
         
         allSources.RemoveAll(src => src == null); 
 
@@ -223,6 +229,7 @@ public class AudioManager : MonoBehaviour
         {
             if (src.isPlaying && src.clip == sfx.clip && src.outputAudioMixerGroup == sfxMixer)
             {
+                Debug.LogWarning($"AudioManager => {id}: Stopped");
                 src.Stop();
                 ReleaseSource(src); 
             }
@@ -286,7 +293,7 @@ public class AudioManager : MonoBehaviour
 
         Stop($"step{currentStep}");
 
-        PlaySound($"steps{newStep}");
+        PlaySound($"step{newStep}");
         currentStep = newStep;
     }
 

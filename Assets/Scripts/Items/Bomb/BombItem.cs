@@ -82,6 +82,8 @@ public sealed class BombItem : HoldableItem
     {
         if (animator != null)
             animator.SetTrigger(PrepareHash);
+        
+        AudioManager.Instance.PlaySound("bomb_lighter");
 
         SetSpriteColor(startColor);
     }
@@ -113,6 +115,9 @@ public sealed class BombItem : HoldableItem
         hasExploded = true;
         
 		rb2d.bodyType = RigidbodyType2D.Kinematic;
+        
+        AudioManager.Instance.Stop("bomb_lighter");
+        AudioManager.Instance.PlaySound("bomb_explosion");
 
         if (animator != null)
             animator.SetTrigger(BoomHash);
