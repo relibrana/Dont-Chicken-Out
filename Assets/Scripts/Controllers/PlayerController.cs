@@ -64,7 +64,10 @@ public class PlayerController : MonoBehaviour
 	public bool isBlockLogicAvailable = true;
 	private bool isBlockOverlapping = false;
 	private Material hayMaterial;
-
+	[SerializeField] private LayerMask blockLayer;
+	[SerializeField] private float blockDetectDistance = 0.1f;
+	[SerializeField] private Transform blockCheckPoint;
+	private bool isPushing;
 	[SerializeField] private bool dbgMode;
 
     // Properties
@@ -142,6 +145,7 @@ public class PlayerController : MonoBehaviour
 		{
 			if(!isBlockOverlapping)
             {
+				animator.Play("Place");
 				currentBlockHolding.PlaceHoldable();
 				currentBlockHolding = null;
 				canPlaceBlock = false;
@@ -181,6 +185,8 @@ public class PlayerController : MonoBehaviour
 		HandleJump();
 
 		HandleBlockLogic();
+
+		CheckPushing();
 	}
 
 	private void UpdateHorizontalDirection() => moveDirection = moveInput.ReadValue<float>();
@@ -297,9 +303,21 @@ public class PlayerController : MonoBehaviour
 		animator.SetFloat("Speed", Mathf.Abs(currentVelocity.x));
 	}
 
-	public void AddImpulse(Vector2 impulseDirection)
+	public void AddImpulse(Vector2 impulseDirection, bool isKick = false)
     {
 		currentVelocity += impulseDirection;
+
+		if(isKick)
+		{
+			if(Mathf.Sign(impulseDirection.x) == Mathf.Sign(transform.localScale.x))
+			{
+				animator.Play("HitBack");
+			}
+			else
+			{
+				animator.Play("HitFront");
+			}
+		}
 
 		isGrounded = false;
 		coyoteTimeTimer = 0f;
@@ -417,5 +435,14 @@ public class PlayerController : MonoBehaviour
 			}
 		}
 		return false;
+	}
+	private void CheckPushing()
+	{
+    	RaycastHit2D hit = Physics2D.Raycast(blockCheckPoint.position, transform.right * transform.localScale.x, 
+			blockDetectDistance, blockLayer);
+	
+    	isPushing = hit.collider != null;
+
+    	animator.SetBool("IsTouchingBlock", isPushing);
 	}
 }

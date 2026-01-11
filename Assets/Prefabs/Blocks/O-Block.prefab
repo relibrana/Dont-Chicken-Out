@@ -49,29 +49,31 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8b4715231a85f45f9b8172df037a7ef2, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  holdColor: {r: 1, g: 1, b: 1, a: 0.25}
+  overlappingColor: {r: 1, g: 0, b: 0, a: 0.25}
   colliders:
   - {fileID: 1203979253787189343}
   - {fileID: 8267213825340639979}
   - {fileID: 3984595637031729122}
   - {fileID: 9115907491792742375}
-  animators:
-  - {fileID: 7219950855646453494}
-  - {fileID: 449239424725283906}
-  - {fileID: 4885050252641536331}
-  - {fileID: 722047484386974030}
   rb2d: {fileID: 3901264166788124858}
   startLayer:
     serializedVersion: 2
     m_Bits: 256
   placedLayer:
     serializedVersion: 2
-    m_Bits: 64
+    m_Bits: 1024
   overlapping: 0
   spriteRenderers:
   - {fileID: 6816704655189773844}
   - {fileID: 4366137759175992480}
   - {fileID: 8746140672221944233}
   - {fileID: 3507914419287525804}
+  animators:
+  - {fileID: 7219950855646453494}
+  - {fileID: 449239424725283906}
+  - {fileID: 4885050252641536331}
+  - {fileID: 722047484386974030}
 --- !u!50 &3901264166788124858
 Rigidbody2D:
   serializedVersion: 5

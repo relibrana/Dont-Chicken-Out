@@ -14,7 +14,7 @@ public class KickCollider : MonoBehaviour
             Vector2 impulseDirection = forceDirection;
             impulseDirection.x *= transform.lossyScale.x;
             
-            playerCtrl.AddImpulse(impulseDirection);
+            playerCtrl.AddImpulse(impulseDirection, true);
         }
         else if (!other.isTrigger && 
             (other.gameObject.CompareTag("Capsule") 

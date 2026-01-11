@@ -43,6 +43,7 @@ public class HoldableItem : MonoBehaviour
 			col.isTrigger = false;
 			col.gameObject.layer = (int)Mathf.Log(placedLayer.value, 2);
 		}
+		gameObject.layer = (int)Mathf.Log(placedLayer.value, 2);
 		holding = false;
 		rb2d.bodyType = RigidbodyType2D.Dynamic;
 		AnimateAppear();

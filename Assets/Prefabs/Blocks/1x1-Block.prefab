@@ -46,20 +46,22 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8b4715231a85f45f9b8172df037a7ef2, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  holdColor: {r: 1, g: 1, b: 1, a: 0.25}
+  overlappingColor: {r: 1, g: 0, b: 0, a: 0.25}
   colliders:
   - {fileID: 5673246753019055015}
-  animators:
-  - {fileID: 4196338978467591438}
   rb2d: {fileID: -8333948090115435712}
   startLayer:
     serializedVersion: 2
     m_Bits: 256
   placedLayer:
     serializedVersion: 2
-    m_Bits: 64
+    m_Bits: 1024
   overlapping: 0
   spriteRenderers:
   - {fileID: 42718062309058028}
+  animators:
+  - {fileID: 4196338978467591438}
 --- !u!50 &-8333948090115435712
 Rigidbody2D:
   serializedVersion: 5
@@ -95,6 +97,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 4413188983734544658}
     m_Modifications:
+    - target: {fileID: 7638155211273270388, guid: 9baba22d8960d4b3da266d93b15486bd, type: 3}
+      propertyPath: m_Layer
+      value: 10
+      objectReference: {fileID: 0}
     - target: {fileID: 7895308326066533507, guid: 9baba22d8960d4b3da266d93b15486bd, type: 3}
       propertyPath: m_RootOrder
       value: -1

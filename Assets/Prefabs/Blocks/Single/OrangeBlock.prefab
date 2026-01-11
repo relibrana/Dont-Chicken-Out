@@ -98,7 +98,7 @@ GameObject:
   - component: {fileID: 7895308326066533507}
   - component: {fileID: 2708964957386333812}
   - component: {fileID: 5845428821436080349}
-  m_Layer: 6
+  m_Layer: 10
   m_Name: OrangeBlock
   m_TagString: Block
   m_Icon: {fileID: 0}
