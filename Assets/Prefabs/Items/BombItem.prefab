@@ -214,7 +214,7 @@ MonoBehaviour:
   destroyDelay: 0.4
   detectLayer:
     serializedVersion: 2
-    m_Bits: 192
+    m_Bits: 1152
   startColor: {r: 1, g: 1, b: 1, a: 1}
   endColor: {r: 1, g: 1, b: 1, a: 1}
   animator: {fileID: 8064756802529601347}
@@ -232,11 +232,11 @@ Rigidbody2D:
   m_Simulated: 1
   m_UseFullKinematicContacts: 0
   m_UseAutoMass: 0
-  m_Mass: 40
-  m_LinearDamping: 3
+  m_Mass: 15
+  m_LinearDamping: 10
   m_AngularDamping: 0.05
   m_GravityScale: 4
-  m_Material: {fileID: 6200000, guid: 083b2fa883b2b6f44bded383a31c02d6, type: 2}
+  m_Material: {fileID: 6200000, guid: 71979884b979e9748b3310ad1b057451, type: 2}
   m_IncludeLayers:
     serializedVersion: 2
     m_Bits: 0
