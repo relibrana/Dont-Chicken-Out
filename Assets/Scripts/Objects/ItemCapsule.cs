@@ -1,10 +1,9 @@
 using System.Collections.Generic;
 using UnityEngine;
-
-public class ItemCapsule : IDamageable
+public class ItemCapsule : MonoBehaviour, IDamageable
 {
     [Header("Damage Visuals")]
-    [SerializeField, Tooltip("Sprites por daño: [0]=intacto, [1]=dañado1, [2]=dañado2")]
+    [SerializeField, Tooltip("Sprites por daÃ±o: [0]=intacto, [1]=daÃ±ado1, [2]=daÃ±ado2")]
     private List<Sprite> damageSprites = new();
 
     [SerializeField] private SpriteRenderer sr;
@@ -17,7 +16,7 @@ public class ItemCapsule : IDamageable
         ResetState();
     }
 
-    public override void TakeDamage(int amount, PlayerController player)
+    public void TakeDamage(int amount, PlayerController player)
     {
         if (amount <= 0) return;
 

@@ -1,10 +1,10 @@
-﻿using System.Collections;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEngine;
 
 public class PoolingManager : MonoBehaviour
 {
 
+    public BlocksSO blocksSO;
     public List<PooledObject> pooledBlocks = new List<PooledObject>();
     public List<PooledObject> pooledItems = new List<PooledObject>();
     public PooledObject itemCapsule;
@@ -22,13 +22,24 @@ public class PoolingManager : MonoBehaviour
         // Create a parent for each object type
         foreach (PooledObject obj in pooledBlocks)
         {
-            InitializePoolObjects(obj, blockList);
+            InitializePoolObjects(obj, blockList, true);
         }
         foreach (PooledObject item in pooledItems)
         {
             InitializePoolObjects(item, itemList);   
         }
         InitializePoolObject(itemCapsule, capsuleList);
+    }
+
+    private void SetBlock(GameObject obj)
+    {
+        if (obj.TryGetComponent(out Rigidbody2D rb))
+        {
+            rb.mass = blocksSO.mass;
+            rb.linearDamping = blocksSO.linearDamping;
+            rb.gravityScale = blocksSO.gravityScale;
+        }
+
     }
     
     public void ResetPool()
@@ -107,6 +118,7 @@ public class PoolingManager : MonoBehaviour
 		{
 			Debug.Log ("All instances are busy, spawn new one");
 			pObject = Instantiate(pooledItems[_objIndex].pooledObjPrefab, itemList[_objIndex].transform);
+            SetBlock(pObject);
 		}
 
 		pObject.SetActive(false);
@@ -142,13 +154,13 @@ public class PoolingManager : MonoBehaviour
         // Spawn the gameObject clones inside the parent
         for (int i = 0; i < _pooledObject.ammountToPool; i++)
 		{
-            GameObject spawnedObject = GameObject.Instantiate(_pooledObject.pooledObjPrefab);
+            GameObject spawnedObject = Instantiate(_pooledObject.pooledObjPrefab);
             spawnedObject.transform.parent = capsuleParent.transform;
             spawnedObject.SetActive(false);
             _list.Add(spawnedObject);
         }
     }
-    private void InitializePoolObjects(PooledObject _pooledObject, List<GameObject> _list)
+    private void InitializePoolObjects(PooledObject _pooledObject, List<GameObject> _list, bool isBlock = false)
 	{
         GameObject pooledObjectsParent = new GameObject();
         pooledObjectsParent.name = _pooledObject.pooledObjPrefab.ToString();
@@ -157,8 +169,11 @@ public class PoolingManager : MonoBehaviour
         // Spawn the gameObject clones inside the parent
         for (int i = 0; i < _pooledObject.ammountToPool; i++)
 		{
-            GameObject spawnedObject = GameObject.Instantiate(_pooledObject.pooledObjPrefab);
+            GameObject spawnedObject = Instantiate(_pooledObject.pooledObjPrefab);
             spawnedObject.transform.parent = pooledObjectsParent.transform;
+
+            if(isBlock) SetBlock(spawnedObject);
+
             spawnedObject.SetActive(false);
         }
     }

@@ -34,4 +34,6 @@ public class PlatformerValuesSO : ScriptableObject
     public float jumpBufferTime = 0.15f;
     [Tooltip("Amount of Force the kick will make")]
     public Vector2 kickForce;
+    [Tooltip("Cooldown time between each block Placement")]
+    public float blockPlacementCD;
 }

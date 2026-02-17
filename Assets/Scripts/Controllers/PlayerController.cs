@@ -4,12 +4,12 @@ using DG.Tweening;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
-public class PlayerController : MonoBehaviour
+public class PlayerController : MonoBehaviour, IKickable
 {
 	[SerializeField] private PlatformerValuesSO valuesSO;
 
 	//Components and State Values
-	private Rigidbody2D rb;
+	private Rigidbody2D _rb;
 	private Vector2 currentVelocity;
 	private float velocitySmoothing;
 	[SerializeField] private KickCollider kickCollider;
@@ -59,7 +59,7 @@ public class PlayerController : MonoBehaviour
 	//Blocks
 	[SerializeField] private Transform blockPosition;
 	public HoldableItem currentBlockHolding = null;
-	[SerializeField] private float blockPlaceCooldown = 1f;
+	private float blockPlaceCooldown;
 	[SerializeField] private bool canPlaceBlock = false;
 	public bool isBlockLogicAvailable = true;
 	private bool isBlockOverlapping = false;
@@ -80,11 +80,13 @@ public class PlayerController : MonoBehaviour
 		playerInput = GetComponent<PlayerInput>();
 		InitializeInputActions();
 
-		rb = GetComponent<Rigidbody2D>();
+		_rb = GetComponent<Rigidbody2D>();
 
-		rb.gravityScale = 0f;
-		rb.freezeRotation = true;
+		_rb.gravityScale = 0f;
+		_rb.freezeRotation = true;
 		CalculateValues();
+
+		blockPlaceCooldown = valuesSO.blockPlacementCD;
 
 		kickCollider.forceDirection = valuesSO.kickForce;
 		kickCollider.playerController = this;
@@ -164,6 +166,12 @@ public class PlayerController : MonoBehaviour
 		animator.Play("Kick");
 		AudioManager.Instance.PlaySound("player_kick");
 	}
+	
+    //IKickable Method
+    public void ReceiveKick(Vector2 kickImpulse)
+    {
+    	AddImpulse(kickImpulse, true);
+    }
 
 	private void OnCluckStarted(InputAction.CallbackContext context)
 	{
@@ -276,11 +284,11 @@ public class PlayerController : MonoBehaviour
 
 		currentVelocity.y = Mathf.Min(currentVelocity.y, valuesSO.maxJumpSpeed);
 
-		rb.linearVelocity = currentVelocity;
+		_rb.linearVelocity = currentVelocity;
 
 		#if UNITY_EDITOR
-			if(dbgMode && Mathf.Abs(rb.linearVelocityX) + Mathf.Abs(rb.linearVelocityY) > 0.5f) 
-				Debug.LogWarning(rb.linearVelocity);
+			if(dbgMode && Mathf.Abs(_rb.linearVelocityX) + Mathf.Abs(_rb.linearVelocityY) > 0.5f) 
+				Debug.LogWarning(_rb.linearVelocity);
 		#endif
 	}
 

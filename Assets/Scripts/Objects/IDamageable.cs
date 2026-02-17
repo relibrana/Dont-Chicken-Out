@@ -1,9 +1,4 @@
-using UnityEngine;
-
-public class IDamageable : MonoBehaviour
+public interface IDamageable
 {
-    public virtual void TakeDamage(int amount, PlayerController player)
-    {
-        
-    }
+    public void TakeDamage(int amount, PlayerController player);
 }

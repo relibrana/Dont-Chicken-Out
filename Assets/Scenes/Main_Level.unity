@@ -9431,6 +9431,10 @@ PrefabInstance:
     m_TransformParent: {fileID: 0}
     m_Modifications:
     - target: {fileID: 1306948335560172110, guid: eb5ad07b62b54435ba110d7614a039e6, type: 3}
+      propertyPath: blocksSO
+      value: 
+      objectReference: {fileID: 11400000, guid: f22672e008a4b8b478a9c8a0daaade9f, type: 2}
+    - target: {fileID: 1306948335560172110, guid: eb5ad07b62b54435ba110d7614a039e6, type: 3}
       propertyPath: pooledItems.Array.size
       value: 2
       objectReference: {fileID: 0}

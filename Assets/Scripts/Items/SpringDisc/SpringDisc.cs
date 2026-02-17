@@ -11,6 +11,7 @@ public class SpringDisc : HoldableItem
 
     [Header("On Kick Settings")]
     [SerializeField] private float attenuationOnMovement;
+    [SerializeField] private KickResponse kickResponse;
 
     [Header("Collission Settings")]
     [SerializeField] private LayerMask detectLayer;
@@ -33,6 +34,7 @@ public class SpringDisc : HoldableItem
     {
         _rb = GetComponent<Rigidbody2D>();
         spriteInitialPos = spriteRenderer.transform.localPosition;
+        kickResponse.OnBeforeKick += () => _rb.bodyType = RigidbodyType2D.Dynamic;
     }
 
     void FixedUpdate()
@@ -77,11 +79,6 @@ public class SpringDisc : HoldableItem
                 _rb.bodyType = RigidbodyType2D.Kinematic;
             }
         }
-    }
-
-    public void OnKick()
-    {
-        _rb.bodyType = RigidbodyType2D.Dynamic;
     }
 
     private void TriggerAnimation()

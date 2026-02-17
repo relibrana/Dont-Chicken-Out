@@ -7,31 +7,27 @@ public class KickCollider : MonoBehaviour
 
     private void OnTriggerEnter2D(Collider2D other)
     {
-        //!LOGIC FOR BLOCKS
-
-        if (other.TryGetComponent(out PlayerController playerCtrl))
+        if(other.attachedRigidbody && other.attachedRigidbody.TryGetComponent(out IKickable kickable))
         {
             Vector2 impulseDirection = forceDirection;
             impulseDirection.x *= transform.lossyScale.x;
-            
-            playerCtrl.AddImpulse(impulseDirection, true);
+            kickable.ReceiveKick(impulseDirection);
         }
-        else if (!other.isTrigger && 
-            (other.gameObject.CompareTag("Capsule") 
-            || other.gameObject.CompareTag("Block") 
-            || other.gameObject.CompareTag("Item")))
+        if(other.TryGetComponent(out IDamageable damageable))
         {
-            Vector2 impulseDirection = forceDirection;
-            impulseDirection.x *= transform.lossyScale.x;
-
-            other.GetComponent<SpringDisc>()?.OnKick();
-
-            other.attachedRigidbody.linearVelocity = impulseDirection;
-
-            if(other.TryGetComponent(out IDamageable damageable))
-            {
-                damageable.TakeDamage(1, playerController);
-            }
+            damageable.TakeDamage(1, playerController);
         }
+        // if (!other.isTrigger && 
+        //     (other.gameObject.CompareTag("Capsule") 
+        //     || other.gameObject.CompareTag("Block") 
+        //     || other.gameObject.CompareTag("Item"))) //This needs to be improved
+        // {
+        //     Vector2 impulseDirection = forceDirection;
+        //     impulseDirection.x *= transform.lossyScale.x;
+
+        //     other.GetComponent<IKickable>()?.OnKick();
+
+        //     other.attachedRigidbody.linearVelocity = impulseDirection;
+        // }
     }
 }

@@ -80,7 +80,6 @@ MonoBehaviour:
   startPosition: {x: 0, y: 0}
   blockPosition: {fileID: 2331769227643709429}
   currentBlockHolding: {fileID: 0}
-  blockPlaceCooldown: 1
   canPlaceBlock: 0
   isBlockLogicAvailable: 1
   blockLayer:
@@ -230,7 +229,7 @@ GameObject:
   - component: {fileID: 8694116796275163194}
   - component: {fileID: 6743993842517759247}
   - component: {fileID: 2841808519952994768}
-  m_Layer: 7
+  m_Layer: 11
   m_Name: Kick Collider
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -662,7 +661,7 @@ GameObject:
   m_Component:
   - component: {fileID: 6212263384490346478}
   - component: {fileID: 436367060191182998}
-  m_Layer: 7
+  m_Layer: 11
   m_Name: Square
   m_TagString: Untagged
   m_Icon: {fileID: 0}

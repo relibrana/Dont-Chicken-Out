@@ -146,6 +146,7 @@ GameObject:
   - component: {fileID: 6211621077152905053}
   - component: {fileID: 2193365588758325400}
   - component: {fileID: 1388905569471602468}
+  - component: {fileID: 8706290863601851906}
   m_Layer: 0
   m_Name: SpringDisc
   m_TagString: Item
@@ -199,6 +200,7 @@ MonoBehaviour:
   spriteRenderer: {fileID: 2464309141000911678}
   bounceForce: 25
   attenuationOnMovement: 5
+  kickResponse: {fileID: 8706290863601851906}
   detectLayer:
     serializedVersion: 2
     m_Bits: 128
@@ -272,3 +274,15 @@ Rigidbody2D:
   m_SleepingMode: 1
   m_CollisionDetection: 0
   m_Constraints: 4
+--- !u!114 &8706290863601851906
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8723323982620638141}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 57b2cb463fff4e648a6acc7c39e61147, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 

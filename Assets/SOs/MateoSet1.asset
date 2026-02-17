@@ -15,6 +15,7 @@ MonoBehaviour:
   maxSpeed: 8.5
   accelerationTime: 0.25
   decelerationTime: 0.1
+  maxJumpSpeed: 16
   peakHeight: 3
   timeToPeak: 0.5
   fallMultiplier: 2.75
@@ -23,3 +24,4 @@ MonoBehaviour:
   coyoteTime: 0.25
   jumpBufferTime: 0.15
   kickForce: {x: 20, y: 17.5}
+  blockPlacementCD: 0.5
