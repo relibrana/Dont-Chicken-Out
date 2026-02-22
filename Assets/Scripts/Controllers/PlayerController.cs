@@ -311,8 +311,10 @@ public class PlayerController : MonoBehaviour, IKickable
 		animator.SetFloat("Speed", Mathf.Abs(currentVelocity.x));
 	}
 
-	public void AddImpulse(Vector2 impulseDirection, bool isKick = false)
+	public void AddImpulse(Vector2 impulseDirection, bool isKick = false, bool resetSpeed = false)
     {
+		if(resetSpeed) currentVelocity = Vector2.zero;
+
 		currentVelocity += impulseDirection;
 
 		if(isKick)
