@@ -24,4 +24,4 @@ MonoBehaviour:
   coyoteTime: 0.25
   jumpBufferTime: 0.15
   kickForce: {x: 20, y: 17.5}
-  blockPlacementCD: 0.5
+  blockPlacementCD: 0.55
