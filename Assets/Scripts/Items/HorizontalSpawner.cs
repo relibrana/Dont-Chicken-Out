@@ -11,6 +11,7 @@ public class HorizontalSpawner : MonoBehaviour
     [Header("Rango Horizontal")]
     [SerializeField] private float xMin;
     [SerializeField] private float xMax;
+    [SerializeField] private float xOffset;
     [SerializeField] private float yOffset;
 
     private Sequence spawnSequence;
@@ -23,20 +24,17 @@ public class HorizontalSpawner : MonoBehaviour
 
     private void StartSpawn()
     {
-        Debug.LogWarning("A");
         spawnSequence?.Kill();
         float randomModifier = 0;
         spawnSequence = DOTween.Sequence();
         spawnSequence.AppendCallback(() => 
         {
             randomModifier = GetRandomModifier();
-            Debug.LogWarning("Repeat");
         });
         spawnSequence.AppendInterval(spawnTime + randomModifier);
         spawnSequence.AppendCallback(() => 
         {
             Spawn();
-            Debug.LogWarning("Spawn");
         }).SetLoops(-1);
     }
 
@@ -49,7 +47,14 @@ public class HorizontalSpawner : MonoBehaviour
 
     private void Spawn()
     {
-        Vector3 newPos = new Vector3(Random.Range(xMin, xMax), yOffset, 0);
+        int randomPlayerIndex = Random.Range(0, GameManager.instance.playersPosX.Count);
+        float playerXPos = GameManager.instance.playersPosX[randomPlayerIndex];
+
+        float xPos = playerXPos + Random.Range(-xOffset, xOffset);
+
+
+        Vector3 newPos = new Vector3(Mathf.Clamp(xPos, xMin, xMax), yOffset, 0);
+
 
         Vector3 worldPos = transform.TransformPoint(newPos);
 
