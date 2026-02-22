@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System;
 using DG.Tweening;
+using System.Collections;
 
 [Serializable]
 public enum GameState { Menu, Prepare, Game, Win }
@@ -25,10 +26,12 @@ public class GameManager : MonoBehaviour
     public Action OnGame;
     public Action OnGameEnd;
     public float autoMoveCameraSpeed = 0.2f;
+    public List<float> playersPosX;
     // bool screenShakeTrigger=false;
     [SerializeField] private PlayerController[] inGamePlayers = new PlayerController[4];
     [SerializeField] private PlayerController[] playersAlive = new PlayerController[4];
     [SerializeField] private Transform deathPos;
+    [SerializeField] int playersCheckDelay;
 
     [Header("End Game")]
     [SerializeField, Min(0f)] private float resultsHoldTime = 1.25f;
@@ -37,6 +40,8 @@ public class GameManager : MonoBehaviour
     private bool needsAReset = false;
     private bool triggerStartGame = false;
     private const float tieThresHold = 0.5f;
+    private Tween winSequence;
+    [SerializeField]private int currPlayersAlive;
 
 
     public GameState gameState = GameState.Menu;
@@ -157,10 +162,50 @@ public class GameManager : MonoBehaviour
             uiManager.StartInitialGameSequence(() =>
             {
                 ChangeGameState(GameState.Game);
+                StartCoroutine(CheckPlayersInGame());
                 AudioManager.Instance.PlayMusic("Game");
                 uiManager.OnGamePlayersUI();
             });
             triggerStartGame = false;
+        }
+    }
+
+    private IEnumerator CheckPlayersInGame()
+    {
+        while(gameState == GameState.Game)
+        {
+            if(currPlayersAlive <= 1)
+            {
+                Debug.Log("Stopped CheckPlayersInGame");
+                yield break;
+            }
+            
+            Debug.Log("Updating");
+            playersPosX.Clear();
+
+            PlayerController[] remainingPlayers = new PlayerController[currPlayersAlive];
+            for (int i = 0; i < remainingPlayers.Length; i++)
+            {
+                remainingPlayers[i] = playersAlive[i];
+                playersPosX.Add(remainingPlayers[i].transform.position.x);
+            }
+
+            OrderPlayers(remainingPlayers);
+
+            yield return new WaitForSeconds(playersCheckDelay);
+        }
+    }
+
+    private void OrderPlayers(PlayerController[] remainingPlayers)
+    {
+        int amountOfPlayers = remainingPlayers.Length;
+        for (int i = 0; i < amountOfPlayers; i++)
+        {
+            Array.Sort(remainingPlayers, (p1, p2) => p2.transform.position.y.CompareTo(p1.transform.position.y));
+            Debug.Log($"Position: {i+1}, CurrPlayers: {currPlayersAlive}, " +
+                $"calculation {currPlayersAlive/2} results {i < (currPlayersAlive/2)}");
+            remainingPlayers[i].isWinning = i < (currPlayersAlive / 2);
+            Debug.Log($"PlayerInPos {i+1} is winning?: {remainingPlayers[i].isWinning}");
         }
     }
 
@@ -251,7 +296,7 @@ public class GameManager : MonoBehaviour
 
     private void CheckIfAllPlayersReady()
     {
-        int currPlayersAlive = 0;
+        currPlayersAlive = 0;
         for (int i = 0; i < playersAlive.Length; i++)
         {
             if (playersAlive[i] != null)
@@ -290,7 +335,7 @@ public class GameManager : MonoBehaviour
 
     private void CheckWinner()
     {
-        int currPlayersAlive = 0;
+        currPlayersAlive = 0;
         for (int i = 0; i < playersAlive.Length; i++)
         {
             if (playersAlive[i] != null)
@@ -310,7 +355,11 @@ public class GameManager : MonoBehaviour
         {
             cameraRig.StopFocusWinner();
             ChangeGameState(GameState.Win);
-            uiManager.OnWinRound(inGamePlayers, wonGame => DOVirtual.DelayedCall(2f, () => CheckGameWon(wonGame), false));
+            uiManager.OnWinRound(inGamePlayers, wonGame => 
+            {
+                winSequence?.Kill();
+                winSequence = DOVirtual.DelayedCall(2f, () => CheckGameWon(wonGame), false);
+            });
         }
     }
 
@@ -323,7 +372,8 @@ public class GameManager : MonoBehaviour
         ChangeGameState(GameState.Win);
         winner.roundsWon++;
         cameraRig.FocusWinner(winner.transform);
-        uiManager.OnWinRound(inGamePlayers, wonGame => DOVirtual.DelayedCall(2f, () => CheckGameWon(wonGame), false));
+        winSequence?.Kill();
+        uiManager.OnWinRound(inGamePlayers, wonGame => winSequence = DOVirtual.DelayedCall(2f, () => CheckGameWon(wonGame), false));
     }
 
     /*private void CheckWinner()

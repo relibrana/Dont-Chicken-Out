@@ -12,6 +12,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f8305dbfcabab9145bc0150b893d80e8, type: 3}
   m_Name: Blocks
   m_EditorClassIdentifier: 
-  mass: 30
-  linearDamping: 15
+  mass: 15
+  linearDamping: 12.5
   gravityScale: 4.5

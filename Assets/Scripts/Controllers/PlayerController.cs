@@ -75,6 +75,8 @@ public class PlayerController : MonoBehaviour, IKickable
 
 	public Vector2 GetBlockPosition() => blockPosition.position;
 
+	public bool isWinning;
+
     private void Awake()
 	{
 		playerInput = GetComponent<PlayerInput>();
@@ -403,8 +405,8 @@ public class PlayerController : MonoBehaviour, IKickable
 		if (currentBlockHolding == null)
 		{
 			PoolingManager poolManager = GameManager.instance.poolManager;
-			int randomIndex = UnityEngine.Random.Range(0, poolManager.pooledBlocks.Count);
-			GameObject randomBlock = poolManager.GetPooledBlock(randomIndex, blockPosition.position);
+			int randomIndex = UnityEngine.Random.Range(0, poolManager.pooledBlocksEasy.Count);
+			GameObject randomBlock = poolManager.GetPooledBlock(randomIndex, blockPosition.position, isWinning);
 			currentBlockHolding = randomBlock.GetComponent<HoldableItem>();
 			currentBlockHolding.SetMaterial(hayMaterial);
 			currentBlockHolding.StartHold();
