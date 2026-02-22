@@ -170,7 +170,7 @@ public class PlayerController : MonoBehaviour, IKickable
     //IKickable Method
     public void ReceiveKick(Vector2 kickImpulse)
     {
-    	AddImpulse(kickImpulse, true);
+    	AddImpulse(kickImpulse, isKick: true);
     }
 
 	private void OnCluckStarted(InputAction.CallbackContext context)
