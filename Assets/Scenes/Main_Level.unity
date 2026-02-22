@@ -1147,6 +1147,7 @@ MonoBehaviour:
   deathPos: {fileID: 401942787}
   playersCheckDelay: 3
   resultsHoldTime: 1.25
+  currPlayersAlive: 0
   gameState: 0
 --- !u!1 &264744293
 GameObject:
@@ -9459,11 +9460,11 @@ PrefabInstance:
       objectReference: {fileID: 8153581683628303109, guid: 04b66dfaeb4853c49a48c452f56ef03b, type: 3}
     - target: {fileID: 1306948335560172110, guid: eb5ad07b62b54435ba110d7614a039e6, type: 3}
       propertyPath: pooledBlocksEasy.Array.size
-      value: 2
+      value: 3
       objectReference: {fileID: 0}
     - target: {fileID: 1306948335560172110, guid: eb5ad07b62b54435ba110d7614a039e6, type: 3}
       propertyPath: pooledBlocksHard.Array.size
-      value: 3
+      value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 1306948335560172110, guid: eb5ad07b62b54435ba110d7614a039e6, type: 3}
       propertyPath: pooledItems.Array.data[0].ammountToPool
@@ -9628,7 +9629,7 @@ PrefabInstance:
     - target: {fileID: 1306948335560172110, guid: eb5ad07b62b54435ba110d7614a039e6, type: 3}
       propertyPath: pooledBlocksEasy.Array.data[2].pooledObjPrefab
       value: 
-      objectReference: {fileID: 8904384935305461590, guid: fff542d9e74b749b2a662e6cdb26deea, type: 3}
+      objectReference: {fileID: 8559084241221279014, guid: 8e83006b931494924b971616f1e4bc55, type: 3}
     - target: {fileID: 1306948335560172110, guid: eb5ad07b62b54435ba110d7614a039e6, type: 3}
       propertyPath: pooledBlocksEasy.Array.data[3].pooledObjPrefab
       value: 
@@ -9644,11 +9645,11 @@ PrefabInstance:
     - target: {fileID: 1306948335560172110, guid: eb5ad07b62b54435ba110d7614a039e6, type: 3}
       propertyPath: pooledBlocksHard.Array.data[1].pooledObjPrefab
       value: 
-      objectReference: {fileID: 8559084241221279014, guid: 8e83006b931494924b971616f1e4bc55, type: 3}
+      objectReference: {fileID: 1974060792461469227, guid: 54c6d2c70df9242e78242f2248d13dd2, type: 3}
     - target: {fileID: 1306948335560172110, guid: eb5ad07b62b54435ba110d7614a039e6, type: 3}
       propertyPath: pooledBlocksHard.Array.data[2].pooledObjPrefab
       value: 
-      objectReference: {fileID: 1974060792461469227, guid: 54c6d2c70df9242e78242f2248d13dd2, type: 3}
+      objectReference: {fileID: 8559084241221279014, guid: 8e83006b931494924b971616f1e4bc55, type: 3}
     - target: {fileID: 4165543465696150291, guid: eb5ad07b62b54435ba110d7614a039e6, type: 3}
       propertyPath: m_Name
       value: Pool_Blocks

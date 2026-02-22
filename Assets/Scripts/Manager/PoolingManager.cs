@@ -110,13 +110,13 @@ public class PoolingManager : MonoBehaviour
     }
 
 
-    public GameObject GetPooledBlock(int _objIndex, Vector3 _spawnPosition, bool isWinning)
-	{
+    public GameObject GetPooledBlock(Vector3 _spawnPosition, bool isWinning)
+    {
 		GameObject pObject;
         List<GameObject> blockObjectList;
         List<PooledObject> blockPrefabList;
 
-        if(Random.Range(0f,1.1f) > 0.25f)
+        if(Random.Range(0f,1.1f) > 0.35f)
         {
             blockObjectList = isWinning ? blockListHard : blockListEasy;
             blockPrefabList = isWinning ? pooledBlocksHard : pooledBlocksEasy;
@@ -127,13 +127,13 @@ public class PoolingManager : MonoBehaviour
             blockPrefabList = isWinning ? pooledBlocksEasy : pooledBlocksHard;
         }
 
-
-        pObject = blockObjectList[_objIndex].transform.GetChild(0).gameObject;
+        int RandomIndex = Random.Range(0, blockObjectList.Count);
+        pObject = blockObjectList[RandomIndex].transform.GetChild(0).gameObject;
 
 		if (pObject.activeSelf)
 		{
 			Debug.Log ("All instances are busy, spawn new one");
-			pObject = Instantiate(blockPrefabList[_objIndex].pooledObjPrefab, blockObjectList[_objIndex].transform);
+			pObject = Instantiate(blockPrefabList[RandomIndex].pooledObjPrefab, blockObjectList[RandomIndex].transform);
             SetBlock(pObject);
 		}
 

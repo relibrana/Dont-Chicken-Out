@@ -405,8 +405,7 @@ public class PlayerController : MonoBehaviour, IKickable
 		if (currentBlockHolding == null)
 		{
 			PoolingManager poolManager = GameManager.instance.poolManager;
-			int randomIndex = UnityEngine.Random.Range(0, poolManager.pooledBlocksEasy.Count);
-			GameObject randomBlock = poolManager.GetPooledBlock(randomIndex, blockPosition.position, isWinning);
+			GameObject randomBlock = poolManager.GetPooledBlock(blockPosition.position, isWinning);
 			currentBlockHolding = randomBlock.GetComponent<HoldableItem>();
 			currentBlockHolding.SetMaterial(hayMaterial);
 			currentBlockHolding.StartHold();
