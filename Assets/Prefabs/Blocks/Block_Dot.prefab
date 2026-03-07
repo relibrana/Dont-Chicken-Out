@@ -13,7 +13,7 @@ GameObject:
   - component: {fileID: -8333948090115435712}
   - component: {fileID: -6890473738753097719}
   m_Layer: 0
-  m_Name: 1x1-Block
+  m_Name: Block_Dot
   m_TagString: Untagged
   m_Icon: {fileID: 2974397684917235467, guid: 0000000000000000d000000000000000, type: 0}
   m_NavMeshLayer: 0

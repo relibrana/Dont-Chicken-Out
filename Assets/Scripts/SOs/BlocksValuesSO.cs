@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 
 [CreateAssetMenu(fileName = "Blocks")]
-public class BlocksSO : ScriptableObject
+public class BlocksValuesSO : ScriptableObject
 {
     public float mass;
     public float linearDamping;

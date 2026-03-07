@@ -189,7 +189,7 @@ public class AudioManager : MonoBehaviour
         sfxMap.TryGetValue(id, out Sound sfx);
         if (sfx == null)
         {
-            Debug.LogWarning($"AudioManager => {id}: IsNull");
+            Debug.Log($"AudioManager => {id}: IsNull");
             return null;
         }
 
@@ -219,7 +219,7 @@ public class AudioManager : MonoBehaviour
         sfxMap.TryGetValue(id, out Sound sfx);
         if (sfx == null)
         {
-            Debug.LogWarning($"AudioManager => {id}: IsNull");
+            Debug.Log($"AudioManager => {id}: IsNull");
             return;
         }
         
@@ -229,7 +229,7 @@ public class AudioManager : MonoBehaviour
         {
             if (src.isPlaying && src.clip == sfx.clip && src.outputAudioMixerGroup == sfxMixer)
             {
-                Debug.LogWarning($"AudioManager => {id}: Stopped");
+                Debug.Log($"AudioManager => {id}: Stopped");
                 src.Stop();
                 ReleaseSource(src); 
             }

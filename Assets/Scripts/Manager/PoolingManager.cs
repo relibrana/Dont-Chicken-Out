@@ -1,16 +1,18 @@
 ﻿using System.Collections.Generic;
+using Unity.Android.Gradle;
 using UnityEngine;
 
 public class PoolingManager : MonoBehaviour
 {
 
-    public BlocksSO blocksSO;
-    public List<PooledObject> pooledBlocksEasy = new List<PooledObject>();
-    public List<PooledObject> pooledBlocksHard = new List<PooledObject>();
+    public BlocksValuesSO blocksSO;
+    [SerializeField] private BlocksPoolSO easyBlocks;
+    [SerializeField] private BlocksPoolSO mediumBlocks;
+    [SerializeField] private BlocksPoolSO hardBlocks;
+    public List<PooledObject> pooledBlocks = new List<PooledObject>();
     public List<PooledObject> pooledItems = new List<PooledObject>();
     public PooledObject itemCapsule;
-    [HideInInspector] public List<GameObject> blockListEasy = new List<GameObject>();
-    [HideInInspector] public List<GameObject> blockListHard = new List<GameObject>();
+    [HideInInspector] public List<GameObject> blockList = new List<GameObject>();
     [HideInInspector] public List<GameObject> itemList = new List<GameObject>();
     [HideInInspector] public List<GameObject> capsuleList = new List<GameObject>();
     private GameObject capsuleParent;
@@ -22,13 +24,9 @@ public class PoolingManager : MonoBehaviour
     private void Initialize()
     {
         // Create a parent for each object type
-        foreach (PooledObject obj in pooledBlocksEasy)
+        foreach (PooledObject obj in pooledBlocks)
         {
-            InitializePoolObjects(obj, blockListEasy, true);
-        }
-        foreach (PooledObject obj in pooledBlocksHard)
-        {
-            InitializePoolObjects(obj, blockListHard, true);
+            InitializePoolObjects(obj, blockList, true);
         }
         foreach (PooledObject item in pooledItems)
         {
@@ -50,18 +48,7 @@ public class PoolingManager : MonoBehaviour
     
     public void ResetPool()
     {
-        foreach (GameObject parent in blockListEasy)
-        {
-            foreach (Transform blockGroup in parent.transform)
-            {
-                if(blockGroup.gameObject.activeSelf)
-                {
-                    blockGroup.gameObject.SetActive(false);
-                    ResetSingleBlocks(blockGroup.gameObject);
-                }
-            }
-        }
-        foreach (GameObject parent in blockListHard)
+        foreach (GameObject parent in blockList)
         {
             foreach (Transform blockGroup in parent.transform)
             {
@@ -110,38 +97,67 @@ public class PoolingManager : MonoBehaviour
     }
 
 
-    public GameObject GetPooledBlock(Vector3 _spawnPosition, bool isWinning)
+    public GameObject GetPooledBlock(Vector3 _spawnPosition, GameStatus playerGameRank)
     {
-		GameObject pObject;
-        List<GameObject> blockObjectList;
-        List<PooledObject> blockPrefabList;
 
-        if(Random.Range(0f,1.1f) > 0.35f)
+        BlocksPoolSO blocksPool = (playerGameRank == GameStatus.Winning) ? hardBlocks :
+                        (playerGameRank == GameStatus.Losing) ? easyBlocks : mediumBlocks;
+        
+        float totalPercentage = 0;
+
+        foreach(BlockData block in blocksPool.blocks) totalPercentage += block.chance;
+
+        float randomValue = Random.Range(0, totalPercentage);
+        float processedWeight = 0;
+
+        GameObject blockPrefab = null;
+
+        foreach(BlockData block in blocksPool.blocks)
         {
-            blockObjectList = isWinning ? blockListHard : blockListEasy;
-            blockPrefabList = isWinning ? pooledBlocksHard : pooledBlocksEasy;
+            processedWeight += block.chance;
+            if(randomValue <= processedWeight)
+            {
+                blockPrefab = block.prefab;
+                break;
+            }
         }
-        else
+
+        if(blockPrefab == null) blockPrefab = blocksPool.blocks[0].prefab;
+
+        
+		GameObject pObject = null;
+
+        foreach (GameObject parent in blockList)
         {
-            blockObjectList = isWinning ? blockListEasy : blockListHard;
-            blockPrefabList = isWinning ? pooledBlocksEasy : pooledBlocksHard;
+            if(parent.name == blockPrefab.ToString())
+            {
+                foreach (Transform child in parent.transform)
+                {
+                    if(!child.gameObject.activeSelf)
+                    {
+                        pObject = child.gameObject;
+                        break;
+                    }
+                }
+
+                if(pObject == null)
+                {
+                    Debug.Log ($"{blockPrefab.name}'s Pool is full, spawn new one");
+                    pObject = Instantiate(blockPrefab, parent.transform);
+                    SetBlock(pObject);
+                }
+                break;
+            }
         }
-
-        int RandomIndex = Random.Range(0, blockObjectList.Count);
-        pObject = blockObjectList[RandomIndex].transform.GetChild(0).gameObject;
-
-		if (pObject.activeSelf)
-		{
-			Debug.Log ("All instances are busy, spawn new one");
-			pObject = Instantiate(blockPrefabList[RandomIndex].pooledObjPrefab, blockObjectList[RandomIndex].transform);
-            SetBlock(pObject);
-		}
 
 		pObject.SetActive(false);
 		pObject.SetActive(true);
 		pObject.transform.position = _spawnPosition;
 		pObject.transform.localScale = Vector3.one;
 		pObject.transform.SetSiblingIndex(pObject.transform.parent.childCount);
+
+        ResetSingleBlocks(pObject);
+
         return pObject;
     }
     public GameObject GetPooledItem(int _objIndex, Vector3 _spawnPosition)

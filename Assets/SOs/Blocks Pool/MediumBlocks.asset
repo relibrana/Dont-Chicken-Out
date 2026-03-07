@@ -1,0 +1,21 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5cd94cb0891d2fd408cb4074472710d2, type: 3}
+  m_Name: MediumBlocks
+  m_EditorClassIdentifier: 
+  blocks:
+  - prefab: {fileID: 8559084241221279014, guid: 8e83006b931494924b971616f1e4bc55, type: 3}
+    chance: 40
+  - prefab: {fileID: 1777092656929224787, guid: 6431cc751e26c4ca494192f14e4ed4f6, type: 3}
+    chance: 20
+  - prefab: {fileID: 1974060792461469227, guid: 54c6d2c70df9242e78242f2248d13dd2, type: 3}
+    chance: 40

@@ -75,6 +75,7 @@ public class PlayerController : MonoBehaviour, IKickable
 
 	public Vector2 GetBlockPosition() => blockPosition.position;
 
+	public GameStatus gameRank = GameStatus.Neutral;
 	public bool isWinning;
 
     private void Awake()
@@ -243,6 +244,7 @@ public class PlayerController : MonoBehaviour, IKickable
 		return collider.gameObject.CompareTag("Player");
 	}
 
+#if UNITY_EDITOR
 	void OnDrawGizmos()
 	{
 		Gizmos.color = Color.yellow;
@@ -259,7 +261,16 @@ public class PlayerController : MonoBehaviour, IKickable
 		float gizmos2 = transform.position.x + checkSpacing;
 		Gizmos.DrawLine(new Vector2(gizmos2, startPosY), new Vector2(gizmos2, startPosY - raycastDistance));
 		Gizmos.DrawLine(new Vector2(gizmos2, startPosY + headCheck), new Vector2(gizmos2, startPosY + headCheck + raycastDistance));
+		
+    	Gizmos.color = gameRank == GameStatus.Winning ? Color.red : 
+						gameRank == GameStatus.Losing ? Color.green: Color.yellow;
+
+    	Vector3 labelPos = transform.position + Vector3.up * 1f; 
+    	Gizmos.DrawWireSphere(labelPos, 0.5f);
+	
+    	UnityEditor.Handles.Label(labelPos + Vector3.up, $"Status: {gameRank}");
 	}
+#endif
 
 	private void HandleJump()
 	{
@@ -405,7 +416,7 @@ public class PlayerController : MonoBehaviour, IKickable
 		if (currentBlockHolding == null)
 		{
 			PoolingManager poolManager = GameManager.instance.poolManager;
-			GameObject randomBlock = poolManager.GetPooledBlock(blockPosition.position, isWinning);
+			GameObject randomBlock = poolManager.GetPooledBlock(blockPosition.position, gameRank);
 			currentBlockHolding = randomBlock.GetComponent<HoldableItem>();
 			currentBlockHolding.SetMaterial(hayMaterial);
 			currentBlockHolding.StartHold();
@@ -456,4 +467,6 @@ public class PlayerController : MonoBehaviour, IKickable
 
     	animator.SetBool("IsTouchingBlock", isPushing);
 	}
+	
 }
+public enum GameStatus { Winning, Neutral, Losing}

@@ -27,6 +27,7 @@ public class GameManager : MonoBehaviour
     public Action OnGameEnd;
     public float autoMoveCameraSpeed = 0.2f;
     public List<float> playersPosX;
+    private Coroutine checkerCoroutine;
     // bool screenShakeTrigger=false;
     [SerializeField] private PlayerController[] inGamePlayers = new PlayerController[4];
     [SerializeField] private PlayerController[] playersAlive = new PlayerController[4];
@@ -153,16 +154,18 @@ public class GameManager : MonoBehaviour
         {
             winner = null;
             poolManager.ResetPool();
+            currPlayersAlive = 0;
             for (int i = 0; i < inGamePlayers.Length; i++)
             {
                 playersAlive[i] = inGamePlayers[i];
+                if(playersAlive[i] != null) currPlayersAlive++;
             }
             cameraRig.canMove = false;
             cameraRig.ResetToGameplay();
             uiManager.StartInitialGameSequence(() =>
             {
                 ChangeGameState(GameState.Game);
-                StartCoroutine(CheckPlayersInGame());
+                checkerCoroutine = StartCoroutine(CheckPlayersInGame());
                 AudioManager.Instance.PlayMusic("Game");
                 uiManager.OnGamePlayersUI();
             });
@@ -172,15 +175,16 @@ public class GameManager : MonoBehaviour
 
     private IEnumerator CheckPlayersInGame()
     {
+        Debug.LogWarning("Starting CheckPlayersInGame");
         while(gameState == GameState.Game)
         {
             if(currPlayersAlive <= 1)
             {
-                Debug.Log("Stopped CheckPlayersInGame");
-                yield break;
+                Debug.LogWarning("Stopped CheckPlayersInGame");
+                break;
             }
             
-            Debug.Log("Updating");
+            Debug.LogWarning("Updating CheckPlayersInGame");
             playersPosX.Clear();
 
             PlayerController[] remainingPlayers = new PlayerController[currPlayersAlive];
@@ -194,19 +198,37 @@ public class GameManager : MonoBehaviour
 
             yield return new WaitForSeconds(playersCheckDelay);
         }
+        Debug.LogWarning("Stopped CheckPlayersInGame");
+        if(checkerCoroutine != null)
+        {
+            Debug.LogWarning("Stopped CheckPlayersInGame");
+            StopCoroutine(checkerCoroutine);
+        }
     }
 
     private void OrderPlayers(PlayerController[] remainingPlayers)
     {
         int amountOfPlayers = remainingPlayers.Length;
+
+        Array.Sort(remainingPlayers, (p1, p2) => p2.transform.position.y.CompareTo(p1.transform.position.y));
+
         for (int i = 0; i < amountOfPlayers; i++)
         {
-            Array.Sort(remainingPlayers, (p1, p2) => p2.transform.position.y.CompareTo(p1.transform.position.y));
-            Debug.Log($"Position: {i+1}, CurrPlayers: {currPlayersAlive}, " +
-                $"calculation {currPlayersAlive/2} results {i < (currPlayersAlive/2)}");
-            remainingPlayers[i].isWinning = i < (currPlayersAlive / 2);
-            Debug.Log($"PlayerInPos {i+1} is winning?: {remainingPlayers[i].isWinning}");
+            remainingPlayers[i].gameRank = GetPlayerStatus(i, amountOfPlayers);
+
+            Debug.Log($"Posición: {i + 1} | Jugador: {remainingPlayers[i].name} | Estado: {remainingPlayers[i].gameRank}");
         }
+    }
+
+    private GameStatus GetPlayerStatus(int playerRank, int totalPlayers)
+    {
+        if(playerRank == 0)
+            return GameStatus.Winning;
+
+        if(playerRank == totalPlayers - 1)
+            return GameStatus.Losing;
+        
+        return GameStatus.Neutral;
     }
 
     private void ResetPlayer(PlayerController player)
@@ -347,12 +369,26 @@ public class GameManager : MonoBehaviour
 
         if (currPlayersAlive == 1)
         {
+            if(checkerCoroutine != null)
+            {
+                Debug.LogWarning("Stopped CheckPlayersInGame");
+                StopCoroutine(checkerCoroutine);
+            }
             //DoWin();
             cameraRig.FocusWinner(winner.transform);
-            DOVirtual.DelayedCall(tieThresHold, () => DoWin(), false);
+            DOVirtual.DelayedCall(tieThresHold, () => {
+                if(gameState == GameState.Win) 
+                    return;
+                DoWin();
+            }, false);
         }
         else if (currPlayersAlive == 0)
         {
+            if(checkerCoroutine != null)
+            {
+                Debug.LogWarning("Stopped CheckPlayersInGame");
+                StopCoroutine(checkerCoroutine);
+            }
             cameraRig.StopFocusWinner();
             ChangeGameState(GameState.Win);
             uiManager.OnWinRound(inGamePlayers, wonGame => 
