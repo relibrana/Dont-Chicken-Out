@@ -54,6 +54,9 @@ TagManager:
   - name: Characters
     uniqueID: 1152462753
     locked: 0
+  - name: Pause
+    uniqueID: 336056473
+    locked: 0
   - name: LoadingUI
     uniqueID: 2485799169
     locked: 0

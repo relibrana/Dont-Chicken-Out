@@ -29,7 +29,7 @@ public class PlayerUI : MonoBehaviour
         waitJoinBlinkCoroutine = StartCoroutine(WaitJoinBlink());
         ChangeUIState(PlayerUIState.WaitJoin);
 
-        // Guardar sprites originales de los huevitos (estado "vacío")
+        // Guardar sprites originales de los huevitos (estado "vacï¿½o")
         if (pointsImages != null && pointsImages.Length > 0)
         {
             defaultPointSprites = new Sprite[pointsImages.Length];
@@ -44,7 +44,7 @@ public class PlayerUI : MonoBehaviour
 
     public void ChangeUIState(PlayerUIState newState)
     {
-        InitialText.gameObject.SetActive(false);
+        InitialText?.gameObject.SetActive(false);
         // InGameBox.SetActive(false);
         // DeadBox.SetActive(false);
 
@@ -92,7 +92,7 @@ public class PlayerUI : MonoBehaviour
             contentRoot.SetActive(active);
     }
 
-    // Actualizar los huevitos según los puntos del jugador
+    // Actualizar los huevitos segï¿½n los puntos del jugador
     public void UpdatePointsHUD(Sprite filledSprite)
     {
         if (pointsImages == null || pointsImages.Length == 0 || defaultPointSprites == null)

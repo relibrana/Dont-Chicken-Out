@@ -50,6 +50,15 @@
                     "processors": "",
                     "interactions": "",
                     "initialStateCheck": false
+                },
+                {
+                    "name": "Pause",
+                    "type": "Button",
+                    "id": "3c6e61c1-ab09-477a-8a94-3e71fd9e3887",
+                    "expectedControlType": "",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
                 }
             ],
             "bindings": [
@@ -259,6 +268,39 @@
                     "processors": "",
                     "groups": ";Keyboard2",
                     "action": "Cluck",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "aa54b5b8-1981-458d-8615-5c1e7045d21b",
+                    "path": "<Keyboard>/escape",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": ";Keyboard1",
+                    "action": "Pause",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "660c7e6f-ad66-4acd-a1fa-6d8ea1e31883",
+                    "path": "<Keyboard>/enter",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": ";Keyboard2",
+                    "action": "Pause",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "e9cad34b-386c-405c-84b6-5d20d7defc82",
+                    "path": "<Gamepad>/start",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": ";Gamepad",
+                    "action": "Pause",
                     "isComposite": false,
                     "isPartOfComposite": false
                 }
@@ -498,7 +540,7 @@
                 {
                     "name": "",
                     "id": "3562446a-a894-491a-8788-8e59547c2422",
-                    "path": "<Keyboard>/f",
+                    "path": "<Keyboard>/escape",
                     "interactions": "",
                     "processors": "",
                     "groups": "Keyboard1",
@@ -509,7 +551,7 @@
                 {
                     "name": "",
                     "id": "62a99c28-53f0-4c85-9f23-281c79eff072",
-                    "path": "<Gamepad>/buttonSouth",
+                    "path": "<Gamepad>/start",
                     "interactions": "",
                     "processors": "",
                     "groups": ";Gamepad",
@@ -520,7 +562,7 @@
                 {
                     "name": "",
                     "id": "d5618dc4-577e-4f6a-8457-5a8ba39c4adc",
-                    "path": "<Keyboard>/rightCtrl",
+                    "path": "<Keyboard>/enter",
                     "interactions": "",
                     "processors": "",
                     "groups": ";Keyboard2",

@@ -44,12 +44,14 @@ public class PlayerController : MonoBehaviour, IKickable
 	private InputAction placeBlockInput;
 	private InputAction kickInput;
 	private InputAction cluckInput;
+	private InputAction pauseInput;
+	private InputAction backUIInput;
 	public int playerIndex;
 	public bool isOnGame = false;
 	public int roundsWon;
 
 	//InputSystem
-	private PlayerInput playerInput;
+	public PlayerInput playerInput;
 	private string assignedScheme;
 
 	//Game Manager
@@ -64,6 +66,7 @@ public class PlayerController : MonoBehaviour, IKickable
 	public bool isBlockLogicAvailable = true;
 	private bool isBlockOverlapping = false;
 	private Material hayMaterial;
+	[NonSerialized] public Material playerMat;
 	[SerializeField] private LayerMask blockLayer;
 	[SerializeField] private float blockDetectDistance = 0.1f;
 	[SerializeField] private Transform blockCheckPoint;
@@ -120,7 +123,14 @@ public class PlayerController : MonoBehaviour, IKickable
 
 		cluckInput = playerInput.actions.FindAction("Cluck");
 		cluckInput.started += OnCluckStarted;
+
+		pauseInput = playerInput.actions.FindAction("Pause");
+		pauseInput.started += OnPauseStarted;
+
+		backUIInput = playerInput.actions.FindActionMap("UI").FindAction("Back");
+		backUIInput.started += OnPauseFromUIStarted;
 	}
+	private bool isOnPause() => PauseManager.instance.isPaused;
 
 	void OnDestroy()
 	{
@@ -133,6 +143,8 @@ public class PlayerController : MonoBehaviour, IKickable
 
 	private void OnJumpStarted(InputAction.CallbackContext context)
 	{
+		if(isOnPause()) return;
+
 		jumpBufferTimer = valuesSO.jumpBufferTime;
 		isHoldingJump = true;
 	}
@@ -146,6 +158,8 @@ public class PlayerController : MonoBehaviour, IKickable
 
 	private void OnPlaceBlockStarted(InputAction.CallbackContext context)
 	{
+		if(isOnPause()) return;
+
 		if (isGrounded && canPlaceBlock)
 		{
 			if(!isBlockOverlapping)
@@ -166,6 +180,8 @@ public class PlayerController : MonoBehaviour, IKickable
 
 	private void OnKickStarted(InputAction.CallbackContext context)
 	{
+		if(isOnPause()) return;
+
 		animator.Play("Kick");
 		AudioManager.Instance.PlaySound("player_kick");
 	}
@@ -178,11 +194,23 @@ public class PlayerController : MonoBehaviour, IKickable
 
 	private void OnCluckStarted(InputAction.CallbackContext context)
 	{
+		if(isOnPause()) return;
+
 		AudioManager.Instance.MakeCuackSound();
 		if (GameManager.instance.gameState == GameState.Menu)
 		{
 			onPlayerReady?.Invoke(this);
 		}
+	}
+
+	private void OnPauseStarted(InputAction.CallbackContext context)
+	{
+		if(GameManager.instance.gameState != GameState.Game) return;
+		PauseManager.instance.Pause(this);
+	}
+	private void OnPauseFromUIStarted(InputAction.CallbackContext context)
+	{
+		PauseManager.instance.Resume();
 	}
 
 	void Update()
@@ -348,12 +376,13 @@ public class PlayerController : MonoBehaviour, IKickable
 
 	public void SetMaterials(PlayerMaterial mats)
     {
+		playerMat = mats.playerMat;
+		hayMaterial = mats.hayMat;
 		foreach (SpriteRenderer sr in spriteRenderers)
 		{
-			sr.material = mats.playerMat;
+			sr.material = playerMat;
 		}
 		// sprite.material = mats.playerMat;
-		hayMaterial = mats.hayMat;
     }
 	private void HandleGravity()
 	{
