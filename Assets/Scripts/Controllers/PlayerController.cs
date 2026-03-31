@@ -98,7 +98,7 @@ public class PlayerController : MonoBehaviour, IKickable
 		kickCollider.playerController = this;
 	}
 
-	public void CalculateValues()
+    public void CalculateValues()
 	{
 		calculatedGravity = 2 * valuesSO.peakHeight / -(valuesSO.timeToPeak * valuesSO.timeToPeak);
 
@@ -108,6 +108,9 @@ public class PlayerController : MonoBehaviour, IKickable
 	private void InitializeInputActions()
 	{
 		moveInput = playerInput.actions.FindAction("Move");
+		moveInput.performed += OnMoveInput;
+		moveInput.canceled += OnMoveInput;
+
 		moveInput.Enable();
 
 		jumpInput = playerInput.actions.FindAction("Jump");
@@ -215,8 +218,6 @@ public class PlayerController : MonoBehaviour, IKickable
 
 	void Update()
 	{
-		UpdateHorizontalDirection();
-
 		UpdateJumpValues();
 
 		CheckGround();
@@ -228,7 +229,11 @@ public class PlayerController : MonoBehaviour, IKickable
 		CheckPushing();
 	}
 
-	private void UpdateHorizontalDirection() => moveDirection = moveInput.ReadValue<float>();
+	private void OnMoveInput(InputAction.CallbackContext context)
+	{
+		if(context.performed || context.canceled)
+			moveDirection = context.ReadValue<float>();
+	}
 
 	private void UpdateJumpValues()
 	{
