@@ -36,4 +36,6 @@ public class PlatformerValuesSO : ScriptableObject
     public Vector2 kickForce;
     [Tooltip("Cooldown time between each block Placement")]
     public float blockPlacementCD;
+    [Tooltip("Time after leaving ground the player can still place a block")]
+    public float blockCoyoteTime = 0.2f;
 }

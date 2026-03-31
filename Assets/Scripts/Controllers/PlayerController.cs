@@ -39,6 +39,7 @@ public class PlayerController : MonoBehaviour, IKickable
 	private float moveDirection;
 	private InputAction jumpInput;
 	private bool isGrounded;
+	private float lastGroundTime;
 	private bool isHoldingJump;
 	private bool jumpLocked;
 	private InputAction placeBlockInput;
@@ -160,7 +161,7 @@ public class PlayerController : MonoBehaviour, IKickable
 	{
 		if(isOnPause()) return;
 
-		if (isGrounded && canPlaceBlock)
+		if ((isGrounded || Time.time <= lastGroundTime + valuesSO.blockCoyoteTime) && canPlaceBlock)
 		{
 			if(!isBlockOverlapping)
             {
@@ -255,6 +256,7 @@ public class PlayerController : MonoBehaviour, IKickable
 		RaycastHit2D hit3 = Physics2D.Raycast(new Vector2(pos.x + checkSpacing, pos.y - spacingY), Vector2.down, raycastDistance, groundLayer);
 
 		isGrounded = hit.collider || hit2.collider || hit3.collider;
+		if(isGrounded) lastGroundTime = Time.time;
 
 		animator.SetBool("OnGround", isGrounded);
 
