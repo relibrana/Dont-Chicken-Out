@@ -71,6 +71,14 @@ MonoBehaviour:
     id: player_kick
     volume: 0.6
     loop: 0
+  - clip: {fileID: 0}
+    id: player_death
+    volume: 0.6
+    loop: 0
+  - clip: {fileID: 8300000, guid: 170b6af02849e0c429f181d4b1e24cf6, type: 3}
+    id: player_join
+    volume: 0.6
+    loop: 0
   playerCockSfxs:
   - clip: {fileID: 8300000, guid: cf1d6cef5fc67ce4099aacc0746be71a, type: 3}
     id: cuack0
@@ -195,8 +203,29 @@ MonoBehaviour:
     id: bomb_explosion
     volume: 0.6
     loop: 0
-  miscsSfxs:
+  - clip: {fileID: 0}
+    id: egg_break
+    volume: 0.6
+    loop: 0
+  uiSfxs:
   - clip: {fileID: 8300000, guid: e18f36faa57ac014a8cfaa5459e96daf, type: 3}
     id: Title
     volume: 0.6
     loop: 0
+  - clip: {fileID: 0}
+    id: button_selected
+    volume: 0.6
+    loop: 0
+  - clip: {fileID: 0}
+    id: win_round
+    volume: 0.6
+    loop: 0
+  - clip: {fileID: 0}
+    id: win_game
+    volume: 0.6
+    loop: 0
+  - clip: {fileID: 0}
+    id: game_start
+    volume: 0.6
+    loop: 0
+  miscsSfxs: []

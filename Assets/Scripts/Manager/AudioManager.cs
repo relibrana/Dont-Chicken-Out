@@ -40,6 +40,7 @@ public class AudioManager : MonoBehaviour
     [SerializeField] private List<Sound> playerStepSfxs;
     [SerializeField] private List<Sound> blocksSfxs;
     [SerializeField] private List<Sound> itemSfxs;
+    [SerializeField] private List<Sound> uiSfxs;
     [SerializeField] private List<Sound> miscsSfxs;
     private Dictionary<string, Sound> sfxMap = new();
 
@@ -98,6 +99,10 @@ public class AudioManager : MonoBehaviour
             sfxMap.Add(item.id, item);
         }
         foreach (var item in itemSfxs)
+        {
+            sfxMap.Add(item.id, item);
+        }
+        foreach (var item in uiSfxs)
         {
             sfxMap.Add(item.id, item);
         }
@@ -214,7 +219,7 @@ public class AudioManager : MonoBehaviour
         return src;
     }
 
-    public void Stop(string id)
+    public void StopSound(string id)
     {
         sfxMap.TryGetValue(id, out Sound sfx);
         if (sfx == null)
@@ -291,7 +296,7 @@ public class AudioManager : MonoBehaviour
     {
         GetNonRepeatedRandomNumber(currentStep, playerStepSfxs.Count, out int newStep);
 
-        Stop($"step{currentStep}");
+        StopSound($"step{currentStep}");
 
         PlaySound($"step{newStep}");
         currentStep = newStep;
@@ -301,10 +306,15 @@ public class AudioManager : MonoBehaviour
     {
         GetNonRepeatedRandomNumber(currentCuack, playerCockSfxs.Count, out int newCuack);
 
-        Stop($"cuack{currentCuack}");
+        StopSound($"cuack{currentCuack}");
 
         PlaySound($"cuack{newCuack}");
         currentCuack = newCuack;
+    }
+
+    public void MakeButtonSelectedSound()
+    {
+        PlaySound("button_selected");
     }
 
     public int GetNonRepeatedRandomNumber(int nonRepeat, int maxExclusive, out int randomNum)

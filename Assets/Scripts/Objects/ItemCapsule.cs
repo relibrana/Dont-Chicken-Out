@@ -21,6 +21,8 @@ public class ItemCapsule : MonoBehaviour, IDamageable
         if (amount <= 0) return;
 
         life -= amount;
+        
+        AudioManager.Instance.PlaySound("egg_break");
 
         if (life <= 0)
         {

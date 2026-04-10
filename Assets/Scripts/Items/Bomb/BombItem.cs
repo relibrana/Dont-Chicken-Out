@@ -116,7 +116,7 @@ public sealed class BombItem : HoldableItem
         
 		rb2d.bodyType = RigidbodyType2D.Kinematic;
         
-        AudioManager.Instance.Stop("bomb_lighter");
+        AudioManager.Instance.StopSound("bomb_lighter");
         AudioManager.Instance.PlaySound("bomb_explosion");
 
         if (animator != null)

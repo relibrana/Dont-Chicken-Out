@@ -31,19 +31,19 @@ public class PauseManager : MonoBehaviour
 
     public void TogglePauseMenu()
     {
-        if(isPaused)
-            Resume();
-        else
-            Pause();
+        if(isPaused) Resume();
+        else Pause();
     }
 
     public void Resume()
     {
         if(!pauseMenuUI.activeSelf) return;
         
+        AudioManager.Instance.MakeButtonSelectedSound();
         isPaused = false;
         pauseMenuUI.SetActive(false);
         Time.timeScale = 1f;
+
         if(currentPlayerController != null)
         {
 		    currentPlayerController.playerInput.SwitchCurrentActionMap("Player");
@@ -57,6 +57,7 @@ public class PauseManager : MonoBehaviour
     {
         if(pauseMenuUI.activeSelf) return;
 
+        AudioManager.Instance.MakeButtonSelectedSound();
         isPaused = true;
         pauseMenuUI.SetActive(true);
         Time.timeScale = 0f;
@@ -80,12 +81,14 @@ public class PauseManager : MonoBehaviour
 
     public void GoToMenu()
     {
+        AudioManager.Instance.MakeButtonSelectedSound();
         Time.timeScale = 1f;
         SceneTransitionService.Instance.LoadMenu();
     }
 
     public void RestartGame()
     {
+        AudioManager.Instance.MakeButtonSelectedSound();
         Time.timeScale = 1f;
         SceneTransitionService.Instance.LoadSpecificScene("Main_Level");
     }

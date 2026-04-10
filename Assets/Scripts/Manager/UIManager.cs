@@ -233,6 +233,9 @@ public class UIManager : MonoBehaviour
     {
         if (startGameSequence != null)
             return;
+        
+        
+        AudioManager.Instance.PlaySound("game_start");
 
         StartGameText(callback);
     }
@@ -241,6 +244,7 @@ public class UIManager : MonoBehaviour
     {
         if (startGameSequence != null)
         {
+            AudioManager.Instance.StopSound("game_start");
             startGameSequence.Kill();
             startGameSequence = null;
             startGameTimerText.gameObject.SetActive(false);

@@ -283,6 +283,8 @@ public class GameManager : MonoBehaviour
         player.SetMaterials(playerMat);
         AddInGamePlayer(player);
 
+        AudioManager.Instance.PlaySound("player_join");
+
         uiManager.UpdateJoinedPlayers(inGamePlayers);
         CheckIfAllPlayersReady();
     }
@@ -348,6 +350,7 @@ public class GameManager : MonoBehaviour
         }
         player.isBlockLogicAvailable = false;
         playersAlive[player.playerIndex] = null;
+        AudioManager.Instance.PlaySound("player_death");
 
         uiManager.UpdateDeadPlayer(player.playerIndex);
         cameraRig.DoDeathShake();
@@ -376,6 +379,7 @@ public class GameManager : MonoBehaviour
             }
             //DoWin();
             cameraRig.FocusWinner(winner.transform);
+
             DOVirtual.DelayedCall(tieThresHold, () => {
                 if(gameState == GameState.Win) 
                     return;
@@ -389,8 +393,10 @@ public class GameManager : MonoBehaviour
                 Debug.LogWarning("Stopped CheckPlayersInGame");
                 StopCoroutine(checkerCoroutine);
             }
+
             cameraRig.StopFocusWinner();
             ChangeGameState(GameState.Win);
+
             uiManager.OnWinRound(inGamePlayers, wonGame => 
             {
                 winSequence?.Kill();
@@ -409,7 +415,20 @@ public class GameManager : MonoBehaviour
         winner.roundsWon++;
         cameraRig.FocusWinner(winner.transform);
         winSequence?.Kill();
-        uiManager.OnWinRound(inGamePlayers, wonGame => winSequence = DOVirtual.DelayedCall(2f, () => CheckGameWon(wonGame), false));
+        
+        uiManager.OnWinRound(inGamePlayers, wonGame => 
+        {
+            if(wonGame)
+            {
+                AudioManager.Instance.PlaySound("win_game");
+            }
+            else
+            {
+                AudioManager.Instance.PlaySound("win_round");
+            }
+
+            winSequence = DOVirtual.DelayedCall(2f, () => CheckGameWon(wonGame), false);
+        });
     }
 
     /*private void CheckWinner()

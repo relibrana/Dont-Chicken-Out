@@ -46,6 +46,8 @@ public sealed class MainMenuController : MonoBehaviour
     public void PlayButton()
     {
         if (minigame == null) return;
+        
+        AudioManager.Instance.MakeButtonSelectedSound();
 
         SceneTransitionService.Instance.LoadSpecificScene("Main_Level");
     }
@@ -57,11 +59,13 @@ public sealed class MainMenuController : MonoBehaviour
 #else
         Application.Quit();
 #endif
+        AudioManager.Instance.MakeButtonSelectedSound();
     }
 
     public void OpenSupportLink()
     {
         Application.OpenURL("https://beacons.ai/raymi.games");
+        AudioManager.Instance.MakeButtonSelectedSound();
     }
 
     private void StartSelectRoutine()
