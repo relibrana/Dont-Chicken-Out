@@ -8,7 +8,7 @@ public class ItemCapsule : MonoBehaviour, IDamageable
 
     [SerializeField] private SpriteRenderer sr;
 
-    private const int baseLife = 3;
+    private const int baseLife = 1;
     private int life;
 
     private void Awake()
