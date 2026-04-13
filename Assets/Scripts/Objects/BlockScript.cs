@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -5,6 +6,13 @@ using UnityEngine;
 public class BlockScript : HoldableItem
 {
 	[SerializeField] protected List<Animator> animators = new();
+	protected List<BlockOverlapCheck> _overlapChecks = new();
+
+	protected virtual void Awake()
+	{
+		foreach (var animator in animators)
+			_overlapChecks.Add(animator.GetComponent<BlockOverlapCheck>());
+	}
 
 	protected override void OnDisable()
 	{
@@ -27,11 +35,20 @@ public class BlockScript : HoldableItem
 	}
 	protected IEnumerator AnimateAppearRoutine(float waitTime)
 	{
-		foreach (Animator anim in animators)
+		for (int i = 0; i < animators.Count; i++)
 		{
-			anim.enabled = true;
-			anim.SetTrigger ("appear");
+			var overlapCheck = _overlapChecks[i];
+			if (overlapCheck.OverlapCheck(overlapCheck.DisableBlock)) 
+				continue;
+			
+			var animator = animators[i];
+			animator.enabled = true;
+			animator.SetTrigger ("appear");
+			
 			yield return new WaitForSeconds (waitTime);
 		}
+
+		foreach (var overlapCheck in _overlapChecks)
+			overlapCheck.OverlapCheck(overlapCheck.DisableBlock);
 	}
 }
