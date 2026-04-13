@@ -175,34 +175,28 @@ public class GameManager : MonoBehaviour
 
     private IEnumerator CheckPlayersInGame()
     {
-        Debug.LogWarning("Starting CheckPlayersInGame");
-        while(gameState == GameState.Game)
+        while (gameState == GameState.Game)
         {
-            if(currPlayersAlive <= 1)
-            {
-                Debug.LogWarning("Stopped CheckPlayersInGame");
+            if (currPlayersAlive <= 1)
                 break;
-            }
-            
-            Debug.LogWarning("Updating CheckPlayersInGame");
+
             playersPosX.Clear();
 
-            PlayerController[] remainingPlayers = new PlayerController[currPlayersAlive];
-            for (int i = 0; i < remainingPlayers.Length; i++)
+            for (int i = 0; i < playersAlive.Length; i++)
             {
-                remainingPlayers[i] = playersAlive[i];
-                playersPosX.Add(remainingPlayers[i].transform.position.x);
+                if (playersAlive[i] == null) continue;
+                playersPosX.Add(playersAlive[i].transform.position.x);
             }
 
-            OrderPlayers(remainingPlayers);
+            List<PlayerController> remaining = new List<PlayerController>();
+            for (int i = 0; i < playersAlive.Length; i++)
+            {
+                if (playersAlive[i] != null)
+                    remaining.Add(playersAlive[i]);
+            }
+            OrderPlayers(remaining.ToArray());
 
             yield return new WaitForSeconds(playersCheckDelay);
-        }
-        Debug.LogWarning("Stopped CheckPlayersInGame");
-        if(checkerCoroutine != null)
-        {
-            Debug.LogWarning("Stopped CheckPlayersInGame");
-            StopCoroutine(checkerCoroutine);
         }
     }
 
@@ -341,6 +335,8 @@ public class GameManager : MonoBehaviour
 
     private void OnPlayersDeath(PlayerController player)
     {
+        player.isOnGame = false;
+
         player.transform.position = player.startPosition;
         player.gameObject.transform.position = deathPos.position;
         if (player.currentBlockHolding)
@@ -353,7 +349,7 @@ public class GameManager : MonoBehaviour
         AudioManager.Instance.PlaySound("player_death");
 
         uiManager.UpdateDeadPlayer(player.playerIndex);
-        cameraRig.DoDeathShake();
+        cameraRig.DoShake();
 
         CheckWinner();
     }

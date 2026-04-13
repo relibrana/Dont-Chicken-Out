@@ -122,6 +122,8 @@ public sealed class BombItem : HoldableItem
         if (animator != null)
             animator.SetTrigger(BoomHash);
 
+        CinemachineVerticalRig2D.Instance.DoShake(CinemachineVerticalRig2D.Instance.DefaultShakeDuration, CinemachineVerticalRig2D.Instance.DefaultShakeAmplitude);
+
         PlayExplosionFx();
 
         for (int i = 0; i < colliders.Count; i++)

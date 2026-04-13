@@ -4,6 +4,8 @@ using UnityEngine;
 [DisallowMultipleComponent]
 public class CinemachineVerticalRig2D : MonoBehaviour
 {
+    public static CinemachineVerticalRig2D Instance { get; private set; }
+
     [Header("References")]
     [Tooltip("Transform 'ancla' que la cámara sigue. Normalmente es un objeto vacío que esta cámara moverá verticalmente.")]
     [SerializeField] private Transform baseFollowTarget;
@@ -81,8 +83,24 @@ public class CinemachineVerticalRig2D : MonoBehaviour
         }
     }
 
+    // Properties
+
+    public float DefaultShakeDuration => defaultShakeDuration;
+    public float DefaultShakeAmplitude => defaultShakeAmplitude;
+
     void Awake()
     {
+        if (Instance != null && Instance != this)
+        {
+            Debug.LogWarning("[CinemachineVerticalRig2D] Múltiples instancias detectadas. Eliminando la nueva.");
+            Destroy(this);
+            return;
+        }
+        else
+        {
+            Instance = this;
+        }
+
         if (baseFollowTarget == null) Debug.LogWarning("[CinemachineVerticalRig2D] baseFollowTarget no asignado.");
         if (cineCam == null) Debug.LogWarning("[CinemachineVerticalRig2D] cineCam no asignado.");
 
@@ -95,7 +113,7 @@ public class CinemachineVerticalRig2D : MonoBehaviour
 #if UNITY_EDITOR
         if (Input.GetKeyDown(KeyCode.Z))
         {
-            DoDeathShake();
+            DoShake();
         }
 
         if (Input.GetKeyDown(KeyCode.X))
@@ -182,7 +200,7 @@ public class CinemachineVerticalRig2D : MonoBehaviour
     /// <summary>
     /// Temblor visual.
     /// </summary>
-    public void DoDeathShake(float duration = -1f, float amplitude = -1f)
+    public void DoShake(float duration = -1f, float amplitude = -1f)
     {
         _shakeTimeLeft = (duration > 0f) ? duration : defaultShakeDuration;
         _shakeAmplitude = (amplitude > 0f) ? amplitude : defaultShakeAmplitude;
