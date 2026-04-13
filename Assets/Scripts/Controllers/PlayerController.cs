@@ -64,7 +64,7 @@ public class PlayerController : MonoBehaviour, IKickable
 	private float blockPlaceCooldown;
 	[SerializeField] private bool canPlaceBlock = false;
 	public bool isBlockLogicAvailable = true;
-	private bool isBlockOverlapping = false;
+	private bool isBlockUnavailable = false;
 	private Material hayMaterial;
 	[NonSerialized] public Material playerMat;
 	[SerializeField] private LayerMask blockLayer;
@@ -165,7 +165,7 @@ public class PlayerController : MonoBehaviour, IKickable
 
 		if (isGrounded && canPlaceBlock)
 		{
-			if(!isBlockOverlapping)
+			if(!isBlockUnavailable)
             {
 				animator.Play("Place");
 				currentBlockHolding.PlaceHoldable();
@@ -461,15 +461,21 @@ public class PlayerController : MonoBehaviour, IKickable
 			currentBlockHolding.transform.position = blockPosition.position;
 			currentBlockHolding.transform.localScale = new Vector3(transform.lossyScale.x, 1, 1);
 
-			isBlockOverlapping = false;
-			foreach (Collider2D col in currentBlockHolding.GetColliders())
+			isBlockUnavailable = !isGrounded;
+
+			if (!isBlockUnavailable)
 			{
-				if (CheckOverlapping(col))
+				foreach (Collider2D col in currentBlockHolding.GetColliders())
 				{
-					isBlockOverlapping = true;
+					if (CheckOverlapping(col))
+					{
+						isBlockUnavailable = true;
+						break;
+					}
 				}
 			}
-			currentBlockHolding.overlapping = isBlockOverlapping;
+
+			currentBlockHolding.overlapping = isBlockUnavailable;
 		}
 	}
 	
