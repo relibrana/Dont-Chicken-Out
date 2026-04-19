@@ -317,6 +317,11 @@ public class AudioManager : MonoBehaviour
         PlaySound("button_selected");
     }
 
+    public void MakeButtonHoverSound()
+    {
+        PlaySound("button_selected");
+    }
+
     public int GetNonRepeatedRandomNumber(int nonRepeat, int maxExclusive, out int randomNum)
     {
         do

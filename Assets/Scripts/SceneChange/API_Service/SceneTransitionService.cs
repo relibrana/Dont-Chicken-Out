@@ -127,6 +127,7 @@ public sealed class SceneTransitionService : MonoBehaviour
     // Minijuego -> Menú
     private IEnumerator MinigameToMenuRoutine(string sceneName)
     {
+        AudioManager.Instance.PlaySound("scene_transitionOut");
         // 1) Circle TOP
         yield return circleTransition.Close();
 
@@ -138,6 +139,7 @@ public sealed class SceneTransitionService : MonoBehaviour
         }
 
         // 3) Circle MIN
+        AudioManager.Instance.PlaySound("scene_transitionIn");
         yield return circleTransition.Open();
 
         isTransitioning = false;

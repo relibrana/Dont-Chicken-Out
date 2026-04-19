@@ -8,72 +8,71 @@ using UnityEngine.UI;
 public class PauseManager : MonoBehaviour
 {
     public static PauseManager instance;
+
     [SerializeField] private GameObject pauseMenuUI;
-    public bool isPaused = false;
+    [SerializeField] private GameObject selectedFirstButton;
+    [SerializeField] private TextMeshProUGUI playerName;
+    [SerializeField] private Image playerUI;
+
+    public bool isPaused { get; private set; } = false;
+
     private PlayerController currentPlayerController = null;
 
-    [SerializeField] private GameObject selectedFirstButton;
-    [SerializeField] TextMeshProUGUI playerName;
-    [SerializeField] Image playerUI;
+    // ── Unity lifecycle ───────────────────────────────────────────────────────
 
-    void Awake()
+    private void Awake()
     {
         if (instance == null)
-        {
             instance = this;
-        }
         else
-        {
             Destroy(gameObject);
-            return;
-        }
     }
+
+    // ── Public API ────────────────────────────────────────────────────────────
 
     public void TogglePauseMenu()
     {
-        if(isPaused) Resume();
+        if (isPaused) Resume();
         else Pause();
     }
 
     public void Resume()
     {
-        if(!pauseMenuUI.activeSelf) return;
-        
+        if (!pauseMenuUI.activeSelf) return;
+
         AudioManager.Instance.MakeButtonSelectedSound();
         isPaused = false;
         pauseMenuUI.SetActive(false);
         Time.timeScale = 1f;
 
-        if(currentPlayerController != null)
+        if (currentPlayerController != null)
         {
-		    currentPlayerController.playerInput.SwitchCurrentActionMap("Player");
+            currentPlayerController.playerInput.SwitchCurrentActionMap("Player");
             currentPlayerController = null;
         }
-        
+
         EventSystem.current.SetSelectedGameObject(null);
     }
 
     public void Pause(PlayerController currentPC = null)
     {
-        if(pauseMenuUI.activeSelf) return;
+        if (pauseMenuUI.activeSelf) return;
 
         AudioManager.Instance.MakeButtonSelectedSound();
         isPaused = true;
         pauseMenuUI.SetActive(true);
         Time.timeScale = 0f;
 
-        if(currentPC != null) 
+        if (currentPC != null)
         {
             currentPlayerController = currentPC;
-		    currentPlayerController.playerInput.SwitchCurrentActionMap("UI");
+            currentPlayerController.playerInput.SwitchCurrentActionMap("UI");
             playerName.text = $"Player {currentPlayerController.playerIndex + 1}";
             playerUI.material = currentPlayerController.playerMat;
 
             var uiModule = EventSystem.current.GetComponent<InputSystemUIInputModule>();
-            if(uiModule != null)
-            {
+            if (uiModule != null)
                 uiModule.actionsAsset = currentPC.playerInput.actions;
-            }
         }
 
         EventSystem.current.SetSelectedGameObject(selectedFirstButton);

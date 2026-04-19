@@ -28,22 +28,20 @@ public class GameManager : MonoBehaviour
     public float autoMoveCameraSpeed = 0.2f;
     public List<float> playersPosX;
     private Coroutine checkerCoroutine;
-    // bool screenShakeTrigger=false;
     [SerializeField] private PlayerController[] inGamePlayers = new PlayerController[4];
-    [SerializeField] private PlayerController[] playersAlive = new PlayerController[4];
+    [SerializeField] private PlayerController[] playersAlive  = new PlayerController[4];
     [SerializeField] private Transform deathPos;
-    [SerializeField] int playersCheckDelay;
+    [SerializeField] private int playersCheckDelay;
 
     [Header("End Game")]
     [SerializeField, Min(0f)] private float resultsHoldTime = 1.25f;
 
-    private PlayerController winner = null;
-    private bool needsAReset = false;
-    private bool triggerStartGame = false;
-    private const float tieThresHold = 0.5f;
+    private PlayerController winner    = null;
+    private bool needsAReset           = false;
+    private bool triggerStartGame      = false;
+    private const float tieThresHold   = 0.5f;
     private Tween winSequence;
-    [SerializeField]private int currPlayersAlive;
-
+    [SerializeField] private int currPlayersAlive;
 
     public GameState gameState = GameState.Menu;
 
@@ -52,50 +50,47 @@ public class GameManager : MonoBehaviour
         get
         {
             var copy = new PlayerController[4];
-            for (int i = 0; i < playersAlive.Length; i++)
+            for (int i = 0; i < inGamePlayers.Length; i++)
                 copy[i] = inGamePlayers[i];
             return copy;
         }
     }
 
-    void Awake()
+    // ── Unity lifecycle ───────────────────────────────────────────────────────
+
+    private void Awake()
     {
         if (instance == null)
             instance = this;
         else
             Destroy(gameObject);
     }
-    void Start()
+
+    private void Start()
     {
         AudioManager.Instance.PlayMusic("Menu");
     }
 
-    void Update()
+    private void Update()
     {
         if (autoMoveCameraCurrentTime < 0)
             autoMoveCameraCurrentTime = 0;
 
         switch (gameState)
         {
-            case GameState.Menu:
-                OnMenuState();
-                break;
-            case GameState.Prepare:
-                OnPrepareState();
-                break;
-            case GameState.Game:
-                OnGameState();
-                break;
-            case GameState.Win:
-                OnWinState();
-                break;
+            case GameState.Menu:    OnMenuState();    break;
+            case GameState.Prepare: OnPrepareState(); break;
+            case GameState.Game:    OnGameState();    break;
+            case GameState.Win:     OnWinState();     break;
         }
     }
+
+    // ── State machine ─────────────────────────────────────────────────────────
 
     private void ChangeGameState(GameState newGameState)
     {
         gameState = newGameState;
-        switch(newGameState)
+        switch (newGameState)
         {
             case GameState.Game:
                 OnGame?.Invoke();
@@ -103,8 +98,6 @@ public class GameManager : MonoBehaviour
             case GameState.Menu:
             case GameState.Win:
                 OnGameEnd?.Invoke();
-                break;
-            default:
                 break;
         }
     }
@@ -119,17 +112,17 @@ public class GameManager : MonoBehaviour
     {
         AudioManager.Instance.PlayMusic("Menu");
         poolManager.ResetPool();
+
         foreach (var player in inGamePlayers)
         {
-            if (player == null)
-                continue;
+            if (player == null) continue;
             player.roundsWon = 0;
             ResetPlayer(player);
         }
+
         for (int i = 0; i < playersAlive.Length; i++)
-        {
             playersAlive[i] = null;
-        }
+
         cameraRig.ResetToGameplay();
         needsAReset = false;
     }
@@ -138,8 +131,7 @@ public class GameManager : MonoBehaviour
     {
         foreach (var player in inGamePlayers)
         {
-            if (player == null)
-                continue;
+            if (player == null) continue;
 
             if (!player.gameObject.activeSelf)
                 player.gameObject.SetActive(true);
@@ -150,136 +142,57 @@ public class GameManager : MonoBehaviour
 
         autoMoveCameraCurrentTime = startUpTime;
 
-        if (triggerStartGame)
+        if (!triggerStartGame) return;
+
+        winner = null;
+        poolManager.ResetPool();
+        currPlayersAlive = 0;
+
+        for (int i = 0; i < inGamePlayers.Length; i++)
         {
-            winner = null;
-            poolManager.ResetPool();
-            currPlayersAlive = 0;
-            for (int i = 0; i < inGamePlayers.Length; i++)
-            {
-                playersAlive[i] = inGamePlayers[i];
-                if(playersAlive[i] != null) currPlayersAlive++;
-            }
-            cameraRig.canMove = false;
-            cameraRig.ResetToGameplay();
-            uiManager.StartInitialGameSequence(() =>
-            {
-                ChangeGameState(GameState.Game);
-                checkerCoroutine = StartCoroutine(CheckPlayersInGame());
-                AudioManager.Instance.PlayMusic("Game");
-                uiManager.OnGamePlayersUI();
-            });
-            triggerStartGame = false;
+            playersAlive[i] = inGamePlayers[i];
+            if (playersAlive[i] != null) currPlayersAlive++;
         }
-    }
 
-    private IEnumerator CheckPlayersInGame()
-    {
-        Debug.LogWarning("Starting CheckPlayersInGame");
-        while(gameState == GameState.Game)
+        cameraRig.canMove = false;
+        cameraRig.ResetToGameplay();
+
+        uiManager.StartInitialGameSequence(() =>
         {
-            if(currPlayersAlive <= 1)
-            {
-                Debug.LogWarning("Stopped CheckPlayersInGame");
-                break;
-            }
-            
-            Debug.LogWarning("Updating CheckPlayersInGame");
-            playersPosX.Clear();
+            ChangeGameState(GameState.Game);
+            checkerCoroutine = StartCoroutine(CheckPlayersInGame());
+            AudioManager.Instance.PlayMusic("Game");
+            uiManager.OnGamePlayersUI();
+        });
 
-            PlayerController[] remainingPlayers = new PlayerController[currPlayersAlive];
-            for (int i = 0; i < remainingPlayers.Length; i++)
-            {
-                remainingPlayers[i] = playersAlive[i];
-                playersPosX.Add(remainingPlayers[i].transform.position.x);
-            }
-
-            OrderPlayers(remainingPlayers);
-
-            yield return new WaitForSeconds(playersCheckDelay);
-        }
-        Debug.LogWarning("Stopped CheckPlayersInGame");
-        if(checkerCoroutine != null)
-        {
-            Debug.LogWarning("Stopped CheckPlayersInGame");
-            StopCoroutine(checkerCoroutine);
-        }
-    }
-
-    private void OrderPlayers(PlayerController[] remainingPlayers)
-    {
-        int amountOfPlayers = remainingPlayers.Length;
-
-        Array.Sort(remainingPlayers, (p1, p2) => p2.transform.position.y.CompareTo(p1.transform.position.y));
-
-        for (int i = 0; i < amountOfPlayers; i++)
-        {
-            remainingPlayers[i].gameRank = GetPlayerStatus(i, amountOfPlayers);
-
-            Debug.Log($"Posición: {i + 1} | Jugador: {remainingPlayers[i].name} | Estado: {remainingPlayers[i].gameRank}");
-        }
-    }
-
-    private GameStatus GetPlayerStatus(int playerRank, int totalPlayers)
-    {
-        if(playerRank == 0)
-            return GameStatus.Winning;
-
-        if(playerRank == totalPlayers - 1)
-            return GameStatus.Losing;
-        
-        return GameStatus.Neutral;
-    }
-
-    private void ResetPlayer(PlayerController player)
-    {
-        player.transform.position = player.startPosition;
-        player.isBlockLogicAvailable = true;
-        player.currentBlockHolding = null;
-        player.isOnGame = false;
+        triggerStartGame = false;
     }
 
     private void OnGameState()
     {
         cameraRig.canMove = true;
+
         for (int i = 0; i < playersAlive.Length; i++)
         {
             if (playersAlive[i] != null)
                 playersAlive[i].isOnGame = true;
         }
 
-        //CameraMovement
         autoMoveCameraCurrentTime -= Time.deltaTime;
 
         if (autoMoveCameraCurrentTime <= 0)
-        {
             cameraRig.MaxHeightReached += autoMoveCameraSpeed * Time.deltaTime;
-        }
     }
 
-    private void OnWinState()
-    {
-        //uiManager.HidePointsPanel();
-    }
+    private void OnWinState() { }
 
-    public float CheckPlayerCoordinates()
-    {
-        float lowestY = float.MaxValue;
-        foreach (PlayerController player in inGamePlayers)
-        {
-            if (player != null && player.transform.position.y < lowestY)
-            {
-                lowestY = player.transform.position.y;
-            }
-        }
-        return lowestY;
-    }
+    // ── Player management ─────────────────────────────────────────────────────
 
-    public void AddPlayer(PlayerController player, Vector2 StartPos, PlayerMaterial playerMat)
+    public void AddPlayer(PlayerController player, Vector2 startPos, PlayerMaterial playerMat)
     {
-        player.onDeath = OnPlayersDeath;
+        player.onDeath       = OnPlayersDeath;
         player.onPlayerReady = PlayerToggleReady;
-        player.startPosition = StartPos;
+        player.startPosition = startPos;
         player.SetMaterials(playerMat);
         AddInGamePlayer(player);
 
@@ -293,18 +206,33 @@ public class GameManager : MonoBehaviour
     {
         for (int i = 0; i < inGamePlayers.Length; i++)
         {
-            if (inGamePlayers[i] == null)
-            {
-                inGamePlayers[i] = player;
-                player.playerIndex = i;
-                return;
-            }
+            if (inGamePlayers[i] != null) continue;
+
+            inGamePlayers[i]  = player;
+            player.playerIndex = i;
+            return;
         }
     }
 
-    private void HandleDisconnection()
+    private void ResetPlayer(PlayerController player)
     {
+        player.transform.position = player.startPosition;
+        player.DropBlock();
+        player.isOnGame = false;
+    }
 
+    private void OnPlayersDeath(PlayerController player)
+    {
+        player.gameObject.transform.position = deathPos.position;
+        player.DropBlock();
+
+        playersAlive[player.playerIndex] = null;
+
+        AudioManager.Instance.PlaySound("player_death");
+        uiManager.UpdateDeadPlayer(player.playerIndex);
+        cameraRig.DoDeathShake();
+
+        CheckWinner();
     }
 
     private void PlayerToggleReady(PlayerController player)
@@ -312,7 +240,6 @@ public class GameManager : MonoBehaviour
         bool wasReady = playersAlive.Contains(player);
 
         uiManager.UpdateReadyPlayer(player.playerIndex, !wasReady);
-
         playersAlive[player.playerIndex] = !wasReady ? player : null;
 
         CheckIfAllPlayersReady();
@@ -323,8 +250,7 @@ public class GameManager : MonoBehaviour
         currPlayersAlive = 0;
         for (int i = 0; i < playersAlive.Length; i++)
         {
-            if (playersAlive[i] != null)
-                currPlayersAlive++;
+            if (playersAlive[i] != null) currPlayersAlive++;
         }
 
         if (currPlayersAlive != playersManager.currPlayersInGame || currPlayersAlive < 2)
@@ -336,26 +262,55 @@ public class GameManager : MonoBehaviour
 
         triggerStartGame = true;
         ChangeGameState(GameState.Prepare);
-
     }
 
-    private void OnPlayersDeath(PlayerController player)
+    // ── Winner / rank logic ───────────────────────────────────────────────────
+
+    private IEnumerator CheckPlayersInGame()
     {
-        player.transform.position = player.startPosition;
-        player.gameObject.transform.position = deathPos.position;
-        if (player.currentBlockHolding)
+        while (gameState == GameState.Game)
         {
-            player.currentBlockHolding.gameObject.SetActive(false);
-            player.currentBlockHolding = null;
+            if (currPlayersAlive <= 1) break;
+
+            playersPosX.Clear();
+
+            PlayerController[] remainingPlayers = new PlayerController[currPlayersAlive];
+            for (int i = 0; i < remainingPlayers.Length; i++)
+            {
+                remainingPlayers[i] = playersAlive[i];
+                playersPosX.Add(remainingPlayers[i].transform.position.x);
+            }
+
+            OrderPlayers(remainingPlayers);
+
+            yield return new WaitForSeconds(playersCheckDelay);
         }
-        player.isBlockLogicAvailable = false;
-        playersAlive[player.playerIndex] = null;
-        AudioManager.Instance.PlaySound("player_death");
 
-        uiManager.UpdateDeadPlayer(player.playerIndex);
-        cameraRig.DoDeathShake();
+        if (checkerCoroutine != null)
+            StopCoroutine(checkerCoroutine);
+    }
 
-        CheckWinner();
+    private void OrderPlayers(PlayerController[] remainingPlayers)
+    {
+        int total = remainingPlayers.Length;
+
+        Array.Sort(remainingPlayers, (p1, p2) =>
+            p2.transform.position.y.CompareTo(p1.transform.position.y));
+
+        for (int i = 0; i < total; i++)
+        {
+            GameStatus status = GetPlayerStatus(i, total);
+            remainingPlayers[i].SetGameRank(status);
+
+            Debug.Log($"Posición: {i + 1} | Jugador: {remainingPlayers[i].name} | Estado: {status}");
+        }
+    }
+
+    private GameStatus GetPlayerStatus(int playerRank, int totalPlayers)
+    {
+        if (playerRank == 0)                  return GameStatus.Winning;
+        if (playerRank == totalPlayers - 1)   return GameStatus.Losing;
+        return GameStatus.Neutral;
     }
 
     private void CheckWinner()
@@ -363,41 +318,29 @@ public class GameManager : MonoBehaviour
         currPlayersAlive = 0;
         for (int i = 0; i < playersAlive.Length; i++)
         {
-            if (playersAlive[i] != null)
-            {
-                currPlayersAlive++;
-                winner = playersAlive[i];
-            }
+            if (playersAlive[i] == null) continue;
+            currPlayersAlive++;
+            winner = playersAlive[i];
         }
 
         if (currPlayersAlive == 1)
         {
-            if(checkerCoroutine != null)
-            {
-                Debug.LogWarning("Stopped CheckPlayersInGame");
-                StopCoroutine(checkerCoroutine);
-            }
-            //DoWin();
+            StopCheckerCoroutine();
             cameraRig.FocusWinner(winner.transform);
 
-            DOVirtual.DelayedCall(tieThresHold, () => {
-                if(gameState == GameState.Win) 
-                    return;
+            DOVirtual.DelayedCall(tieThresHold, () =>
+            {
+                if (gameState == GameState.Win) return;
                 DoWin();
             }, false);
         }
         else if (currPlayersAlive == 0)
         {
-            if(checkerCoroutine != null)
-            {
-                Debug.LogWarning("Stopped CheckPlayersInGame");
-                StopCoroutine(checkerCoroutine);
-            }
-
+            StopCheckerCoroutine();
             cameraRig.StopFocusWinner();
             ChangeGameState(GameState.Win);
 
-            uiManager.OnWinRound(inGamePlayers, wonGame => 
+            uiManager.OnWinRound(inGamePlayers, wonGame =>
             {
                 winSequence?.Kill();
                 winSequence = DOVirtual.DelayedCall(2f, () => CheckGameWon(wonGame), false);
@@ -407,76 +350,19 @@ public class GameManager : MonoBehaviour
 
     private void DoWin()
     {
-        if(gameState == GameState.Win)
-        {
-            return;
-        }
+        if (gameState == GameState.Win) return;
+
         ChangeGameState(GameState.Win);
         winner.roundsWon++;
         cameraRig.FocusWinner(winner.transform);
         winSequence?.Kill();
-        
-        uiManager.OnWinRound(inGamePlayers, wonGame => 
-        {
-            if(wonGame)
-            {
-                AudioManager.Instance.PlaySound("win_game");
-            }
-            else
-            {
-                AudioManager.Instance.PlaySound("win_round");
-            }
 
+        uiManager.OnWinRound(inGamePlayers, wonGame =>
+        {
+            AudioManager.Instance.PlaySound(wonGame ? "win_game" : "win_round");
             winSequence = DOVirtual.DelayedCall(2f, () => CheckGameWon(wonGame), false);
         });
     }
-
-    /*private void CheckWinner()
-    {
-        int currPlayersAlive = 0;
-        for (int i = 0; i < playersAlive.Length; i++)
-        {
-            if (playersAlive[i] != null)
-            {
-                currPlayersAlive++;
-                winner = playersAlive[i];
-            }
-        }
-
-        if (currPlayersAlive == 1)
-        {
-            ChangeGameState(GameState.Win);
-            winner.roundsWon++;
-
-            // Solo acercar la c�mara al ganador si GAN� LA PARTIDA (por ejemplo, 3 puntos)
-            if (winner.roundsWon >= 3)
-            {
-                cameraRig.FocusWinner(winner.transform);
-            }
-
-            uiManager.OnWinRound(inGamePlayers, wonGame =>
-                DOVirtual.DelayedCall(2f, () => CheckGameWon(wonGame), false));
-        }
-    }*/
-
-
-    /*private void CheckGameWon(bool wonGame)
-    {
-        if (wonGame)
-        {
-            uiManager.ResetPlayers(inGamePlayers);
-            needsAReset = true;
-            ChangeGameState(GameState.Menu);
-        }
-        else
-        {
-            uiManager.HidePointsPanel();
-
-            uiManager.UpdateReadyPlayers(inGamePlayers);
-            triggerStartGame = true;
-            ChangeGameState(GameState.Prepare);
-        }
-    }*/
 
     private void CheckGameWon(bool wonGame)
     {
@@ -488,7 +374,6 @@ public class GameManager : MonoBehaviour
             {
                 uiManager.HidePointsPanel();
                 needsAReset = true;
-
                 SceneTransitionService.Instance.LoadMenu();
             }, false);
 
@@ -502,7 +387,32 @@ public class GameManager : MonoBehaviour
         ChangeGameState(GameState.Prepare);
     }
 
+    // ── Helpers ───────────────────────────────────────────────────────────────
 
+    private void StopCheckerCoroutine()
+    {
+        if (checkerCoroutine == null) return;
+        StopCoroutine(checkerCoroutine);
+        checkerCoroutine = null;
+    }
 
-    public void FreeKeyboardScheme(string schemeName) => playersManager.FreeKeyboardScheme(schemeName);
+    public float CheckPlayerCoordinates()
+    {
+        float lowestY = float.MaxValue;
+        foreach (var player in inGamePlayers)
+        {
+            if (player != null && player.transform.position.y < lowestY)
+                lowestY = player.transform.position.y;
+        }
+        return lowestY;
+    }
+
+    public void FreeKeyboardScheme(string schemeName) =>
+        playersManager.FreeKeyboardScheme(schemeName);
 }
+
+/// <summary>
+/// Represents the current in-game rank of a player during an active round.
+/// Used by GameManager to assign difficulty-scaled blocks via PoolingManager.
+/// </summary>
+public enum GameStatus { Winning, Neutral, Losing }

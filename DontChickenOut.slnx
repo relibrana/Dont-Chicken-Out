@@ -1,0 +1,7 @@
+﻿<Solution>
+  <Project Path="SingularityGroup.HotReload.Runtime.csproj" />
+  <Project Path="SingularityGroup.HotReload.Editor.csproj" />
+  <Project Path="Assembly-CSharp.csproj" />
+  <Project Path="Assembly-CSharp-firstpass.csproj" />
+  <Project Path="SingularityGroup.HotReload.Runtime.Public.csproj" />
+</Solution>

@@ -1,512 +1,239 @@
 using System;
-using System.Collections.Generic;
+using System.Linq;
 using DG.Tweening;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
-public class PlayerController : MonoBehaviour, IKickable
+/// <summary>
+/// Central coordinator for the player. Owns player state and public API.
+/// Delegates input reading to PlayerInputHandler, physics to PlayerMovement,
+/// block lifecycle to PlayerBlockHandler, and animation to PlayerAnimController.
+/// GameManager and other external systems interact exclusively through this class.
+/// </summary>
+public sealed class PlayerController : MonoBehaviour, IKickable
 {
-	[SerializeField] private PlatformerValuesSO valuesSO;
+    // ── Inspector ─────────────────────────────────────────────────────────────
 
-	//Components and State Values
-	private Rigidbody2D _rb;
-	private Vector2 currentVelocity;
-	private float velocitySmoothing;
-	[SerializeField] private KickCollider kickCollider;
-	[SerializeField] private Animator animator;
-	[SerializeField] private List<SpriteRenderer> spriteRenderers = new();
-	// [SerializeField] private SpriteRenderer sprite;
+    [SerializeField] private PlatformerValuesSO valuesSO;
+    [SerializeField] private KickCollider kickCollider;
+    [SerializeField] private PlayerAnimController animController;
 
-	//Ground Checkers
-	[SerializeField] private float raycastDistance = 0.55f;
-	[SerializeField] private float checkSpacing = 0.2f;
-	[SerializeField] private float spacingY = 0.2f;
-	[SerializeField] private float headCheck = 0.2f;
-	[SerializeField] private LayerMask groundLayer;
-	[SerializeField] private LayerMask layersToDetect;
-	private bool isPlayerOnHead;
+    // ── Public state (read by GameManager / UIManager) ────────────────────────
 
-	//Timers
-	private float coyoteTimeTimer;
-	private float jumpBufferTimer;
+    [NonSerialized] public int   playerIndex;
+    [NonSerialized] public int   roundsWon;
+    [NonSerialized] public bool  isOnGame;
+    [NonSerialized] public Vector2 startPosition;
 
-	//Internal Calculations
-	private float calculatedGravity;
-	private float calculatedInitialJumpVelocity;
+    public GameStatus GameRank   { get; private set; } = GameStatus.Neutral;
+    public Material   HayMaterial { get; private set; }
 
-	//Input Values
-	private InputAction moveInput;
-	private float moveDirection;
-	private InputAction jumpInput;
-	private bool isGrounded;
-	private bool isHoldingJump;
-	private bool jumpLocked;
-	private InputAction placeBlockInput;
-	private InputAction kickInput;
-	private InputAction cluckInput;
-	private InputAction pauseInput;
-	private InputAction backUIInput;
-	public int playerIndex;
-	public bool isOnGame = false;
-	public int roundsWon;
+    // ── External callbacks (set by GameManager) ───────────────────────────────
 
-	//InputSystem
-	public PlayerInput playerInput;
-	private string assignedScheme;
+    public Action<PlayerController> onDeath;
+    public Action<PlayerController> onPlayerReady;
 
-	//Game Manager
-	public Action<PlayerController> onDeath;
-	public Action<PlayerController> onPlayerReady;
-	public Vector2 startPosition;
-	//Blocks
-	[SerializeField] private Transform blockPosition;
-	public HoldableItem currentBlockHolding = null;
-	private float blockPlaceCooldown;
-	[SerializeField] private bool canPlaceBlock = false;
-	public bool isBlockLogicAvailable = true;
-	private bool isBlockUnavailable = false;
-	private Material hayMaterial;
-	[NonSerialized] public Material playerMat;
-	[SerializeField] private LayerMask blockLayer;
-	[SerializeField] private float blockDetectDistance = 0.1f;
-	[SerializeField] private Transform blockCheckPoint;
-	private bool isPushing;
-	[SerializeField] private bool dbgMode;
+    // ── Private component refs ────────────────────────────────────────────────
 
-    // Properties
-    public bool IsGrounded => isGrounded;
+    private PlayerInputHandler _inputHandler;
+    private PlayerMovement     _movement;
+    private PlayerBlockHandler _blockHandler;
 
-	public Vector2 GetBlockPosition() => blockPosition.position;
+    // ── Input / scheme ────────────────────────────────────────────────────────
 
-	public GameStatus gameRank = GameStatus.Neutral;
-	public bool isWinning;
+    public PlayerInput playerInput { get; private set; }
+    private string _assignedScheme;
+
+    // ── Unity lifecycle ───────────────────────────────────────────────────────
 
     private void Awake()
-	{
-		playerInput = GetComponent<PlayerInput>();
-		InitializeInputActions();
+    {
+        playerInput   = GetComponent<PlayerInput>();
+        _inputHandler = GetComponent<PlayerInputHandler>();
+        _movement     = GetComponent<PlayerMovement>();
+        _blockHandler = GetComponent<PlayerBlockHandler>();
 
-		_rb = GetComponent<Rigidbody2D>();
+        _movement.SetAnimController(animController);
+        _blockHandler.Initialize(valuesSO.blockPlacementCD, animController);
 
-		_rb.gravityScale = 0f;
-		_rb.freezeRotation = true;
-		CalculateValues();
+        kickCollider.forceDirection   = valuesSO.kickForce;
+        kickCollider.playerController = this;
 
-		blockPlaceCooldown = valuesSO.blockPlacementCD;
+        SubscribeToInputEvents();
+    }
 
-		kickCollider.forceDirection = valuesSO.kickForce;
-		kickCollider.playerController = this;
-	}
+    private void OnDestroy()
+    {
+        UnsubscribeFromInputEvents();
+    }
 
-    public void CalculateValues()
-	{
-		calculatedGravity = 2 * valuesSO.peakHeight / -(valuesSO.timeToPeak * valuesSO.timeToPeak);
+    private void Update()
+    {
+        _movement.ProcessInput(_inputHandler.CurrentInput);
 
-		calculatedInitialJumpVelocity = -calculatedGravity * valuesSO.timeToPeak;
-	}
+        if (!isOnGame) return;
 
-	private void InitializeInputActions()
-	{
-		moveInput = playerInput.actions.FindAction("Move");
-		moveInput.performed += OnMoveInput;
-		moveInput.canceled += OnMoveInput;
+        _blockHandler.IsAvailable = true;
+    }
 
-		moveInput.Enable();
+    // ── Input event routing ───────────────────────────────────────────────────
 
-		jumpInput = playerInput.actions.FindAction("Jump");
-		jumpInput.started += OnJumpStarted;
-		jumpInput.canceled += OnJumpCanceled;
-		jumpInput.Enable();
+    private void SubscribeToInputEvents()
+    {
+        _inputHandler.OnKickPressed      += HandleKick;
+        _inputHandler.OnPlaceBlockPressed += HandlePlaceBlock;
+        _inputHandler.OnCluckPressed     += HandleCluck;
+        _inputHandler.OnPausePressed     += HandlePause;
+        _inputHandler.OnBackUIPressed    += HandleBackUI;
+    }
 
-		placeBlockInput = playerInput.actions.FindAction("PlaceBlock");
-		placeBlockInput.started += OnPlaceBlockStarted;
+    private void UnsubscribeFromInputEvents()
+    {
+        if (_inputHandler == null) return;
 
-		kickInput = playerInput.actions.FindAction("Kick");
-		kickInput.started += OnKickStarted;
+        _inputHandler.OnKickPressed      -= HandleKick;
+        _inputHandler.OnPlaceBlockPressed -= HandlePlaceBlock;
+        _inputHandler.OnCluckPressed     -= HandleCluck;
+        _inputHandler.OnPausePressed     -= HandlePause;
+        _inputHandler.OnBackUIPressed    -= HandleBackUI;
+    }
 
-		cluckInput = playerInput.actions.FindAction("Cluck");
-		cluckInput.started += OnCluckStarted;
+    private void HandleKick()
+    {
+        if (IsOnPause()) return;
 
-		pauseInput = playerInput.actions.FindAction("Pause");
-		pauseInput.started += OnPauseStarted;
+        animController.PlayKick();
+        AudioManager.Instance.PlaySound("player_kick");
+    }
 
-		backUIInput = playerInput.actions.FindActionMap("UI").FindAction("Back");
-		backUIInput.started += OnPauseFromUIStarted;
-	}
-	private bool isOnPause() => PauseManager.instance.isPaused;
+    private void HandlePlaceBlock()
+    {
+        if (IsOnPause()) return;
+        if (!isOnGame) return;
 
-	void OnDestroy()
-	{
-		if (jumpInput != null)
-		{
-			jumpInput.started -= OnJumpStarted;
-			jumpInput.canceled -= OnJumpCanceled;
-		}
-	}
+        _blockHandler.TryPlaceBlock();
+    }
 
-	private void OnJumpStarted(InputAction.CallbackContext context)
-	{
-		if(isOnPause()) return;
+    private void HandleCluck()
+    {
+        if (IsOnPause()) return;
 
-		jumpBufferTimer = valuesSO.jumpBufferTime;
-		isHoldingJump = true;
-	}
+        AudioManager.Instance.MakeCuackSound();
 
-	private void OnJumpCanceled(InputAction.CallbackContext context)
-	{
-		isHoldingJump = false;
-	}
+        if (GameManager.instance.gameState == GameState.Menu)
+            onPlayerReady?.Invoke(this);
+    }
 
-	public void StepSound() => AudioManager.Instance.MakeStepSound();
+    private void HandlePause()
+    {
+        if (GameManager.instance.gameState != GameState.Game) return;
 
-	private void OnPlaceBlockStarted(InputAction.CallbackContext context)
-	{
-		if(isOnPause()) return;
+        PauseManager.instance.Pause(this);
+    }
 
-		if (isGrounded && canPlaceBlock)
-		{
-			if(!isBlockUnavailable)
-            {
-				animator.Play("Place");
-				currentBlockHolding.PlaceHoldable();
-				currentBlockHolding = null;
-				canPlaceBlock = false;
-				isBlockLogicAvailable = false;
-				DOVirtual.DelayedCall(blockPlaceCooldown, () => isBlockLogicAvailable = true, false);
-            }
-            else
-			{
-				AudioManager.Instance.PlaySound("block_invalid");
-			}
-		}
-	}
+    private void HandleBackUI()
+    {
+        PauseManager.instance.Resume();
+    }
 
-	private void OnKickStarted(InputAction.CallbackContext context)
-	{
-		if(isOnPause()) return;
+    private bool IsOnPause() => PauseManager.instance.isPaused;
 
-		animator.Play("Kick");
-		AudioManager.Instance.PlaySound("player_kick");
-	}
-	
-    //IKickable Method
+    // ── IKickable ─────────────────────────────────────────────────────────────
+
     public void ReceiveKick(Vector2 kickImpulse)
     {
-    	AddImpulse(kickImpulse, isKick: true);
+        _movement.AddImpulse(kickImpulse);
+
+        if (Mathf.Sign(kickImpulse.x) == Mathf.Sign(transform.localScale.x))
+            animController.PlayHitBack();
+        else
+            animController.PlayHitFront();
     }
 
-	private void OnCluckStarted(InputAction.CallbackContext context)
-	{
-		if(isOnPause()) return;
+    // ── Public API (called by GameManager) ────────────────────────────────────
 
-		AudioManager.Instance.MakeCuackSound();
-		if (GameManager.instance.gameState == GameState.Menu)
-		{
-			onPlayerReady?.Invoke(this);
-		}
-	}
+    /// <summary>Triggers the player death flow.</summary>
+    public void OnDeath() => onDeath?.Invoke(this);
 
-	private void OnPauseStarted(InputAction.CallbackContext context)
-	{
-		if(GameManager.instance.gameState != GameState.Game) return;
-		PauseManager.instance.Pause(this);
-	}
-	private void OnPauseFromUIStarted(InputAction.CallbackContext context)
-	{
-		PauseManager.instance.Resume();
-	}
+    /// <summary>
+    /// Applies an external impulse to the player (explosion, spring, etc.).
+    /// Optionally plays hit animations if treated as a kick.
+    /// </summary>
+    public void AddImpulse(Vector2 impulse, bool isKick = false, bool resetSpeed = false)
+    {
+        _movement.AddImpulse(impulse, resetSpeed);
 
-	void Update()
-	{
-		UpdateJumpValues();
+        if (!isKick) return;
 
-		CheckGround();
+        if (Mathf.Sign(impulse.x) == Mathf.Sign(transform.localScale.x))
+            animController.PlayHitBack();
+        else
+            animController.PlayHitFront();
+    }
 
-		HandleJump();
+    /// <summary>Sets player and hay materials on all sprite renderers.</summary>
+    public void SetMaterials(PlayerMaterial mats)
+    {
+        HayMaterial = mats.hayMat;
+        _blockHandler.CurrentBlock?.SetMaterial(HayMaterial);
 
-		HandleBlockLogic();
+        var renderers = GetComponentsInChildren<SpriteRenderer>();
+        foreach (var sr in renderers)
+            sr.material = mats.playerMat;
 
-		CheckPushing();
-	}
+        playerMat = mats.playerMat;
+    }
 
-	private void OnMoveInput(InputAction.CallbackContext context)
-	{
-		if(context.performed || context.canceled)
-			moveDirection = context.ReadValue<float>();
-	}
+    /// <summary>Updates the player's rank in the current game session.</summary>
+    public void SetGameRank(GameStatus rank) => GameRank = rank;
 
-	private void UpdateJumpValues()
-	{
-		if (jumpBufferTimer > 0)
-		{
-			jumpBufferTimer -= Time.deltaTime;
-		}
+    /// <summary>Returns the world position used to spawn/hold blocks.</summary>
+    public Vector2 GetBlockPosition() => _blockHandler.GetBlockSpawnPosition();
 
-		if (isGrounded)
-		{
-			coyoteTimeTimer = valuesSO.coyoteTime;
-		}
-		else
-		{
-			coyoteTimeTimer -= Time.deltaTime;
-		}
-	}
+    /// <summary>Drops the currently held block. Called on death and reset.</summary>
+    public void DropBlock() => _blockHandler.DropBlock();
 
-	private void CheckGround()
-	{
-		Vector2 pos = transform.position;
-		RaycastHit2D hit = Physics2D.Raycast(new Vector2(pos.x - checkSpacing, pos.y - spacingY), Vector2.down, raycastDistance, groundLayer);
-		RaycastHit2D hit2 = Physics2D.Raycast(new Vector2(pos.x, pos.y - spacingY - 0.07f), Vector2.down, raycastDistance, groundLayer);
-		RaycastHit2D hit3 = Physics2D.Raycast(new Vector2(pos.x + checkSpacing, pos.y - spacingY), Vector2.down, raycastDistance, groundLayer);
+    /// <summary>
+    /// Discards the current block and assigns a new one.
+    /// Called by ItemCapsule when the capsule breaks.
+    /// </summary>
+    public void SwapBlock(HoldableItem newBlock) => _blockHandler.SwapBlock(newBlock);
 
-		isGrounded = hit.collider || hit2.collider || hit3.collider;
+    // ── Input scheme (called by PlayersManager) ───────────────────────────────
 
-		animator.SetBool("OnGround", isGrounded);
+    public void OnAssignedScheme(string schemeName)
+    {
+        _assignedScheme = schemeName;
+        playerInput.SwitchCurrentControlScheme(_assignedScheme, playerInput.devices.ToArray());
+        playerInput.SwitchCurrentActionMap("Player");
+    }
 
-		RaycastHit2D hitH = Physics2D.Raycast(new Vector2(pos.x - checkSpacing, pos.y + headCheck), Vector2.up, raycastDistance, groundLayer);
-		RaycastHit2D hitH2 = Physics2D.Raycast(new Vector2(pos.x, pos.y + headCheck + 0.07f), Vector2.up, raycastDistance, groundLayer);
-		RaycastHit2D hitH3 = Physics2D.Raycast(new Vector2(pos.x + checkSpacing, pos.y + headCheck), Vector2.up, raycastDistance, groundLayer);
+    public void OnPlayerLeft(PlayerInput input)
+    {
+        if (_assignedScheme != "Gamepad")
+            GameManager.instance.FreeKeyboardScheme(_assignedScheme);
+    }
 
-		isPlayerOnHead = ColliderIsPlayer(hitH.collider) || ColliderIsPlayer(hitH2.collider) || ColliderIsPlayer(hitH3.collider);
-	}
+    // ── Step sound (called by PlayerAnimController animation event) ───────────
 
-	private bool ColliderIsPlayer(Collider2D collider)
-	{
-		if (!collider)
-			return false;
-		return collider.gameObject.CompareTag("Player");
-	}
+    public void StepSound() => AudioManager.Instance.MakeStepSound();
+
+    /// <summary>Delegated from PlayerMovement. Used by CinemachineVerticalRig2D.</summary>
+    public bool IsGrounded => _movement.IsGrounded;
+
+    // ── Editor ────────────────────────────────────────────────────────────────
+
+    [NonSerialized] public Material playerMat;
 
 #if UNITY_EDITOR
-	void OnDrawGizmos()
-	{
-		Gizmos.color = Color.yellow;
+    private void OnDrawGizmos()
+    {
+        Gizmos.color = GameRank == GameStatus.Winning ? Color.red :
+                       GameRank == GameStatus.Losing  ? Color.green : Color.yellow;
 
-		float startPosY = transform.position.y - spacingY;
-		Gizmos.DrawLine(new Vector2(transform.position.x, startPosY - 0.07f), new Vector2(transform.position.x, startPosY - raycastDistance));
-		Gizmos.DrawLine(new Vector2(transform.position.x, startPosY + headCheck + 0.07f),
-			new Vector2(transform.position.x, startPosY + headCheck + raycastDistance));
-
-		float gizmos1 = transform.position.x - checkSpacing;
-		Gizmos.DrawLine(new Vector2(gizmos1, startPosY), new Vector2(gizmos1, startPosY - raycastDistance));
-		Gizmos.DrawLine(new Vector2(gizmos1, startPosY + headCheck), new Vector2(gizmos1, startPosY + headCheck + raycastDistance));
-
-		float gizmos2 = transform.position.x + checkSpacing;
-		Gizmos.DrawLine(new Vector2(gizmos2, startPosY), new Vector2(gizmos2, startPosY - raycastDistance));
-		Gizmos.DrawLine(new Vector2(gizmos2, startPosY + headCheck), new Vector2(gizmos2, startPosY + headCheck + raycastDistance));
-		
-    	Gizmos.color = gameRank == GameStatus.Winning ? Color.red : 
-						gameRank == GameStatus.Losing ? Color.green: Color.yellow;
-
-    	Vector3 labelPos = transform.position + Vector3.up * 1f; 
-    	Gizmos.DrawWireSphere(labelPos, 0.5f);
-	
-    	UnityEditor.Handles.Label(labelPos + Vector3.up, $"Status: {gameRank}");
-	}
+        Vector3 labelPos = transform.position + Vector3.up * 1f;
+        Gizmos.DrawWireSphere(labelPos, 0.5f);
+        UnityEditor.Handles.Label(labelPos + Vector3.up, $"Status: {GameRank}");
+    }
 #endif
-
-	private void HandleJump()
-	{
-		bool canJump = jumpBufferTimer > 0f && coyoteTimeTimer > 0f && !isPlayerOnHead && !jumpLocked;
-
-		if (canJump)
-		{
-			currentVelocity.y = calculatedInitialJumpVelocity;
-			AudioManager.Instance.PlaySound("player_jump");
-
-			isGrounded = false;
-			jumpLocked = true;
-			DOVirtual.DelayedCall(0.5f, () => jumpLocked = false);
-
-			jumpBufferTimer = 0f;
-			coyoteTimeTimer = 0f;
-		}
-	}
-
-	void FixedUpdate()
-	{
-		HandleHorizontalMovement();
-		HandleGravity();
-
-		currentVelocity.y = Mathf.Min(currentVelocity.y, valuesSO.maxJumpSpeed);
-
-		_rb.linearVelocity = currentVelocity;
-
-		#if UNITY_EDITOR
-			if(dbgMode && Mathf.Abs(_rb.linearVelocityX) + Mathf.Abs(_rb.linearVelocityY) > 0.5f) 
-				Debug.LogWarning(_rb.linearVelocity);
-		#endif
-	}
-
-	private void HandleHorizontalMovement()
-	{
-		float targetSpeed = moveDirection * valuesSO.maxSpeed;
-
-		if(moveDirection != 0)
-			transform.localScale = new Vector3(Mathf.Sign(moveDirection), 1);
-
-		float smoothTime = Mathf.Abs(targetSpeed) > 0.01f ? valuesSO.accelerationTime : valuesSO.decelerationTime;
-
-		currentVelocity.x = Mathf.SmoothDamp(
-			currentVelocity.x,
-			targetSpeed,
-			ref velocitySmoothing,
-			smoothTime
-		);
-
-		animator.SetFloat("Speed", Mathf.Abs(currentVelocity.x));
-	}
-
-	public void AddImpulse(Vector2 impulseDirection, bool isKick = false, bool resetSpeed = false)
-    {
-		if(resetSpeed) currentVelocity = Vector2.zero;
-
-		currentVelocity += impulseDirection;
-
-		if(isKick)
-		{
-			if(Mathf.Sign(impulseDirection.x) == Mathf.Sign(transform.localScale.x))
-			{
-				animator.Play("HitBack");
-			}
-			else
-			{
-				animator.Play("HitFront");
-			}
-		}
-
-		isGrounded = false;
-		coyoteTimeTimer = 0f;
-    }
-
-	public void SetMaterials(PlayerMaterial mats)
-    {
-		playerMat = mats.playerMat;
-		hayMaterial = mats.hayMat;
-		foreach (SpriteRenderer sr in spriteRenderers)
-		{
-			sr.material = playerMat;
-		}
-		// sprite.material = mats.playerMat;
-    }
-	private void HandleGravity()
-	{
-		if (isGrounded)
-		{
-			if (currentVelocity.y <= 0)
-				currentVelocity.y = -0.1f;
-
-			return;
-		}
-
-		currentVelocity.y += calculatedGravity * Time.deltaTime;
-
-		if (currentVelocity.y < 0)
-		{
-			float glideMultiplier = isHoldingJump ? valuesSO.glideResistance : 0;
-
-			animator.SetBool("IsGliding", isHoldingJump);
-
-			int fallLimit = isHoldingJump ? -4 : -25;
-
-			float nextVelocityY = currentVelocity.y + calculatedGravity * (valuesSO.fallMultiplier - 1f - glideMultiplier) * Time.deltaTime;
-
-			currentVelocity.y = Mathf.Clamp(nextVelocityY, fallLimit, 50);
-		}
-		else if (currentVelocity.y > 0 && !isHoldingJump)
-		{
-			currentVelocity.y += calculatedGravity * (valuesSO.lowJumpMultiplier - 1f) * Time.deltaTime;
-		}
-
-		animator.SetFloat("velocityY", currentVelocity.y);
-	}
-
-	public void OnDeath()
-	{
-		onDeath?.Invoke(this);
-	}
-
-	public void OnAssignedScheme(string schemeName)
-	{
-		assignedScheme = schemeName;
-
-		playerInput.SwitchCurrentControlScheme(assignedScheme, playerInput.devices.ToArray());
-
-		playerInput.SwitchCurrentActionMap("Player");
-	}
-
-	public void OnPlayerLeft(PlayerInput playerInput)
-	{
-		if (assignedScheme != "Gamepad")
-		{
-			GameManager.instance.FreeKeyboardScheme(assignedScheme);
-		}
-	}
-
-	private void HandleBlockLogic()
-	{
-		if (!isOnGame || !isBlockLogicAvailable) return;
-
-		if (currentBlockHolding == null)
-		{
-			PoolingManager poolManager = GameManager.instance.poolManager;
-			GameObject randomBlock = poolManager.GetPooledBlock(blockPosition.position, gameRank);
-			currentBlockHolding = randomBlock.GetComponent<HoldableItem>();
-			currentBlockHolding.SetMaterial(hayMaterial);
-			currentBlockHolding.StartHold();
-			DOVirtual.DelayedCall(0.3f, () => canPlaceBlock = true, false);
-		}
-		else
-		{
-			currentBlockHolding.transform.position = blockPosition.position;
-			currentBlockHolding.transform.localScale = new Vector3(transform.lossyScale.x, 1, 1);
-
-			isBlockUnavailable = !isGrounded;
-
-			if (!isBlockUnavailable)
-			{
-				foreach (Collider2D col in currentBlockHolding.GetColliders())
-				{
-					if (CheckOverlapping(col))
-					{
-						isBlockUnavailable = true;
-						break;
-					}
-				}
-			}
-
-			currentBlockHolding.overlapping = isBlockUnavailable;
-		}
-	}
-	
-	private bool CheckOverlapping(Collider2D collider)
-	{
-		ContactFilter2D filter = new ContactFilter2D();
-		filter.SetLayerMask(layersToDetect);
-		filter.useTriggers = false;
-
-		List<Collider2D> results = new List<Collider2D>();
-
-		int count = collider.Overlap(filter, results);
-
-		for(int i = 0; i < count; i++)
-		{
-			if(results[i] != collider)
-			{
-				return true;
-			}
-		}
-		return false;
-	}
-	private void CheckPushing()
-	{
-    	RaycastHit2D hit = Physics2D.Raycast(blockCheckPoint.position, transform.right * transform.localScale.x, 
-			blockDetectDistance, blockLayer);
-	
-    	isPushing = hit.collider != null;
-
-    	animator.SetBool("IsTouchingBlock", isPushing);
-	}
-	
 }
-public enum GameStatus { Winning, Neutral, Losing}

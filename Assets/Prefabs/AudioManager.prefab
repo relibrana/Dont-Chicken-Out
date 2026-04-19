@@ -228,4 +228,16 @@ MonoBehaviour:
     id: game_start
     volume: 0.6
     loop: 0
-  miscsSfxs: []
+  - clip: {fileID: 0}
+    id: button_hover
+    volume: 0.6
+    loop: 0
+  miscsSfxs:
+  - clip: {fileID: 0}
+    id: scene_transitionOut
+    volume: 0.6
+    loop: 0
+  - clip: {fileID: 0}
+    id: scene_transitionIn
+    volume: 0.6
+    loop: 0

@@ -168,7 +168,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 8394646178700007924, guid: 9baba22d8960d4b3da266d93b15486bd, type: 3}
       propertyPath: m_Name
-      value: OrangeBlock (3)
+      value: Block (3)
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -249,7 +249,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 8394646178700007924, guid: 9baba22d8960d4b3da266d93b15486bd, type: 3}
       propertyPath: m_Name
-      value: OrangeBlock (2)
+      value: Block (2)
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -330,7 +330,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 8394646178700007924, guid: 9baba22d8960d4b3da266d93b15486bd, type: 3}
       propertyPath: m_Name
-      value: OrangeBlock
+      value: Block
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -411,7 +411,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 8394646178700007924, guid: 9baba22d8960d4b3da266d93b15486bd, type: 3}
       propertyPath: m_Name
-      value: OrangeBlock (1)
+      value: Block (1)
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
