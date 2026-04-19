@@ -8,6 +8,7 @@ using System.Collections;
 [Serializable]
 public enum GameState { Menu, Prepare, Game, Win }
 
+[DefaultExecutionOrder(-1)]
 public class GameManager : MonoBehaviour
 {
     public static GameManager instance;
@@ -25,6 +26,10 @@ public class GameManager : MonoBehaviour
     [Header("Game Variables")]
     public Action OnGame;
     public Action OnGameEnd;
+    /// <summary>Fired when the game enters Prepare state (countdown started).</summary>
+    public Action OnPrepare;
+    /// <summary>Fired whenever the number of joined players changes. int = current count.</summary>
+    public Action<int> OnPlayersCountChanged;
     public float autoMoveCameraSpeed = 0.2f;
     public List<float> playersPosX;
     private Coroutine checkerCoroutine;
@@ -39,6 +44,7 @@ public class GameManager : MonoBehaviour
     private PlayerController winner    = null;
     private bool needsAReset           = false;
     private bool triggerStartGame      = false;
+    private bool _repositionOnReset    = false;
     private const float tieThresHold   = 0.5f;
     private Tween winSequence;
     [SerializeField] private int currPlayersAlive;
@@ -92,6 +98,9 @@ public class GameManager : MonoBehaviour
         gameState = newGameState;
         switch (newGameState)
         {
+            case GameState.Prepare:
+                OnPrepare?.Invoke();
+                break;
             case GameState.Game:
                 OnGame?.Invoke();
                 break;
@@ -125,6 +134,8 @@ public class GameManager : MonoBehaviour
 
         cameraRig.ResetToGameplay();
         needsAReset = false;
+
+        OnPlayersCountChanged?.Invoke(CountJoinedPlayers());
     }
 
     private void OnPrepareState()
@@ -137,7 +148,7 @@ public class GameManager : MonoBehaviour
                 player.gameObject.SetActive(true);
 
             if (triggerStartGame)
-                ResetPlayer(player);
+                ResetPlayer(player, _repositionOnReset);
         }
 
         autoMoveCameraCurrentTime = startUpTime;
@@ -146,13 +157,6 @@ public class GameManager : MonoBehaviour
 
         winner = null;
         poolManager.ResetPool();
-        currPlayersAlive = 0;
-
-        for (int i = 0; i < inGamePlayers.Length; i++)
-        {
-            playersAlive[i] = inGamePlayers[i];
-            if (playersAlive[i] != null) currPlayersAlive++;
-        }
 
         cameraRig.canMove = false;
         cameraRig.ResetToGameplay();
@@ -165,7 +169,8 @@ public class GameManager : MonoBehaviour
             uiManager.OnGamePlayersUI();
         });
 
-        triggerStartGame = false;
+        triggerStartGame   = false;
+        _repositionOnReset = false;
     }
 
     private void OnGameState()
@@ -191,15 +196,16 @@ public class GameManager : MonoBehaviour
     public void AddPlayer(PlayerController player, Vector2 startPos, PlayerMaterial playerMat)
     {
         player.onDeath       = OnPlayersDeath;
-        player.onPlayerReady = PlayerToggleReady;
         player.startPosition = startPos;
         player.SetMaterials(playerMat);
         AddInGamePlayer(player);
 
-        AudioManager.Instance.PlaySound("player_join");
+        AudioManager.Instance.MakeJoinSound();
 
         uiManager.UpdateJoinedPlayers(inGamePlayers);
-        CheckIfAllPlayersReady();
+
+        int count = CountJoinedPlayers();
+        OnPlayersCountChanged?.Invoke(count);
     }
 
     private void AddInGamePlayer(PlayerController player)
@@ -208,17 +214,19 @@ public class GameManager : MonoBehaviour
         {
             if (inGamePlayers[i] != null) continue;
 
-            inGamePlayers[i]  = player;
+            inGamePlayers[i]   = player;
             player.playerIndex = i;
             return;
         }
     }
 
-    private void ResetPlayer(PlayerController player)
+    private void ResetPlayer(PlayerController player, bool repositionPlayer = false)
     {
-        player.transform.position = player.startPosition;
         player.DropBlock();
         player.isOnGame = false;
+
+        if (repositionPlayer)
+            player.transform.position = player.startPosition;
     }
 
     private void OnPlayersDeath(PlayerController player)
@@ -228,40 +236,63 @@ public class GameManager : MonoBehaviour
 
         playersAlive[player.playerIndex] = null;
 
-        AudioManager.Instance.PlaySound("player_death");
+        AudioManager.Instance.MakeDeathSound();
         uiManager.UpdateDeadPlayer(player.playerIndex);
         cameraRig.DoDeathShake();
 
         CheckWinner();
     }
 
-    private void PlayerToggleReady(PlayerController player)
+    // ── Start sequence ────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Called by StartGameButton when pressed with ≥2 players in Menu state.
+    /// </summary>
+    public void TriggerStartSequence()
     {
-        bool wasReady = playersAlive.Contains(player);
-
-        uiManager.UpdateReadyPlayer(player.playerIndex, !wasReady);
-        playersAlive[player.playerIndex] = !wasReady ? player : null;
-
-        CheckIfAllPlayersReady();
+        if (gameState != GameState.Menu) return;
+        BeginStartSequence();
     }
 
-    private void CheckIfAllPlayersReady()
+    /// <summary>
+    /// Called by StartGameButton to cancel the countdown when pressed again
+    /// or when a new player joins during the countdown.
+    /// </summary>
+    public void CancelStartSequence()
     {
-        currPlayersAlive = 0;
-        for (int i = 0; i < playersAlive.Length; i++)
-        {
-            if (playersAlive[i] != null) currPlayersAlive++;
-        }
+        if (gameState != GameState.Prepare) return;
 
-        if (currPlayersAlive != playersManager.currPlayersInGame || currPlayersAlive < 2)
-        {
-            uiManager.StopInitialGameSequence();
-            ChangeGameState(GameState.Menu);
-            return;
-        }
+        triggerStartGame = false;
+        uiManager.StopInitialGameSequence();
+        ChangeGameState(GameState.Menu);
+    }
 
-        triggerStartGame = true;
+    /// <summary>
+    /// Internal start sequence shared by the button flow and the between-rounds flow.
+    /// Has no guard on gameState so it can be called from any state.
+    /// </summary>
+    private void BeginStartSequence(bool repositionPlayers = false)
+    {
+        for (int i = 0; i < inGamePlayers.Length; i++)
+            playersAlive[i] = inGamePlayers[i];
+
+        currPlayersAlive = CountJoinedPlayers();
+
+        if (currPlayersAlive < 2) return;
+
+        triggerStartGame    = true;
+        _repositionOnReset  = repositionPlayers;
         ChangeGameState(GameState.Prepare);
+    }
+
+    private int CountJoinedPlayers()
+    {
+        int count = 0;
+        for (int i = 0; i < inGamePlayers.Length; i++)
+        {
+            if (inGamePlayers[i] != null) count++;
+        }
+        return count;
     }
 
     // ── Winner / rank logic ───────────────────────────────────────────────────
@@ -308,8 +339,8 @@ public class GameManager : MonoBehaviour
 
     private GameStatus GetPlayerStatus(int playerRank, int totalPlayers)
     {
-        if (playerRank == 0)                  return GameStatus.Winning;
-        if (playerRank == totalPlayers - 1)   return GameStatus.Losing;
+        if (playerRank == 0)                return GameStatus.Winning;
+        if (playerRank == totalPlayers - 1) return GameStatus.Losing;
         return GameStatus.Neutral;
     }
 
@@ -380,11 +411,10 @@ public class GameManager : MonoBehaviour
             return;
         }
 
+        // New round — start automatically without going through the button again.
         cameraRig.ResetToGameplay();
         uiManager.HidePointsPanel();
-        uiManager.UpdateReadyPlayers(inGamePlayers);
-        triggerStartGame = true;
-        ChangeGameState(GameState.Prepare);
+        BeginStartSequence(repositionPlayers: true);
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────

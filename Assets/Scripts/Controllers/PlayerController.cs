@@ -20,18 +20,17 @@ public sealed class PlayerController : MonoBehaviour, IKickable
 
     // ── Public state (read by GameManager / UIManager) ────────────────────────
 
-    [NonSerialized] public int   playerIndex;
-    [NonSerialized] public int   roundsWon;
-    [NonSerialized] public bool  isOnGame;
+    [NonSerialized] public int     playerIndex;
+    [NonSerialized] public int     roundsWon;
+    [NonSerialized] public bool    isOnGame;
     [NonSerialized] public Vector2 startPosition;
 
-    public GameStatus GameRank   { get; private set; } = GameStatus.Neutral;
+    public GameStatus GameRank    { get; private set; } = GameStatus.Neutral;
     public Material   HayMaterial { get; private set; }
 
     // ── External callbacks (set by GameManager) ───────────────────────────────
 
     public Action<PlayerController> onDeath;
-    public Action<PlayerController> onPlayerReady;
 
     // ── Private component refs ────────────────────────────────────────────────
 
@@ -80,22 +79,22 @@ public sealed class PlayerController : MonoBehaviour, IKickable
 
     private void SubscribeToInputEvents()
     {
-        _inputHandler.OnKickPressed      += HandleKick;
+        _inputHandler.OnKickPressed       += HandleKick;
         _inputHandler.OnPlaceBlockPressed += HandlePlaceBlock;
-        _inputHandler.OnCluckPressed     += HandleCluck;
-        _inputHandler.OnPausePressed     += HandlePause;
-        _inputHandler.OnBackUIPressed    += HandleBackUI;
+        _inputHandler.OnCluckPressed      += HandleCluck;
+        _inputHandler.OnPausePressed      += HandlePause;
+        _inputHandler.OnBackUIPressed     += HandleBackUI;
     }
 
     private void UnsubscribeFromInputEvents()
     {
         if (_inputHandler == null) return;
 
-        _inputHandler.OnKickPressed      -= HandleKick;
+        _inputHandler.OnKickPressed       -= HandleKick;
         _inputHandler.OnPlaceBlockPressed -= HandlePlaceBlock;
-        _inputHandler.OnCluckPressed     -= HandleCluck;
-        _inputHandler.OnPausePressed     -= HandlePause;
-        _inputHandler.OnBackUIPressed    -= HandleBackUI;
+        _inputHandler.OnCluckPressed      -= HandleCluck;
+        _inputHandler.OnPausePressed      -= HandlePause;
+        _inputHandler.OnBackUIPressed     -= HandleBackUI;
     }
 
     private void HandleKick()
@@ -119,9 +118,6 @@ public sealed class PlayerController : MonoBehaviour, IKickable
         if (IsOnPause()) return;
 
         AudioManager.Instance.MakeCuackSound();
-
-        if (GameManager.instance.gameState == GameState.Menu)
-            onPlayerReady?.Invoke(this);
     }
 
     private void HandlePause()
@@ -214,7 +210,7 @@ public sealed class PlayerController : MonoBehaviour, IKickable
             GameManager.instance.FreeKeyboardScheme(_assignedScheme);
     }
 
-    // ── Step sound (called by PlayerAnimController animation event) ───────────
+    // ── Step sound (called by animation event) ────────────────────────────────
 
     public void StepSound() => AudioManager.Instance.MakeStepSound();
 

@@ -306,7 +306,7 @@ public class AudioManager : MonoBehaviour
     // Métodos de acceso simples (propio del script)
 	public void MakeStepSound()
     {
-        GetNonRepeatedRandomNumber(currentStep, playerStepSfxs.Count, out int newStep);
+        int newStep = GetNonRepeatedRandomNumber(currentStep, playerStepSfxs.Count);
 
         StopSound($"step{currentStep}");
 
@@ -315,7 +315,7 @@ public class AudioManager : MonoBehaviour
     }
 	public void MakeDeathSound()
     {
-        GetNonRepeatedRandomNumber(currentDeath, playerDeathSfxs.Count, out int newDeath);
+        int newDeath = GetNonRepeatedRandomNumber(currentDeath, playerDeathSfxs.Count);
 
         StopSound($"cuack{currentDeath}");
 
@@ -324,7 +324,7 @@ public class AudioManager : MonoBehaviour
     }
 	public void MakeJoinSound()
     {
-        GetNonRepeatedRandomNumber(currentJoin, playerJoinSfxs.Count, out int newJoin);
+        int newJoin = GetNonRepeatedRandomNumber(currentJoin, playerJoinSfxs.Count);
 
         StopSound($"cuack{currentJoin}");
 
@@ -334,7 +334,7 @@ public class AudioManager : MonoBehaviour
 
 	public void MakeCuackSound()
     {
-        GetNonRepeatedRandomNumber(currentCuack, playerCockSfxs.Count, out int newCuack);
+        int newCuack = GetNonRepeatedRandomNumber(currentCuack, playerCockSfxs.Count);
 
         StopSound($"cuack{currentCuack}");
 
@@ -352,8 +352,15 @@ public class AudioManager : MonoBehaviour
         PlaySound("button_hover");
     }
 
-    public int GetNonRepeatedRandomNumber(int nonRepeat, int maxExclusive, out int randomNum)
+    public int GetNonRepeatedRandomNumber(int nonRepeat, int maxExclusive)
     {
+        if(maxExclusive <= 1)
+        {
+            return 0;
+        }
+
+        int randomNum = nonRepeat;
+            
         do
         {
             randomNum = UnityEngine.Random.Range(0, maxExclusive);

@@ -11,6 +11,10 @@ public class UIManager : MonoBehaviour
     [SerializeField] private GameObject dimLayerBG;
     [SerializeField] private TextMeshProUGUI startGameTimerText;
 
+    [Header("Kick Button Prompt")]
+    [Tooltip("UI block shown when the start button is active and available to kick.")]
+    [SerializeField] private GameObject kickButtonPrompt;
+
     [Header("Points Manage")]
     [SerializeField] private Sprite eggPoint;
     [SerializeField] private GameObject pointsPanelHUD;
@@ -28,7 +32,9 @@ public class UIManager : MonoBehaviour
     [SerializeField] Transform playersCountEnd;
     [SerializeField] TextMeshProUGUI playersCountText;
 
-    void Awake()
+    // ── Unity lifecycle ───────────────────────────────────────────────────────
+
+    private void Awake()
     {
         pointsCanvasGroup = pointsPanelHUD.GetComponent<CanvasGroup>();
 
@@ -37,12 +43,79 @@ public class UIManager : MonoBehaviour
         if (pointsCanvasGroup != null)
             pointsCanvasGroup.alpha = 0f;
 
+        if (kickButtonPrompt != null)
+            kickButtonPrompt.SetActive(false);
+
         for (int i = 0; i < playersUI.Length; i++)
         {
             playersUI[i].playerIndex = i + 1;
             playersUI[i].ChangeUIState(PlayerUIState.WaitJoin);
         }
     }
+
+    private void OnEnable()
+    {
+        GameManager.instance.OnPlayersCountChanged += HandlePlayersCountChanged;
+        GameManager.instance.OnPrepare             += HandlePrepare;
+        GameManager.instance.OnGame                += HandleGame;
+        GameManager.instance.OnGameEnd             += HandleGameEnd;
+    }
+
+    private void OnDisable()
+    {
+        if (GameManager.instance == null) return;
+
+        GameManager.instance.OnPlayersCountChanged -= HandlePlayersCountChanged;
+        GameManager.instance.OnPrepare             -= HandlePrepare;
+        GameManager.instance.OnGame                -= HandleGame;
+        GameManager.instance.OnGameEnd             -= HandleGameEnd;
+    }
+
+    // ── Kick button prompt ────────────────────────────────────────────────────
+
+    private void HandlePlayersCountChanged(int playerCount)
+    {
+        if (kickButtonPrompt == null) return;
+
+        // Only show the prompt in Menu state and when enough players have joined.
+        bool shouldShow = playerCount >= 2
+                       && GameManager.instance.gameState == GameState.Menu;
+
+        kickButtonPrompt.SetActive(shouldShow);
+    }
+
+    private void HandlePrepare()
+    {
+        // Countdown started — hide the prompt.
+        if (kickButtonPrompt != null)
+            kickButtonPrompt.SetActive(false);
+    }
+
+    private void HandleGame()
+    {
+        // Game started — prompt is already hidden, nothing extra needed.
+        if (kickButtonPrompt != null)
+            kickButtonPrompt.SetActive(false);
+    }
+
+    private void HandleGameEnd()
+    {
+        // Win or back to Menu — re-evaluate based on current player count.
+        if (kickButtonPrompt == null) return;
+
+        int count = 0;
+        foreach (var p in GameManager.instance.InGamePlayers)
+        {
+            if (p != null) count++;
+        }
+
+        bool shouldShow = count >= 2
+                       && GameManager.instance.gameState == GameState.Menu;
+
+        kickButtonPrompt.SetActive(shouldShow);
+    }
+
+    // ── Players UI ────────────────────────────────────────────────────────────
 
     public void ResetPlayers(PlayerController[] inGamePlayers)
     {
@@ -114,7 +187,6 @@ public class UIManager : MonoBehaviour
 
     public void OnWinRound(PlayerController[] inGamePlayers, Action<bool> callback)
     {
-        // Abrir panel de puntajes (Fade In)
         ShowPointsPanel();
 
         bool didPlayerWonGame = false;
@@ -125,13 +197,13 @@ public class UIManager : MonoBehaviour
                 playersUI[i].roundsWon = inGamePlayers[i].roundsWon;
                 playersUI[i].ChangeUIState(PlayerUIState.Round);
 
-                // Actualizar huevitos del jugador seg�n sus puntos
                 playersUI[i].UpdatePointsHUD(eggPoint);
 
                 if (playersUI[i].roundsWon == 3)
                     didPlayerWonGame = true;
             }
         }
+
         if (didPlayerWonGame)
         {
             int[] roundsWon = new int[4];
@@ -199,20 +271,14 @@ public class UIManager : MonoBehaviour
             int rank = 1;
             for (int j = 0; j < scores.Length; j++)
             {
-                int otherScore = scores[j];
-
-                if (otherScore > currentScore)
-                {
+                if (scores[j] > currentScore)
                     rank++;
-                }
             }
 
             int rankIndex = rank - 1;
 
             if (rankIndex >= 0 && rankIndex < PUESTOS.Length)
-            {
                 ranks.Add(PUESTOS[rankIndex]);
-            }
         }
 
         return ranks;
@@ -233,27 +299,24 @@ public class UIManager : MonoBehaviour
     {
         if (startGameSequence != null)
             return;
-        
-        
-        AudioManager.Instance.PlaySound("game_start");
 
+        AudioManager.Instance.PlaySound("game_start");
         StartGameText(callback);
     }
 
     public void StopInitialGameSequence()
     {
-        if (startGameSequence != null)
-        {
-            AudioManager.Instance.StopSound("game_start");
-            startGameSequence.Kill();
-            startGameSequence = null;
-            startGameTimerText.gameObject.SetActive(false);
-            dimLayerBG.SetActive(true);
-            controls.SetActive(true);
-            playersCount.SetActive(true);
-            controls.transform.DOMove(controlsStart.transform.position, 0.7f).SetEase(Ease.OutBack);
-            playersCount.transform.DOMove(playersCountStart.transform.position, 0.6f).SetEase(Ease.OutBack).SetDelay(0.15f);
-        }
+        if (startGameSequence == null) return;
+
+        AudioManager.Instance.StopSound("game_start");
+        startGameSequence.Kill();
+        startGameSequence = null;
+        startGameTimerText.gameObject.SetActive(false);
+        dimLayerBG.SetActive(true);
+        controls.SetActive(true);
+        playersCount.SetActive(true);
+        controls.transform.DOMove(controlsStart.transform.position, 0.7f).SetEase(Ease.OutBack);
+        playersCount.transform.DOMove(playersCountStart.transform.position, 0.6f).SetEase(Ease.OutBack).SetDelay(0.15f);
     }
 
     private void StartGameText(Action callback)
@@ -285,7 +348,6 @@ public class UIManager : MonoBehaviour
             });
             controls.transform.DOMove(controlsEnd.transform.position, 0.7f).SetEase(Ease.InBack);
             playersCount.transform.DOMove(playersCountEnd.transform.position, 0.6f).SetEase(Ease.InBack).SetDelay(0.15f);
-
         });
 
         startGameSequence.AppendInterval(1.25f);
@@ -303,13 +365,5 @@ public class UIManager : MonoBehaviour
             startGameTimerText.gameObject.SetActive(false);
             startGameSequence = null;
         });
-
     }
-
-    // public void PlayAgainButton ()
-    // {
-    //     SoundManager.instance.PlaySound("start");
-    //     GameManager.instance.RestartScene ();
-    // }
-
 }
