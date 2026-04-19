@@ -37,6 +37,8 @@ public class AudioManager : MonoBehaviour
     [SerializeField] private List<Sound> bgmSounds = new List<Sound>();
     [SerializeField] private List<Sound> playerSfxs;
     [SerializeField] private List<Sound> playerCockSfxs;
+    [SerializeField] private List<Sound> playerDeathSfxs;
+    [SerializeField] private List<Sound> playerJoinSfxs;
     [SerializeField] private List<Sound> playerStepSfxs;
     [SerializeField] private List<Sound> blocksSfxs;
     [SerializeField] private List<Sound> itemSfxs;
@@ -51,6 +53,8 @@ public class AudioManager : MonoBehaviour
 	//Sounds
 	private int currentStep = 0;
 	private int currentCuack = 0;
+	private int currentJoin = 0;
+	private int currentDeath = 0;
 
 
     protected void Awake()
@@ -88,6 +92,14 @@ public class AudioManager : MonoBehaviour
         foreach (var item in playerCockSfxs)
         {
             item.volume = 0.2f;
+            sfxMap.Add(item.id, item);
+        }
+        foreach (var item in playerDeathSfxs)
+        {
+            sfxMap.Add(item.id, item);
+        }
+        foreach (var item in playerJoinSfxs)
+        {
             sfxMap.Add(item.id, item);
         }
         foreach (var item in playerStepSfxs)
@@ -300,6 +312,24 @@ public class AudioManager : MonoBehaviour
 
         PlaySound($"step{newStep}");
         currentStep = newStep;
+    }
+	public void MakeDeathSound()
+    {
+        GetNonRepeatedRandomNumber(currentDeath, playerDeathSfxs.Count, out int newDeath);
+
+        StopSound($"cuack{currentDeath}");
+
+        PlaySound($"cuack{newDeath}");
+        currentDeath = newDeath;
+    }
+	public void MakeJoinSound()
+    {
+        GetNonRepeatedRandomNumber(currentJoin, playerJoinSfxs.Count, out int newJoin);
+
+        StopSound($"cuack{currentJoin}");
+
+        PlaySound($"cuack{newJoin}");
+        currentJoin = newJoin;
     }
 
 	public void MakeCuackSound()
