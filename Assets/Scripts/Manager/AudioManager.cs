@@ -319,7 +319,7 @@ public class AudioManager : MonoBehaviour
 
     public void MakeButtonHoverSound()
     {
-        PlaySound("button_selected");
+        PlaySound("button_hover");
     }
 
     public int GetNonRepeatedRandomNumber(int nonRepeat, int maxExclusive, out int randomNum)
