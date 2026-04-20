@@ -110,7 +110,7 @@ MonoBehaviour:
   headCheckOffset: 1.9
   groundLayer:
     serializedVersion: 2
-    m_Bits: 1088
+    m_Bits: 1216
 --- !u!114 &5960661316607681385
 MonoBehaviour:
   m_ObjectHideFlags: 0
