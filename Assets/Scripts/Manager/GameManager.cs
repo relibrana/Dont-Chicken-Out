@@ -74,6 +74,8 @@ public class GameManager : MonoBehaviour
 
     private void Start()
     {
+        // Ensures menu BGM plays when Main_Level loads or reloads,
+        // regardless of what was playing before (e.g. after a restart mid-game).
         AudioManager.Instance.PlayMusic("Menu");
     }
 

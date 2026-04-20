@@ -19,6 +19,7 @@ public sealed class MainMenuController : MonoBehaviour
 
     private void OnEnable()
     {
+        AudioManager.Instance.PlayMusic("Menu");
         StartSelectRoutine();
     }
 
@@ -46,9 +47,12 @@ public sealed class MainMenuController : MonoBehaviour
     public void PlayButton()
     {
         if (minigame == null) return;
-        
+
         AudioManager.Instance.MakeButtonSelectedSound();
 
+        // The device that navigated the menu becomes Player 1 automatically.
+        // SessionData was already populated by MenuInputRouter on first press;
+        // we do not need to write anything here — just transition.
         SceneTransitionService.Instance.LoadSpecificScene("Main_Level");
     }
 
@@ -71,9 +75,7 @@ public sealed class MainMenuController : MonoBehaviour
     private void StartSelectRoutine()
     {
         if (selectRoutine != null)
-        {
             StopCoroutine(selectRoutine);
-        }
 
         selectRoutine = StartCoroutine(SelectOnEnableRoutine());
     }
@@ -83,9 +85,7 @@ public sealed class MainMenuController : MonoBehaviour
         yield return null;
 
         if (selectDelay > 0f)
-        {
             yield return new WaitForSecondsRealtime(selectDelay);
-        }
 
         EnsureSelection();
         selectRoutine = null;

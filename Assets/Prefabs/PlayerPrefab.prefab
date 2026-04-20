@@ -77,7 +77,7 @@ MonoBehaviour:
     m_Bits: 1024
   layersToDetect:
     serializedVersion: 2
-    m_Bits: 1728
+    m_Bits: 1729
   blockDetectDistance: 0.1
 --- !u!114 &8272030075611925850
 MonoBehaviour:

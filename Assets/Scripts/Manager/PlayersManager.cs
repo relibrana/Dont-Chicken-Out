@@ -7,164 +7,176 @@ using UnityEngine.InputSystem.Controls;
 
 public class PlayersManager : MonoBehaviour
 {
-    [SerializeField] private Transform[] spawnPoints;
-    [SerializeField] private MaterialsSO materialsSO;
-    [SerializeField] private GameObject playerPrefab;
+    [SerializeField] private Transform[]  spawnPoints;
+    [SerializeField] private MaterialsSO  materialsSO;
+    [SerializeField] private GameObject   playerPrefab;
+
     [NonSerialized] public int currPlayersInGame;
-    private PlayerInputManager playerInputManager;
 
-    private List<string> usedKeyboardSchemes = new List<string>();
+    private PlayerInputManager _playerInputManager;
+    private List<string> _usedKeyboardSchemes = new List<string>();
 
-    private readonly Dictionary<Key, string> keyboardJoinKeys = new Dictionary<Key, string>()
+    private readonly Dictionary<Key, string> keyboardJoinKeys = new Dictionary<Key, string>
     {
-        { Key.E, "Keyboard1" },
-        { Key.RightShift, "Keyboard2" }
+        { Key.E,          "Keyboard1" },
+        { Key.RightShift, "Keyboard2" },
     };
 
-    private IDisposable anyButtonPressSubscription;
+    private IDisposable _anyButtonSubscription;
+
+    // ── Unity lifecycle ───────────────────────────────────────────────────────
 
     private void Awake()
     {
-        playerInputManager = GetComponent<PlayerInputManager>();
+        _playerInputManager = GetComponent<PlayerInputManager>();
+    }
+
+    private void Start()
+    {
+        // If a primary device was registered in the menu, auto-join it as Player 1
+        // before opening up the normal join flow.
+        if (SessionData.HasPrimaryDevice)
+        {
+            AttemptToJoin(SessionData.PrimaryDevice, SessionData.PrimaryScheme);
+            SessionData.Clear();
+        }
     }
 
     private void OnEnable()
     {
-        playerInputManager.DisableJoining();
+        _playerInputManager.DisableJoining();
 
-        var observer = new InputControlObserver(this);
-        anyButtonPressSubscription = InputSystem.onAnyButtonPress.Subscribe(observer);
+        _anyButtonSubscription = InputSystem.onAnyButtonPress
+            .Subscribe(new InputControlObserver(this));
     }
 
     private void OnDisable()
     {
-
-        anyButtonPressSubscription?.Dispose();
+        _anyButtonSubscription?.Dispose();
+        _anyButtonSubscription = null;
     }
+
+    // ── Join validation ───────────────────────────────────────────────────────
 
     private bool IsPossibleToPair(InputControl control)
     {
         if (GameManager.instance.gameState != GameState.Menu)
             return false;
 
-        if (playerInputManager.maxPlayerCount > 0 && currPlayersInGame >= playerInputManager.maxPlayerCount)
-        {
-            //!LOGIC TO SHOW MAX PLAYERS REACHED
+        if (_playerInputManager.maxPlayerCount > 0
+            && currPlayersInGame >= _playerInputManager.maxPlayerCount)
             return false;
-        }
 
         if (control.device is Keyboard)
-        {
             return CheckKeyboardJoin(control);
-        }
-        else if (control.device is Gamepad gamepad)
-        {
+
+        if (control.device is Gamepad gamepad)
             return CheckGamepadJoin(control, gamepad);
-        }
 
         return false;
-
-        bool CheckKeyboardJoin(InputControl inputControl)
-        {
-            if (!(inputControl is KeyControl keyControl))
-                return false;
-            
-            if (!keyboardJoinKeys.ContainsKey(keyControl.keyCode))
-                return false;
-
-            string scheme = keyboardJoinKeys[keyControl.keyCode];
-
-            if (usedKeyboardSchemes.Contains(scheme))
-                return false;
-
-            return true;
-        }
-
-        bool CheckGamepadJoin(InputControl inputControl, Gamepad gamepad)
-        {
-            if (inputControl != gamepad.startButton)
-                return false;
-
-            if (PlayerInput.all.Any(player => player.devices.Contains(inputControl.device)))
-                return false;
-            
-            return true;
-        }
     }
+
+    private bool CheckKeyboardJoin(InputControl inputControl)
+    {
+        if (!(inputControl is KeyControl keyControl))
+            return false;
+
+        if (!keyboardJoinKeys.ContainsKey(keyControl.keyCode))
+            return false;
+
+        string scheme = keyboardJoinKeys[keyControl.keyCode];
+        return !_usedKeyboardSchemes.Contains(scheme);
+    }
+
+    private bool CheckGamepadJoin(InputControl inputControl, Gamepad gamepad)
+    {
+        if (inputControl != gamepad.startButton)
+            return false;
+
+        return !PlayerInput.all.Any(p => p.devices.Contains(inputControl.device));
+    }
+
+    // ── Button press handling ─────────────────────────────────────────────────
 
     private void HandleButtonPress(InputControl control)
     {
-        if (!IsPossibleToPair(control))
-            return;
-        
+        if (!IsPossibleToPair(control)) return;
 
         InputDevice device = control.device;
-        string schemeName;
 
         if (device is Gamepad)
         {
-            schemeName = "Gamepad";
-            AttemptToJoin(device, schemeName);
+            AttemptToJoin(device, "Gamepad");
         }
-
         else if (device is Keyboard)
         {
-            string keyScheme = keyboardJoinKeys[((KeyControl)control).keyCode];
-            schemeName = keyScheme;
-            AttemptToJoin(device, schemeName);
+            string scheme = keyboardJoinKeys[((KeyControl)control).keyCode];
+            AttemptToJoin(device, scheme);
         }
     }
+
+    // ── Player instantiation ──────────────────────────────────────────────────
 
     private void AttemptToJoin(InputDevice device, string schemeName)
     {
+        // Guard: avoid joining with an already-used keyboard scheme.
+        if (device is Keyboard && _usedKeyboardSchemes.Contains(schemeName))
+        {
+            Debug.Log($"[PlayersManager] Scheme '{schemeName}' is already in use.");
+            return;
+        }
+
+        // Guard: avoid joining with a device already paired to another player.
+        if (device is Gamepad
+            && PlayerInput.all.Any(p => p.devices.Contains(device)))
+        {
+            Debug.Log($"[PlayersManager] Device '{device.name}' is already paired.");
+            return;
+        }
+
         if (device is Keyboard)
-            usedKeyboardSchemes.Add(schemeName);
+            _usedKeyboardSchemes.Add(schemeName);
 
         PlayerInput newPlayer = PlayerInput.Instantiate(
-            prefab: playerPrefab,
-            playerIndex: -1,
-            controlScheme: schemeName,
-            pairWithDevice: device
+            prefab:          playerPrefab,
+            playerIndex:     -1,
+            controlScheme:   schemeName,
+            pairWithDevice:  device
         );
 
         newPlayer.transform.position = spawnPoints[currPlayersInGame].position;
-        PlayerController playerController = newPlayer.gameObject.GetComponent<PlayerController>();
-        GameManager.instance.AddPlayer(playerController, spawnPoints[currPlayersInGame].position, materialsSO.playerMaterials[currPlayersInGame]);
+
+        PlayerController playerController = newPlayer.GetComponent<PlayerController>();
+        GameManager.instance.AddPlayer(
+            playerController,
+            spawnPoints[currPlayersInGame].position,
+            materialsSO.playerMaterials[currPlayersInGame]
+        );
+
         currPlayersInGame++;
 
         newPlayer.SendMessage("OnAssignedScheme", schemeName, SendMessageOptions.DontRequireReceiver);
-        Debug.Log($"New player with device: {device.name} and scheme: {schemeName}");
+        Debug.Log($"[PlayersManager] Joined '{device.name}' with scheme '{schemeName}'.");
     }
+
+    // ── Public API ────────────────────────────────────────────────────────────
 
     public void FreeKeyboardScheme(string schemeName)
     {
-        if (usedKeyboardSchemes.Contains(schemeName))
-        {
-            usedKeyboardSchemes.Remove(schemeName);
-            Debug.Log($"Esquema {schemeName} liberado.");
-        }
+        if (!_usedKeyboardSchemes.Contains(schemeName)) return;
+
+        _usedKeyboardSchemes.Remove(schemeName);
+        Debug.Log($"[PlayersManager] Scheme '{schemeName}' freed.");
     }
 
-    private class InputControlObserver : IObserver<InputControl>
+    // ── Inner observer ────────────────────────────────────────────────────────
+
+    private sealed class InputControlObserver : IObserver<InputControl>
     {
-        private PlayersManager manager;
-
-        public InputControlObserver(PlayersManager manager)
-        {
-            this.manager = manager;
-        }
-
-        public void OnNext(InputControl value)
-        {
-            manager.HandleButtonPress(value);
-        }
-
-        public void OnError(Exception error)
-        {
-            Debug.LogError("InputSystem Observable Error: " + error.Message);
-        }
-
-        public void OnCompleted() { }
+        private readonly PlayersManager _manager;
+        public InputControlObserver(PlayersManager manager) => _manager = manager;
+        public void OnNext(InputControl value) => _manager.HandleButtonPress(value);
+        public void OnError(Exception error)   => Debug.LogError($"[PlayersManager] {error.Message}");
+        public void OnCompleted()              { }
     }
 }
-
