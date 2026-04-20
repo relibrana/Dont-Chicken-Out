@@ -67,6 +67,9 @@ MonoBehaviour:
   animators:
   - {fileID: 7219950855646453494}
   - {fileID: 4885050252641536331}
+  basePitch: 1
+  pitchStep: 0.2
+  maxPitch: 1.8
 --- !u!50 &3901264166788124858
 Rigidbody2D:
   serializedVersion: 5

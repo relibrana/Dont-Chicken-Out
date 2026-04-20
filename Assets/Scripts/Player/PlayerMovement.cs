@@ -262,6 +262,9 @@ public sealed class PlayerMovement : MonoBehaviour
     {
         if (_isGrounded == _wasGrounded) return;
 
+        if(_isGrounded) 
+            AudioManager.Instance.PlaySound("player_land");
+
         _wasGrounded = _isGrounded;
         _animController?.SetGrounded(_isGrounded);
         OnGroundedChanged?.Invoke(_isGrounded);

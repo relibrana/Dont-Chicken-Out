@@ -1,0 +1,23 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 98231222e42f91149b46039f10432a53, type: 3}
+  m_Name: SonicMelody
+  m_EditorClassIdentifier: Assembly-CSharp::MelodySO
+  melodyId: sonic
+  notes:
+  - {fileID: 8300000, guid: 5d29191833c894fcd8dba09ce36102ba, type: 3}
+  - {fileID: 8300000, guid: e992f8b5df5c34ae59b8e5f284e051da, type: 3}
+  - {fileID: 8300000, guid: 1f4d00c5d25224da5aa25a2f2561d6b3, type: 3}
+  - {fileID: 8300000, guid: 84a467322aa5c4deb9e637d07705624c, type: 3}
+  - {fileID: 8300000, guid: 073244b5c4f1a4953b4eb96169b27d9e, type: 3}
+  - {fileID: 8300000, guid: 8ffc5c9fbef1044c382783a6eaf08607, type: 3}
+  - {fileID: 8300000, guid: ff7af02692e414302bc4eb6ccab6d93f, type: 3}

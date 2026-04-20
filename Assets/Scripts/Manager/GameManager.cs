@@ -218,6 +218,7 @@ public class GameManager : MonoBehaviour
 
             inGamePlayers[i]   = player;
             player.playerIndex = i;
+            player.OnPlayerIndexAssigned();
             return;
         }
     }

@@ -19,7 +19,6 @@ public sealed class MainMenuController : MonoBehaviour
 
     private void OnEnable()
     {
-        AudioManager.Instance.PlayMusic("Menu");
         StartSelectRoutine();
     }
 

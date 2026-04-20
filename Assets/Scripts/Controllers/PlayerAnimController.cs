@@ -98,4 +98,7 @@ public sealed class PlayerAnimController : MonoBehaviour
     /// </summary>
     public void PlaySFX(string sfxName) =>
         AudioManager.Instance.PlaySound(sfxName);
+    
+    public void PlayBGM(string bgmName) =>
+        AudioManager.Instance.PlayMusic(bgmName);
 }

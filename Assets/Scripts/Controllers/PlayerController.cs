@@ -37,6 +37,7 @@ public sealed class PlayerController : MonoBehaviour, IKickable
     private PlayerInputHandler _inputHandler;
     private PlayerMovement     _movement;
     private PlayerBlockHandler _blockHandler;
+    private CluckSystem        _cluckSystem;
 
     // ── Input / scheme ────────────────────────────────────────────────────────
 
@@ -51,6 +52,7 @@ public sealed class PlayerController : MonoBehaviour, IKickable
         _inputHandler = GetComponent<PlayerInputHandler>();
         _movement     = GetComponent<PlayerMovement>();
         _blockHandler = GetComponent<PlayerBlockHandler>();
+        _cluckSystem  = GetComponent<CluckSystem>();
 
         _movement.SetAnimController(animController);
         _blockHandler.Initialize(valuesSO.blockPlacementCD, animController);
@@ -117,7 +119,7 @@ public sealed class PlayerController : MonoBehaviour, IKickable
     {
         if (IsOnPause()) return;
 
-        AudioManager.Instance.MakeCuackSound();
+        _cluckSystem?.OnCluckPressed();
     }
 
     private void HandlePause()
@@ -147,6 +149,12 @@ public sealed class PlayerController : MonoBehaviour, IKickable
     }
 
     // ── Public API (called by GameManager) ────────────────────────────────────
+
+    /// <summary>Called by GameManager after playerIndex is assigned.</summary>
+    public void OnPlayerIndexAssigned()
+    {
+        _cluckSystem?.SetPlayerIndex(playerIndex);
+    }
 
     /// <summary>Triggers the player death flow.</summary>
     public void OnDeath() => onDeath?.Invoke(this);

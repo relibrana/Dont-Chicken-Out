@@ -46,10 +46,19 @@ public class HoldableItem : MonoBehaviour
 		holding = false;
 		rb2d.bodyType = RigidbodyType2D.Dynamic;
 		AnimateAppear();
-		AudioManager.Instance.PlaySound("block_placement");
+		OnPlaceSfx();
 	}
 
-    public List<Collider2D> GetColliders() => colliders;
+	public List<Collider2D> GetColliders() => colliders;
+
+	/// <summary>
+	/// Called at the end of PlaceHoldable to play the placement sound.
+	/// Override in subclasses to customise or suppress the default behaviour.
+	/// </summary>
+	protected virtual void OnPlaceSfx()
+	{
+		AudioManager.Instance.PlaySound("block_placement");
+	}
 
 
 	void Update ()

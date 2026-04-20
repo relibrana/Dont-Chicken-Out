@@ -1,0 +1,24 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 98231222e42f91149b46039f10432a53, type: 3}
+  m_Name: TequilaMelody
+  m_EditorClassIdentifier: Assembly-CSharp::MelodySO
+  melodyId: tequila
+  notes:
+  - {fileID: 8300000, guid: 03b0e9a259fcf4239a6caf382983ad82, type: 3}
+  - {fileID: 8300000, guid: e89c777fd4cf74a94bffa55c65478ca6, type: 3}
+  - {fileID: 8300000, guid: f6150751f613d447ca621bdff3efae1b, type: 3}
+  - {fileID: 8300000, guid: f170fb358690d4971bbc637776d2dded, type: 3}
+  - {fileID: 8300000, guid: 85873107231564837aa5b9d33195eb04, type: 3}
+  - {fileID: 8300000, guid: c351088d2cbc74795b9b76ad5c45c021, type: 3}
+  - {fileID: 8300000, guid: 4f5fcd5b7b1464f54a5d574d4078c363, type: 3}
+  - {fileID: 8300000, guid: 4cefe6616dd954b13acf1fc57f6d5ddb, type: 3}

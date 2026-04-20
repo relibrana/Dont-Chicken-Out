@@ -1,0 +1,23 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 98231222e42f91149b46039f10432a53, type: 3}
+  m_Name: MarioMelody
+  m_EditorClassIdentifier: Assembly-CSharp::MelodySO
+  melodyId: mario
+  notes:
+  - {fileID: 8300000, guid: 650d470eca1a043dda2bd6d3fd9042a4, type: 3}
+  - {fileID: 8300000, guid: 491973ec8e32449c79af1f29bfac0e22, type: 3}
+  - {fileID: 8300000, guid: 664c283eab3bf4546ac6191dfe2d6346, type: 3}
+  - {fileID: 8300000, guid: 50b7b182e234f45c29f561f7d47e92ff, type: 3}
+  - {fileID: 8300000, guid: 1a244463fab954984b9400d49fb3f894, type: 3}
+  - {fileID: 8300000, guid: 7aab44cba6bba41ab86de61026157a78, type: 3}
+  - {fileID: 8300000, guid: c66b23a4eaa94470782d2c11f1a2322a, type: 3}

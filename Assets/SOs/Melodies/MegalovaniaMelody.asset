@@ -1,0 +1,26 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 98231222e42f91149b46039f10432a53, type: 3}
+  m_Name: MegalovaniaMelody
+  m_EditorClassIdentifier: Assembly-CSharp::MelodySO
+  melodyId: megalovania
+  notes:
+  - {fileID: 8300000, guid: 454633749f94245b8928eea4c9af0e7b, type: 3}
+  - {fileID: 8300000, guid: eafa9fd0c013b4e80a148c2961b03e3e, type: 3}
+  - {fileID: 8300000, guid: ce0f87a237299403bbe2cbe8a53aa992, type: 3}
+  - {fileID: 8300000, guid: 62d7e98e9d9374638bae6d999e15410e, type: 3}
+  - {fileID: 8300000, guid: e4fe5f7b5df244803afc888791848293, type: 3}
+  - {fileID: 8300000, guid: 9a8971011cb3e4af7b496fa70d64c53c, type: 3}
+  - {fileID: 8300000, guid: e839f512ae6bd46cba86b6229a395904, type: 3}
+  - {fileID: 8300000, guid: d61ddeb20288041a795c5f162ff01857, type: 3}
+  - {fileID: 8300000, guid: 2eab00bd0094f499eab8cc0be7a82238, type: 3}
+  - {fileID: 8300000, guid: e1117908f7edb494ab2cb3cba5fbbc62, type: 3}

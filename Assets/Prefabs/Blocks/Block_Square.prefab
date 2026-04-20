@@ -75,6 +75,9 @@ MonoBehaviour:
   - {fileID: 449239424725283906}
   - {fileID: 4885050252641536331}
   - {fileID: 722047484386974030}
+  basePitch: 1
+  pitchStep: 0.2
+  maxPitch: 1.8
 --- !u!50 &3901264166788124858
 Rigidbody2D:
   serializedVersion: 5
