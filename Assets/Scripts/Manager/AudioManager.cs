@@ -317,18 +317,18 @@ public class AudioManager : MonoBehaviour
     {
         int newDeath = GetNonRepeatedRandomNumber(currentDeath, playerDeathSfxs.Count);
 
-        StopSound($"cuack{currentDeath}");
+        StopSound($"death{currentDeath}");
 
-        PlaySound($"cuack{newDeath}");
+        PlaySound($"death{newDeath}");
         currentDeath = newDeath;
     }
 	public void MakeJoinSound()
     {
         int newJoin = GetNonRepeatedRandomNumber(currentJoin, playerJoinSfxs.Count);
 
-        StopSound($"cuack{currentJoin}");
+        StopSound($"join{currentJoin}");
 
-        PlaySound($"cuack{newJoin}");
+        PlaySound($"join{newJoin}");
         currentJoin = newJoin;
     }
 
