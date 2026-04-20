@@ -71,13 +71,9 @@ MonoBehaviour:
     id: player_kick
     volume: 0.6
     loop: 0
-  - clip: {fileID: 0}
-    id: player_death
-    volume: 0.6
-    loop: 0
-  - clip: {fileID: 8300000, guid: 170b6af02849e0c429f181d4b1e24cf6, type: 3}
+  - clip: {fileID: 8300000, guid: 55e1065b26f3c4a2bb41e6f50154baa5, type: 3}
     id: player_join
-    volume: 0.6
+    volume: 1
     loop: 0
   playerCockSfxs:
   - clip: {fileID: 8300000, guid: cf1d6cef5fc67ce4099aacc0746be71a, type: 3}
@@ -160,6 +156,32 @@ MonoBehaviour:
     id: cuack19
     volume: 0.5
     loop: 0
+  playerDeathSfxs:
+  - clip: {fileID: 8300000, guid: a37cae546f3a347c7aa93ceffab3003e, type: 3}
+    id: death0
+    volume: 0.4
+    loop: 0
+  - clip: {fileID: 8300000, guid: d9100b43734c44d66a7e28fd26258c2c, type: 3}
+    id: death1
+    volume: 0.4
+    loop: 0
+  - clip: {fileID: 8300000, guid: b733049fda2d24cc8b1b1e2185194221, type: 3}
+    id: death2
+    volume: 0.4
+    loop: 0
+  - clip: {fileID: 8300000, guid: 71eba87095ba944aca6494bba96f2365, type: 3}
+    id: death3
+    volume: 0.4
+    loop: 0
+  - clip: {fileID: 8300000, guid: e1b8f12031b2e40a28b3b527cc24cc89, type: 3}
+    id: death4
+    volume: 0.4
+    loop: 0
+  playerJoinSfxs:
+  - clip: {fileID: 0}
+    id: 
+    volume: 0.6
+    loop: 0
   playerStepSfxs:
   - clip: {fileID: 8300000, guid: 5719ad1efcb58b940b81faf42a95fc45, type: 3}
     id: step0
@@ -216,6 +238,10 @@ MonoBehaviour:
     id: button_selected
     volume: 0.08
     loop: 0
+  - clip: {fileID: 8300000, guid: 7670c1accc6264e0cbd5d71ca6e05311, type: 3}
+    id: button_hover
+    volume: 0.08
+    loop: 0
   - clip: {fileID: 0}
     id: win_round
     volume: 0.6
@@ -226,10 +252,6 @@ MonoBehaviour:
     loop: 0
   - clip: {fileID: 0}
     id: game_start
-    volume: 0.6
-    loop: 0
-  - clip: {fileID: 0}
-    id: button_hover
     volume: 0.6
     loop: 0
   miscsSfxs:
