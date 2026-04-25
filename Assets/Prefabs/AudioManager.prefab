@@ -64,20 +64,16 @@ MonoBehaviour:
     volume: 1
     loop: 0
   - clip: {fileID: 8300000, guid: 12bf6658125401a42b6121b0236634d8, type: 3}
-    id: player_falling
-    volume: 1
-    loop: 1
-  - clip: {fileID: 8300000, guid: 170b6af02849e0c429f181d4b1e24cf6, type: 3}
+    id: player_gliding
+    volume: 0.4
+    loop: 0
+  - clip: {fileID: 8300000, guid: 2b6edbe99455848f18fd10828dca74a7, type: 3}
     id: player_kick
-    volume: 0.6
+    volume: 0.25
     loop: 0
-  - clip: {fileID: 8300000, guid: 55e1065b26f3c4a2bb41e6f50154baa5, type: 3}
-    id: player_join
-    volume: 1
-    loop: 0
-  - clip: {fileID: 8300000, guid: 55e1065b26f3c4a2bb41e6f50154baa5, type: 3}
+  - clip: {fileID: 8300000, guid: fe6190d7e666e48a9b2c3c027435b2f5, type: 3}
     id: player_land
-    volume: 1
+    volume: 0.15
     loop: 0
   playerDeathSfxs:
   - clip: {fileID: 8300000, guid: a37cae546f3a347c7aa93ceffab3003e, type: 3}
@@ -101,26 +97,30 @@ MonoBehaviour:
     volume: 0.4
     loop: 0
   playerJoinSfxs:
-  - clip: {fileID: 0}
-    id: 
-    volume: 0.6
+  - clip: {fileID: 8300000, guid: 1ad90cced7289430c9f9335035084127, type: 3}
+    id: join0
+    volume: 0.25
+    loop: 0
+  - clip: {fileID: 8300000, guid: 6f387a16bb88f40b8be5baa172d870c3, type: 3}
+    id: join1
+    volume: 0.25
+    loop: 0
+  - clip: {fileID: 8300000, guid: 99515596146094bf28022aab924a9c05, type: 3}
+    id: join2
+    volume: 0.25
     loop: 0
   playerStepSfxs:
-  - clip: {fileID: 8300000, guid: 5719ad1efcb58b940b81faf42a95fc45, type: 3}
+  - clip: {fileID: 8300000, guid: 0ea2ca8aa02bc4d21a2c61a39cffdf86, type: 3}
     id: step0
-    volume: 0.3
+    volume: 0.02
     loop: 0
-  - clip: {fileID: 8300000, guid: c4651eaee1684db429bed946a29dabf3, type: 3}
+  - clip: {fileID: 8300000, guid: 2b5131069b4834474b48f013bcc0887f, type: 3}
     id: step1
-    volume: 0.3
+    volume: 0.02
     loop: 0
-  - clip: {fileID: 8300000, guid: c4651eaee1684db429bed946a29dabf3, type: 3}
+  - clip: {fileID: 8300000, guid: e33d0b1a0f4ca4d3c8bbcf6f30052f04, type: 3}
     id: step2
-    volume: 0.3
-    loop: 0
-  - clip: {fileID: 8300000, guid: 5719ad1efcb58b940b81faf42a95fc45, type: 3}
-    id: step3
-    volume: 0.3
+    volume: 0.02
     loop: 0
   blocksSfxs:
   - clip: {fileID: 8300000, guid: dbe4099eb0e00b046bf8769268a6e4e0, type: 3}
