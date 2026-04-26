@@ -69,7 +69,7 @@ MonoBehaviour:
     loop: 0
   - clip: {fileID: 8300000, guid: 2b6edbe99455848f18fd10828dca74a7, type: 3}
     id: player_kick
-    volume: 0.25
+    volume: 0.3
     loop: 0
   - clip: {fileID: 8300000, guid: fe6190d7e666e48a9b2c3c027435b2f5, type: 3}
     id: player_land
@@ -142,15 +142,15 @@ MonoBehaviour:
     loop: 0
   - clip: {fileID: 8300000, guid: 34f1e4f2d8286f849826778339f96fab, type: 3}
     id: bomb_lighter
-    volume: 0.6
+    volume: 1
     loop: 1
-  - clip: {fileID: 8300000, guid: d9d827584209ad941a51a0a7d14b6953, type: 3}
+  - clip: {fileID: 8300000, guid: 6e2106bba4e5c4e7793eb42be4f0e887, type: 3}
     id: bomb_explosion
-    volume: 0.6
+    volume: 0.3
     loop: 0
-  - clip: {fileID: 0}
+  - clip: {fileID: 8300000, guid: 55652b962abfc414083691dea33edc3a, type: 3}
     id: egg_break
-    volume: 0.6
+    volume: 0.3
     loop: 0
   uiSfxs:
   - clip: {fileID: 8300000, guid: e18f36faa57ac014a8cfaa5459e96daf, type: 3}
@@ -173,18 +173,18 @@ MonoBehaviour:
     id: win_game
     volume: 0.6
     loop: 0
-  - clip: {fileID: 0}
+  - clip: {fileID: 8300000, guid: d317e143452104e83bb8b4bc720c0570, type: 3}
     id: game_start
-    volume: 0.6
+    volume: 0.2
     loop: 0
   miscsSfxs:
-  - clip: {fileID: 0}
+  - clip: {fileID: 8300000, guid: f026242543c6c44f0ab921c00c03f902, type: 3}
     id: scene_transitionOut
-    volume: 0.6
+    volume: 0.2
     loop: 0
-  - clip: {fileID: 0}
+  - clip: {fileID: 8300000, guid: c45b8c4b1ea2649c2ad8b0d3f1ddf256, type: 3}
     id: scene_transitionIn
-    volume: 0.6
+    volume: 0.2
     loop: 0
   melodies:
   - {fileID: 11400000, guid: cb3ec3aa5355e2e4c879a107de431498, type: 2}
