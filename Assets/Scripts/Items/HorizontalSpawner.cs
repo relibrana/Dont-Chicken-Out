@@ -51,7 +51,7 @@ public class HorizontalSpawner : MonoBehaviour
         spawnSequence = null;
     }
 
-    private float GetRandomModifier() => Random.Range(0, spawnTimeModifier * 2);
+    private float GetRandomModifier() => Random.Range(0, spawnTimeModifier);
 
     private void Spawn()
     {

@@ -10982,7 +10982,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7349066614403196875, guid: 1ecb7d11c58c34736a82172b84d07078, type: 3}
       propertyPath: spawnTimeModifier
-      value: 7.5
+      value: 12
       objectReference: {fileID: 0}
     - target: {fileID: 8272918300763466392, guid: 1ecb7d11c58c34736a82172b84d07078, type: 3}
       propertyPath: m_RootOrder
