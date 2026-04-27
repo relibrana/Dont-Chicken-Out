@@ -54,15 +54,15 @@ MonoBehaviour:
     id: Game
     volume: 0.18
     loop: 1
-  - clip: {fileID: 8300000, guid: 000939dcbaacc4b318343a0138036f85, type: 3}
+  - clip: {fileID: 8300000, guid: 519987becc9eb400fbc3cfccf719e7fa, type: 3}
     id: BGM_Menu_A1
     volume: 0.15
     loop: 0
-  - clip: {fileID: 8300000, guid: 000939dcbaacc4b318343a0138036f85, type: 3}
+  - clip: {fileID: 8300000, guid: cb3294179089144668609a6213ab5f12, type: 3}
     id: BGM_Menu_A2
     volume: 0.15
     loop: 0
-  - clip: {fileID: 8300000, guid: 000939dcbaacc4b318343a0138036f85, type: 3}
+  - clip: {fileID: 8300000, guid: 4d98a840d5d0b4e2bb7597fc14bbd17b, type: 3}
     id: BGM_Menu_B
     volume: 0.15
     loop: 1
@@ -133,11 +133,11 @@ MonoBehaviour:
   blocksSfxs:
   - clip: {fileID: 8300000, guid: dbe4099eb0e00b046bf8769268a6e4e0, type: 3}
     id: block_placement
-    volume: 0.6
+    volume: 0.3
     loop: 0
   - clip: {fileID: 8300000, guid: 7b99746c7f784e44b8190d4b8fffc4bc, type: 3}
     id: block_invalid
-    volume: 0.6
+    volume: 0.3
     loop: 0
   - clip: {fileID: 8300000, guid: 1e2a2297412d88e47bfb3b4f8a643425, type: 3}
     id: block_pushing
@@ -146,7 +146,7 @@ MonoBehaviour:
   itemSfxs:
   - clip: {fileID: 8300000, guid: 7bfbb92e2674a664c93991d638319e04, type: 3}
     id: tire_bounce
-    volume: 0
+    volume: 0.5
     loop: 0
   - clip: {fileID: 8300000, guid: 34f1e4f2d8286f849826778339f96fab, type: 3}
     id: bomb_lighter
@@ -173,17 +173,13 @@ MonoBehaviour:
     id: button_hover
     volume: 0.08
     loop: 0
-  - clip: {fileID: 0}
+  - clip: {fileID: 8300000, guid: fcec733973be44fbcbd0ae9baf312457, type: 3}
     id: win_round
-    volume: 0.6
-    loop: 0
-  - clip: {fileID: 0}
-    id: win_game
-    volume: 0.6
-    loop: 0
-  - clip: {fileID: 8300000, guid: d317e143452104e83bb8b4bc720c0570, type: 3}
-    id: game_countdown
     volume: 0.2
+    loop: 0
+  - clip: {fileID: 8300000, guid: 555c1011887c44099b22ac71110af0d4, type: 3}
+    id: game_countdown
+    volume: 0.5
     loop: 0
   - clip: {fileID: 8300000, guid: d317e143452104e83bb8b4bc720c0570, type: 3}
     id: game_start
