@@ -143,7 +143,7 @@ public class GameManager : MonoBehaviour
 
     private void OnPrepareState()
     {
-        foreach (var player in inGamePlayers)
+        foreach (PlayerController player in inGamePlayers)
         {
             if (player == null) continue;
 

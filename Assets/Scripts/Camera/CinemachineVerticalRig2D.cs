@@ -12,13 +12,13 @@ public class CinemachineVerticalRig2D : MonoBehaviour
     [SerializeField] private CinemachineCamera cineCam;
 
     [Header("Follow")]
-    [Tooltip("Tiempo de amortiguación vertical (en segundos). Valores más pequeños = respuesta más rápida (la cámara sube más rápido). Valores grandes = movimiento más suave pero más lento.")]
+    [Tooltip("Tiempo de amortiguación vertical (en segundos). Valores más pequeños = respuesta más rápida. Valores grandes = movimiento más suave pero más lento.")]
     [SerializeField] private float smoothTimeY = 0.5f;
 
-    [Tooltip("Altura mínima que los jugadores deben superar para que la cámara comience a elevarse. Si nadie supera este valor, la cámara no sube.")]
+    [Tooltip("Altura mínima que los jugadores deben superar para que la cámara comience a elevarse.")]
     [SerializeField] private float minFollowHeight = 1f;
 
-    [Tooltip("Desfase vertical adicional aplicado por encima de la altura máxima alcanzada. Útil para dejar más 'aire' encima del personaje.")]
+    [Tooltip("Desfase vertical adicional aplicado por encima de la altura máxima alcanzada.")]
     [SerializeField] private float yOffset = 0f;
 
     [Header("Zoom")]
@@ -50,20 +50,27 @@ public class CinemachineVerticalRig2D : MonoBehaviour
     [Tooltip("Habilita/deshabilita el movimiento de cámara por código (útil para pausar o durante cinemáticas).")]
     public bool canMove = false;
 
-    // Estado interno
     [Tooltip("Mayor altura REAL alcanzada por los jugadores en esta sesión. Solo sube cuando alguien sobrepasa minFollowHeight.")]
     public float MaxHeightReached { get; set; } = 0f;
 
-    float _velY, _velZoom;
-    bool _focusWinner;
-    Transform _winner;
+    // Velocidades para SmoothDamp
+    private float _velY;
+    private float _velX;
+    private float _velZoom;
 
-    float _shakeTimeLeft = 0f;
-    float _shakeAmplitude = 0f;
-    Vector2 _shakeSeed;
-    Vector3 _lastAppliedShake = Vector3.zero;
+    // Estado del focus al ganador:
+    // _focusWinnerPending: winner registrado, esperando a que el shake termine
+    // _focusWinner: shake terminado, follow al winner activo
+    private bool _focusWinner;
+    private bool _focusWinnerPending;
+    private Transform _winner;
 
-    float LensOrthoSize
+    private float _shakeTimeLeft = 0f;
+    private float _shakeAmplitude = 0f;
+    private Vector2 _shakeSeed;
+    private Vector3 _lastAppliedShake = Vector3.zero;
+
+    private float LensOrthoSize
     {
         get => cineCam != null ? cineCam.Lens.OrthographicSize : Camera.main.orthographicSize;
         set
@@ -90,7 +97,7 @@ public class CinemachineVerticalRig2D : MonoBehaviour
         _shakeSeed = new Vector2(Random.Range(0f, 1000f), Random.Range(0f, 1000f));
     }
 
-    void Update()
+    private void Update()
     {
 #if UNITY_EDITOR
         if (Input.GetKeyDown(KeyCode.Z))
@@ -99,46 +106,70 @@ public class CinemachineVerticalRig2D : MonoBehaviour
         }
 
         if (Input.GetKeyDown(KeyCode.X))
-        {
             FocusWinner(FindAnyObjectByType<PlayerController>()?.transform);
-        }
 #endif
 
         if (baseFollowTarget == null || !canMove) return;
 
+        // El shake siempre se procesa primero, independientemente del estado de la cámara
         UpdateShakeOffset();
+
+        // Cuando el winner está pendiente y el shake expiró, activamos el follow
+        if (_focusWinnerPending && _shakeTimeLeft <= 0f)
+        {
+            _focusWinner = true;
+            _focusWinnerPending = false;
+        }
 
         if (_focusWinner && _winner != null)
         {
-            FollowUpOnly(_winner.position.y);
+            // cineCam.Follow = baseFollowTarget siempre, el shake sigue siendo visible
+            FollowWinner(_winner.position.x, _winner.position.y);
             ZoomTo(winnerOrthoSize);
             return;
         }
 
-        var players = FindObjectsByType<PlayerController>(FindObjectsSortMode.None);
+        PlayerController[] players = FindObjectsByType<PlayerController>(FindObjectsSortMode.None);
         if (players == null || players.Length == 0) return;
 
         float highestGroundedY = float.NegativeInfinity;
 
-        foreach (var p in players)
+        foreach (PlayerController p in players)
         {
-            if (p == null || !p.isActiveAndEnabled) continue;
+            // FIX: excluimos jugadores muertos filtrando por isOnGame
+            if (p == null || !p.isActiveAndEnabled || !p.isOnGame) continue;
             if (!p.IsGrounded) continue;
 
             highestGroundedY = Mathf.Max(highestGroundedY, p.transform.position.y);
         }
 
         if (highestGroundedY != float.NegativeInfinity && highestGroundedY > minFollowHeight)
-        {
             MaxHeightReached = Mathf.Max(MaxHeightReached, highestGroundedY);
-        }
 
         FollowUpOnly(MaxHeightReached);
-        ZoomTo(normalOrthoSize);
 
+        // Durante el pending el zoom ya empieza a reducirse, sin esperar a que el shake termine
+        ZoomTo(_focusWinnerPending ? winnerOrthoSize : normalOrthoSize);
     }
 
-    void FollowUpOnly(float targetY)
+    /// <summary>
+    /// Sigue al ganador en ambos ejes (X e Y) con suavizado.
+    /// Se usa exclusivamente durante el estado de focus al ganador.
+    /// </summary>
+    private void FollowWinner(float targetX, float targetY)
+    {
+        float desiredY = targetY + yOffset;
+
+        Vector3 pos = baseFollowTarget.position;
+        float newY = Mathf.SmoothDamp(pos.y, desiredY, ref _velY, smoothTimeY);
+        float newX = Mathf.SmoothDamp(pos.x, targetX, ref _velX, smoothTimeY);
+        baseFollowTarget.position = new Vector3(newX, newY, pos.z);
+    }
+
+    /// <summary>
+    /// Sigue únicamente el eje Y. Se usa durante el gameplay normal.
+    /// </summary>
+    private void FollowUpOnly(float targetY)
     {
         float desiredY = targetY + yOffset;
 
@@ -147,14 +178,15 @@ public class CinemachineVerticalRig2D : MonoBehaviour
         baseFollowTarget.position = new Vector3(pos.x, newY, pos.z);
     }
 
-    void ZoomTo(float targetSize)
+    private void ZoomTo(float targetSize)
     {
         float newSize = Mathf.SmoothDamp(LensOrthoSize, targetSize, ref _velZoom, zoomSmooth);
         LensOrthoSize = newSize;
     }
 
-    void UpdateShakeOffset()
+    private void UpdateShakeOffset()
     {
+        // Revertimos el offset del frame anterior antes de calcular el nuevo
         if (_lastAppliedShake != Vector3.zero)
         {
             baseFollowTarget.localPosition -= _lastAppliedShake;
@@ -180,7 +212,7 @@ public class CinemachineVerticalRig2D : MonoBehaviour
     }
 
     /// <summary>
-    /// Temblor visual.
+    /// Temblor visual. Funciona en cualquier estado de la cámara.
     /// </summary>
     public void DoDeathShake(float duration = -1f, float amplitude = -1f)
     {
@@ -189,33 +221,43 @@ public class CinemachineVerticalRig2D : MonoBehaviour
     }
 
     /// <summary>
-    /// Enfoca ganador y hace zoom.
+    /// Registra al ganador. Si hay shake activo, el follow espera a que termine.
+    /// El zoom empieza inmediatamente. Si no hay shake, el follow activa al instante.
     /// </summary>
     public void FocusWinner(Transform winner)
     {
         if (winner == null) return;
 
-        cineCam.Follow = winner;
-        _winner = winner;
-        _focusWinner = true;
+        // cineCam siempre sigue al rig, nunca al winner directamente
+        if (cineCam != null) cineCam.Follow = baseFollowTarget;
 
-        if (_lastAppliedShake != Vector3.zero)
+        _winner = winner;
+
+        // Si hay shake activo lo dejamos correr y activamos el follow al terminar
+        if (_shakeTimeLeft > 0f)
         {
-            baseFollowTarget.localPosition -= _lastAppliedShake;
-            _lastAppliedShake = Vector3.zero;
+            _focusWinnerPending = true;
+            _focusWinner = false;
         }
-        _shakeTimeLeft = 0f;
+        else
+        {
+            _focusWinner = true;
+            _focusWinnerPending = false;
+        }
     }
 
     /// <summary>
-    /// Reinicia estado de cámara para una nueva ronda.
+    /// Reinicia el estado completo de la cámara para una nueva ronda.
     /// </summary>
     public void ResetToGameplay()
     {
         if (cineCam != null) cineCam.Follow = baseFollowTarget;
+
         _focusWinner = false;
+        _focusWinnerPending = false;
         _winner = null;
         _velY = 0f;
+        _velX = 0f;
         _velZoom = 0f;
         LensOrthoSize = normalOrthoSize;
         MaxHeightReached = 0f;
@@ -228,26 +270,29 @@ public class CinemachineVerticalRig2D : MonoBehaviour
     }
 
     /// <summary>
-    /// Quita el enfoque al jugador ganador, se utiliza para el empate.
+    /// Quita el enfoque al jugador ganador. Se utiliza para el empate.
     /// </summary>
     public void StopFocusWinner()
     {
         if (cineCam != null) cineCam.Follow = baseFollowTarget;
+
         _focusWinner = false;
+        _focusWinnerPending = false;
         _winner = null;
         _velY = 0f;
+        _velX = 0f;
         _velZoom = 0f;
     }
 
-    void OnDrawGizmos()
+    private void OnDrawGizmos()
     {
         if (cineCam == null) return;
         Vector3 camPos = cineCam.transform.position;
 
-        Gizmos.color = Color.green;   // Umbral para empezar a seguir
+        Gizmos.color = Color.green;
         Gizmos.DrawLine(new Vector3(camPos.x - 10f, minFollowHeight, camPos.z), new Vector3(camPos.x + 10f, minFollowHeight, camPos.z));
 
-        Gizmos.color = Color.red;     // Altura máxima real alcanzada
+        Gizmos.color = Color.red;
         Gizmos.DrawLine(new Vector3(camPos.x - 10f, MaxHeightReached, camPos.z), new Vector3(camPos.x + 10f, MaxHeightReached, camPos.z));
     }
 }
