@@ -20,8 +20,24 @@ public class GameManager : MonoBehaviour
     [Header("UI")]
     [SerializeField] private UIManager uiManager;
     public CinemachineVerticalRig2D cameraRig;
-    private float autoMoveCameraCurrentTime;
-    private const float startUpTime = 3.5f;
+
+    [Header("Camera Auto-Move")]
+    [Tooltip("Seconds after the round starts before the camera begins rising.")]
+    [SerializeField] private float cameraStartDelay = 3.5f;
+
+    [Tooltip("Initial upward speed of the camera (units per second).")]
+    [SerializeField] private float cameraInitialSpeed = 0.15f;
+
+    [Tooltip("How much the speed increases per second of gameplay.")]
+    [SerializeField] private float cameraAcceleration = 0.01f;
+
+    [Tooltip("Maximum upward speed the camera can reach (units per second).")]
+    [SerializeField] private float cameraMaxSpeed = 1.5f;
+
+
+    // Current runtime camera speed — reset each round.
+    private float _currentCameraSpeed;
+    private float _cameraDelayTimer;
 
     [Header("Game Variables")]
     public Action OnGame;
@@ -29,9 +45,9 @@ public class GameManager : MonoBehaviour
     /// <summary>Fired when the game enters Prepare state (countdown started).</summary>
     public Action OnPrepare;
     public Action OnGameStarting;
-    /// <summary>Fired whenever the number of joined players changes. int = current count.</summary>
+    /// <summary>Fired whenever the number of joined players changes.</summary>
     public Action<int> OnPlayersCountChanged;
-    public float autoMoveCameraSpeed = 0.2f;
+
     public List<float> playersPosX;
     private Coroutine checkerCoroutine;
     [SerializeField] private PlayerController[] inGamePlayers = new PlayerController[4];
@@ -83,9 +99,6 @@ public class GameManager : MonoBehaviour
 
     private void Update()
     {
-        if (autoMoveCameraCurrentTime < 0)
-            autoMoveCameraCurrentTime = 0;
-
         switch (gameState)
         {
             case GameState.Menu:    OnMenuState();    break;
@@ -154,8 +167,6 @@ public class GameManager : MonoBehaviour
                 ResetPlayer(player, _repositionOnReset);
         }
 
-        autoMoveCameraCurrentTime = startUpTime;
-
         if (!triggerStartGame) return;
 
         winner = null;
@@ -163,6 +174,9 @@ public class GameManager : MonoBehaviour
 
         cameraRig.canMove = false;
         cameraRig.ResetToGameplay();
+
+        // Reset the speed and delay timer for this new round.
+        ResetCameraSpeed();
 
         uiManager.StartInitialGameSequence(() =>
         {
@@ -187,13 +201,43 @@ public class GameManager : MonoBehaviour
                 playersAlive[i].isOnGame = true;
         }
 
-        autoMoveCameraCurrentTime -= Time.deltaTime;
-
-        if (autoMoveCameraCurrentTime <= 0)
-            cameraRig.MaxHeightReached += autoMoveCameraSpeed * Time.deltaTime;
+        TickCameraAutoMove();
     }
 
     private void OnWinState() { }
+
+    // ── Camera auto-move ──────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Resets speed and delay to their initial values. Call at the start of each round.
+    /// </summary>
+    private void ResetCameraSpeed()
+    {
+        _currentCameraSpeed = cameraInitialSpeed;
+        _cameraDelayTimer   = cameraStartDelay;
+    }
+
+    /// <summary>
+    /// Called every frame while in GameState.Game.
+    /// Waits for the initial delay, then pushes MaxHeightReached upward at an
+    /// ever-increasing speed, capped at cameraMaxSpeed.
+    /// Player-height catch-up is handled by CinemachineVerticalRig2D.
+    /// </summary>
+    private void TickCameraAutoMove()
+    {
+        if (_cameraDelayTimer > 0f)
+        {
+            _cameraDelayTimer -= Time.deltaTime;
+            return;
+        }
+
+        // Gradually increase auto-move speed up to the cap.
+        _currentCameraSpeed = Mathf.Min(
+            _currentCameraSpeed + cameraAcceleration * Time.deltaTime,
+            cameraMaxSpeed);
+
+        cameraRig.MaxHeightReached += _currentCameraSpeed * Time.deltaTime;
+    }
 
     // ── Player management ─────────────────────────────────────────────────────
 
@@ -260,8 +304,7 @@ public class GameManager : MonoBehaviour
     }
 
     /// <summary>
-    /// Called by StartGameButton to cancel the countdown when pressed again
-    /// or when a new player joins during the countdown.
+    /// Called by StartGameButton to cancel the countdown.
     /// </summary>
     public void CancelStartSequence()
     {
@@ -274,7 +317,6 @@ public class GameManager : MonoBehaviour
 
     /// <summary>
     /// Internal start sequence shared by the button flow and the between-rounds flow.
-    /// Has no guard on gameState so it can be called from any state.
     /// </summary>
     private void BeginStartSequence(bool repositionPlayers = false)
     {
@@ -285,8 +327,8 @@ public class GameManager : MonoBehaviour
 
         if (currPlayersAlive < 2) return;
 
-        triggerStartGame    = true;
-        _repositionOnReset  = repositionPlayers;
+        triggerStartGame   = true;
+        _repositionOnReset = repositionPlayers;
         ChangeGameState(GameState.Prepare);
     }
 

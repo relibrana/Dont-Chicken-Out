@@ -1407,7 +1407,10 @@ MonoBehaviour:
   playersManager: {fileID: 202624584}
   uiManager: {fileID: 872296592}
   cameraRig: {fileID: 770377908}
-  autoMoveCameraSpeed: 0.2
+  cameraStartDelay: 3.5
+  cameraInitialSpeed: 0.15
+  cameraAcceleration: 0.01
+  cameraMaxSpeed: 1.5
   playersPosX: []
   inGamePlayers:
   - {fileID: 0}
@@ -2381,6 +2384,37 @@ SpriteRenderer:
   m_SpriteTileMode: 0
   m_WasSpriteAssigned: 1
   m_SpriteSortPoint: 0
+--- !u!1 &401772970
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 401772971}
+  m_Layer: 0
+  m_Name: CameraTarget
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &401772971
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 401772970}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &401942786
 GameObject:
   m_ObjectHideFlags: 0
@@ -4828,7 +4862,7 @@ MonoBehaviour:
   m_StreamingVersion: 20241001
   m_LegacyPriority: 0
   Target:
-    TrackingTarget: {fileID: 1637934210}
+    TrackingTarget: {fileID: 0}
     LookAtTarget: {fileID: 0}
     CustomLookAtTarget: 0
   Lens:
@@ -7939,37 +7973,6 @@ SpriteRenderer:
   m_SpriteTileMode: 0
   m_WasSpriteAssigned: 1
   m_SpriteSortPoint: 0
---- !u!1 &1637934209
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1637934210}
-  m_Layer: 0
-  m_Name: CameraTarget
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &1637934210
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1637934209}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1661556613
 GameObject:
   m_ObjectHideFlags: 0
@@ -11144,7 +11147,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4340369678343532913, guid: 1ecb7d11c58c34736a82172b84d07078, type: 3}
       propertyPath: shakeAffectsY
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 4340369678343532913, guid: 1ecb7d11c58c34736a82172b84d07078, type: 3}
       propertyPath: minFollowHeight
@@ -11157,7 +11160,7 @@ PrefabInstance:
     - target: {fileID: 4340369678343532913, guid: 1ecb7d11c58c34736a82172b84d07078, type: 3}
       propertyPath: baseFollowTarget
       value: 
-      objectReference: {fileID: 1637934210}
+      objectReference: {fileID: 401772971}
     - target: {fileID: 4416076417033056653, guid: 1ecb7d11c58c34736a82172b84d07078, type: 3}
       propertyPath: m_Enabled
       value: 0
@@ -11168,7 +11171,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 5081372368739897606, guid: 1ecb7d11c58c34736a82172b84d07078, type: 3}
       propertyPath: m_LocalPosition.y
-      value: -0.1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 5081372368739897606, guid: 1ecb7d11c58c34736a82172b84d07078, type: 3}
       propertyPath: m_LocalPosition.z
@@ -11184,7 +11187,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 8272918300763466392, guid: 1ecb7d11c58c34736a82172b84d07078, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 0.1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 8272918300763466392, guid: 1ecb7d11c58c34736a82172b84d07078, type: 3}
       propertyPath: m_LocalPosition.z
@@ -11610,6 +11613,6 @@ SceneRoots:
   - {fileID: 401942787}
   - {fileID: 202624586}
   - {fileID: 963877283}
-  - {fileID: 1637934210}
   - {fileID: 1265900149}
   - {fileID: 942466094}
+  - {fileID: 401772971}
