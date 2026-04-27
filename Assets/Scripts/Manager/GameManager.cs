@@ -75,10 +75,10 @@ public class GameManager : MonoBehaviour
 
     private void Start()
     {
-        // On first load: always play the normal intro → loop sequence.
-        // On return from a won game: GameWasWon is set, handled in ResetValues()
-        // via OnMenuState(), so here we only cover the very first boot.
-        AudioManager.Instance.PlayMusicWithIntro("BGM_Menu_A1", "BGM_Menu_B");
+        // BGM is intentionally not started here.
+        // MainMenuController starts it on first load (A1 → B).
+        // On return from Main_Level the AudioManager (DontDestroyOnLoad) carries
+        // whatever was set before the scene transition — no action needed.
     }
 
     private void Update()
@@ -123,13 +123,6 @@ public class GameManager : MonoBehaviour
 
     private void ResetValues()
     {
-        // Consume the win flag before any early-return path can skip it.
-        bool hadWinner = SessionData.GameWasWon;
-        SessionData.GameWasWon = false;
-
-        string introId = hadWinner ? "BGM_Menu_A2" : "BGM_Menu_A1";
-        AudioManager.Instance.PlayMusicWithIntro(introId, "BGM_Menu_B");
-
         poolManager.ResetPool();
 
         foreach (var player in inGamePlayers)
@@ -402,7 +395,11 @@ public class GameManager : MonoBehaviour
 
         uiManager.OnWinRound(inGamePlayers, wonGame =>
         {
-            AudioManager.Instance.PlaySound(wonGame ? "win_game" : "win_round");
+            if (wonGame)
+                AudioManager.Instance.PlayMusicWithIntro("BGM_Menu_A2", "BGM_Menu_B");
+            else
+                AudioManager.Instance.PlaySound("win_round");
+
             winSequence = DOVirtual.DelayedCall(2f, () => CheckGameWon(wonGame), false);
         });
     }
@@ -417,7 +414,6 @@ public class GameManager : MonoBehaviour
             {
                 uiManager.HidePointsPanel();
                 needsAReset = true;
-                SessionData.GameWasWon = true;
                 SceneTransitionService.Instance.LoadMenu();
             }, false);
 

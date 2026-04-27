@@ -81,6 +81,7 @@ public class PauseManager : MonoBehaviour
     public void GoToMenu()
     {
         AudioManager.Instance.MakeButtonSelectedSound();
+        AudioManager.Instance.PlayMusicWithIntro("BGM_Menu_A1", "BGM_Menu_B");
         Time.timeScale = 1f;
         SceneTransitionService.Instance.LoadMenu();
     }

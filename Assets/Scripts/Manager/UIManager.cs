@@ -329,20 +329,20 @@ public class UIManager : MonoBehaviour
             startGameTimerText.text = "3";
         });
 
-        startGameSequence.AppendInterval(1.25f);
+        startGameSequence.AppendInterval(1f);
 
         startGameSequence.AppendCallback(() =>
         {
             startGameTimerText.text = "2";
         });
 
-        startGameSequence.AppendInterval(1.25f);
+        startGameSequence.AppendInterval(1f);
 
         startGameSequence.AppendCallback(() =>
         {
             prevCallback?.Invoke();
             startGameTimerText.text = "1";
-            DOVirtual.DelayedCall(1.15f, () =>
+            DOVirtual.DelayedCall(1f, () =>
             {
                 controls.SetActive(false);
                 playersCount.SetActive(false);
@@ -351,7 +351,7 @@ public class UIManager : MonoBehaviour
             playersCount.transform.DOMove(playersCountEnd.transform.position, 0.6f).SetEase(Ease.InBack).SetDelay(0.15f);
         });
 
-        startGameSequence.AppendInterval(1.25f);
+        startGameSequence.AppendInterval(1f);
 
         startGameSequence.AppendCallback(() =>
         {

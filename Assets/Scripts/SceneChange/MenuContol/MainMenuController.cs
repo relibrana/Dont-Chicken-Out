@@ -17,6 +17,16 @@ public sealed class MainMenuController : MonoBehaviour
 
     private Coroutine selectRoutine;
 
+    private void Start()
+    {
+        // First boot: AudioManager has no music playing yet.
+        // Subsequent arrivals from Main_Level already carry the correct BGM
+        // (A2→B if someone won, A1→B if returned via pause), so we guard
+        // against restarting it unnecessarily.
+        if (!AudioManager.Instance.IsMusicPlaying)
+            AudioManager.Instance.PlayMusicWithIntro("BGM_Menu_A1", "BGM_Menu_B");
+    }
+
     private void OnEnable()
     {
         StartSelectRoutine();

@@ -55,6 +55,9 @@ public class AudioManager : MonoBehaviour
     private AudioSource musicSource;
     private Coroutine introToLoopCoroutine;
 
+    /// <summary>True while any BGM clip is actively playing on the music source.</summary>
+    public bool IsMusicPlaying => musicSource != null && musicSource.isPlaying;
+
     // Sound trackers
     private int currentStep = 0;
     private int currentJoin = 0;
@@ -168,8 +171,8 @@ public class AudioManager : MonoBehaviour
     // ── Music ─────────────────────────────────────────────────────────────────
 
     /// <summary>
-    /// Plays a BGM track. Respects the loop flag set on the Sound asset.
-    /// If the requested clip is already playing, it does nothing.
+    /// Plays a BGM track directly. Respects the loop flag set on the Sound asset.
+    /// If the requested clip is already playing, does nothing.
     /// Cancels any pending intro→loop transition before switching.
     /// </summary>
     public AudioSource PlayMusic(string bgmId)
