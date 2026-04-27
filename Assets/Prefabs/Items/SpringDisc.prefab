@@ -202,7 +202,7 @@ MonoBehaviour:
   spriteRenderers:
   - {fileID: 2464309141000911678}
   spriteRenderer: {fileID: 2464309141000911678}
-  bounceForce: 25
+  bounceForce: {x: 25, y: 35}
   attenuationOnMovement: 5
   kickResponse: {fileID: 8706290863601851906}
   detectLayer:

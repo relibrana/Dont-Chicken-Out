@@ -7,7 +7,7 @@ public class SpringDisc : HoldableItem
     [SerializeField] private SpriteRenderer spriteRenderer;
 
     [Header("Bounce Forces")]
-    [SerializeField] private float bounceForce;
+    [SerializeField] private Vector2 bounceForce;
 
     [Header("On Kick Settings")]
     [SerializeField] private float attenuationOnMovement;
