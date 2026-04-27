@@ -32,13 +32,12 @@ public class PlayersManager : MonoBehaviour
     {
         playerInputManager.DisableJoining();
 
-        var observer = new InputControlObserver(this);
+        InputControlObserver observer = new InputControlObserver(this);
         anyButtonPressSubscription = InputSystem.onAnyButtonPress.Subscribe(observer);
     }
 
     private void OnDisable()
     {
-
         anyButtonPressSubscription?.Dispose();
     }
 
@@ -68,7 +67,7 @@ public class PlayersManager : MonoBehaviour
         {
             if (!(inputControl is KeyControl keyControl))
                 return false;
-            
+
             if (!keyboardJoinKeys.ContainsKey(keyControl.keyCode))
                 return false;
 
@@ -87,7 +86,7 @@ public class PlayersManager : MonoBehaviour
 
             if (PlayerInput.all.Any(player => player.devices.Contains(inputControl.device)))
                 return false;
-            
+
             return true;
         }
     }
@@ -96,7 +95,6 @@ public class PlayersManager : MonoBehaviour
     {
         if (!IsPossibleToPair(control))
             return;
-        
 
         InputDevice device = control.device;
         string schemeName;
@@ -106,7 +104,6 @@ public class PlayersManager : MonoBehaviour
             schemeName = "Gamepad";
             AttemptToJoin(device, schemeName);
         }
-
         else if (device is Keyboard)
         {
             string keyScheme = keyboardJoinKeys[((KeyControl)control).keyCode];
@@ -145,6 +142,58 @@ public class PlayersManager : MonoBehaviour
         }
     }
 
+#if UNITY_EDITOR
+    // --- Propiedades de solo lectura para el editor ---
+
+    public int SpawnPointCount => spawnPoints != null ? spawnPoints.Length : 0;
+
+    /// <summary>
+    /// Instancia un jugador sin device real para prop�sitos de debug en el editor.
+    /// Utiliza el mismo prefab y datos de spawn que el flujo normal.
+    /// </summary>
+    public void Debug_AddPlayer()
+    {
+        // Validar que haya slots disponibles
+        if (playerPrefab == null)
+        {
+            Debug.LogWarning("[Debug] playerPrefab no asignado en PlayersManager.");
+            return;
+        }
+
+        if (spawnPoints == null || currPlayersInGame >= spawnPoints.Length)
+        {
+            Debug.LogWarning("[Debug] No hay spawn points disponibles para m�s jugadores.");
+            return;
+        }
+
+        if (materialsSO == null || currPlayersInGame >= materialsSO.playerMaterials.Count)
+        {
+            Debug.LogWarning("[Debug] No hay materiales disponibles para m�s jugadores.");
+            return;
+        }
+
+        // Instanciamos sin PlayerInput real � el jugador existir� en escena pero sin input
+        GameObject debugPlayer = UnityEngine.Object.Instantiate(playerPrefab, spawnPoints[currPlayersInGame].position, Quaternion.identity);
+        PlayerController playerController = debugPlayer.GetComponent<PlayerController>();
+
+        if (playerController == null)
+        {
+            Debug.LogWarning("[Debug] El prefab no tiene un PlayerController.");
+            UnityEngine.Object.Destroy(debugPlayer);
+            return;
+        }
+
+        GameManager.instance.AddPlayer(
+            playerController,
+            spawnPoints[currPlayersInGame].position,
+            materialsSO.playerMaterials[currPlayersInGame]
+        );
+
+        currPlayersInGame++;
+        Debug.Log($"[Debug] Jugador {currPlayersInGame} agregado sin input device.");
+    }
+#endif
+
     private class InputControlObserver : IObserver<InputControl>
     {
         private PlayersManager manager;
@@ -167,4 +216,3 @@ public class PlayersManager : MonoBehaviour
         public void OnCompleted() { }
     }
 }
-

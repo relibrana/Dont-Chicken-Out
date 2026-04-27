@@ -28,7 +28,6 @@ public class GameManager : MonoBehaviour
     public float autoMoveCameraSpeed = 0.2f;
     public List<float> playersPosX;
     private Coroutine checkerCoroutine;
-    // bool screenShakeTrigger=false;
     [SerializeField] private PlayerController[] inGamePlayers = new PlayerController[4];
     [SerializeField] private PlayerController[] playersAlive = new PlayerController[4];
     [SerializeField] private Transform deathPos;
@@ -42,8 +41,7 @@ public class GameManager : MonoBehaviour
     private bool triggerStartGame = false;
     private const float tieThresHold = 0.5f;
     private Tween winSequence;
-    [SerializeField]private int currPlayersAlive;
-
+    [SerializeField] private int currPlayersAlive;
 
     public GameState gameState = GameState.Menu;
 
@@ -51,7 +49,7 @@ public class GameManager : MonoBehaviour
     {
         get
         {
-            var copy = new PlayerController[4];
+            PlayerController[] copy = new PlayerController[4];
             for (int i = 0; i < playersAlive.Length; i++)
                 copy[i] = inGamePlayers[i];
             return copy;
@@ -65,6 +63,7 @@ public class GameManager : MonoBehaviour
         else
             Destroy(gameObject);
     }
+
     void Start()
     {
         AudioManager.Instance.PlayMusic("Menu");
@@ -95,7 +94,7 @@ public class GameManager : MonoBehaviour
     private void ChangeGameState(GameState newGameState)
     {
         gameState = newGameState;
-        switch(newGameState)
+        switch (newGameState)
         {
             case GameState.Game:
                 OnGame?.Invoke();
@@ -119,7 +118,7 @@ public class GameManager : MonoBehaviour
     {
         AudioManager.Instance.PlayMusic("Menu");
         poolManager.ResetPool();
-        foreach (var player in inGamePlayers)
+        foreach (PlayerController player in inGamePlayers)
         {
             if (player == null)
                 continue;
@@ -136,7 +135,7 @@ public class GameManager : MonoBehaviour
 
     private void OnPrepareState()
     {
-        foreach (var player in inGamePlayers)
+        foreach (PlayerController player in inGamePlayers)
         {
             if (player == null)
                 continue;
@@ -158,7 +157,7 @@ public class GameManager : MonoBehaviour
             for (int i = 0; i < inGamePlayers.Length; i++)
             {
                 playersAlive[i] = inGamePlayers[i];
-                if(playersAlive[i] != null) currPlayersAlive++;
+                if (playersAlive[i] != null) currPlayersAlive++;
             }
             cameraRig.canMove = false;
             cameraRig.ResetToGameplay();
@@ -209,19 +208,18 @@ public class GameManager : MonoBehaviour
         for (int i = 0; i < amountOfPlayers; i++)
         {
             remainingPlayers[i].gameRank = GetPlayerStatus(i, amountOfPlayers);
-
             Debug.Log($"Posición: {i + 1} | Jugador: {remainingPlayers[i].name} | Estado: {remainingPlayers[i].gameRank}");
         }
     }
 
     private GameStatus GetPlayerStatus(int playerRank, int totalPlayers)
     {
-        if(playerRank == 0)
+        if (playerRank == 0)
             return GameStatus.Winning;
 
-        if(playerRank == totalPlayers - 1)
+        if (playerRank == totalPlayers - 1)
             return GameStatus.Losing;
-        
+
         return GameStatus.Neutral;
     }
 
@@ -242,7 +240,6 @@ public class GameManager : MonoBehaviour
                 playersAlive[i].isOnGame = true;
         }
 
-        //CameraMovement
         autoMoveCameraCurrentTime -= Time.deltaTime;
 
         if (autoMoveCameraCurrentTime <= 0)
@@ -330,7 +327,6 @@ public class GameManager : MonoBehaviour
 
         triggerStartGame = true;
         ChangeGameState(GameState.Prepare);
-
     }
 
     private void OnPlayersDeath(PlayerController player)
@@ -368,23 +364,23 @@ public class GameManager : MonoBehaviour
 
         if (currPlayersAlive == 1)
         {
-            if(checkerCoroutine != null)
+            if (checkerCoroutine != null)
             {
                 Debug.LogWarning("Stopped CheckPlayersInGame");
                 StopCoroutine(checkerCoroutine);
             }
-            //DoWin();
             cameraRig.FocusWinner(winner.transform);
 
-            DOVirtual.DelayedCall(tieThresHold, () => {
-                if(gameState == GameState.Win) 
+            DOVirtual.DelayedCall(tieThresHold, () =>
+            {
+                if (gameState == GameState.Win)
                     return;
                 DoWin();
             }, false);
         }
         else if (currPlayersAlive == 0)
         {
-            if(checkerCoroutine != null)
+            if (checkerCoroutine != null)
             {
                 Debug.LogWarning("Stopped CheckPlayersInGame");
                 StopCoroutine(checkerCoroutine);
@@ -393,7 +389,7 @@ public class GameManager : MonoBehaviour
             cameraRig.StopFocusWinner();
             ChangeGameState(GameState.Win);
 
-            uiManager.OnWinRound(inGamePlayers, wonGame => 
+            uiManager.OnWinRound(inGamePlayers, wonGame =>
             {
                 winSequence?.Kill();
                 winSequence = DOVirtual.DelayedCall(2f, () => CheckGameWon(wonGame), false);
@@ -403,76 +399,24 @@ public class GameManager : MonoBehaviour
 
     private void DoWin()
     {
-        if(gameState == GameState.Win)
-        {
+        if (gameState == GameState.Win)
             return;
-        }
+
         ChangeGameState(GameState.Win);
         winner.roundsWon++;
         cameraRig.FocusWinner(winner.transform);
         winSequence?.Kill();
-        
-        uiManager.OnWinRound(inGamePlayers, wonGame => 
+
+        uiManager.OnWinRound(inGamePlayers, wonGame =>
         {
-            if(wonGame)
-            {
+            if (wonGame)
                 AudioManager.Instance.PlaySound("win_game");
-            }
             else
-            {
                 AudioManager.Instance.PlaySound("win_round");
-            }
 
             winSequence = DOVirtual.DelayedCall(2f, () => CheckGameWon(wonGame), false);
         });
     }
-
-    /*private void CheckWinner()
-    {
-        int currPlayersAlive = 0;
-        for (int i = 0; i < playersAlive.Length; i++)
-        {
-            if (playersAlive[i] != null)
-            {
-                currPlayersAlive++;
-                winner = playersAlive[i];
-            }
-        }
-
-        if (currPlayersAlive == 1)
-        {
-            ChangeGameState(GameState.Win);
-            winner.roundsWon++;
-
-            // Solo acercar la c�mara al ganador si GAN� LA PARTIDA (por ejemplo, 3 puntos)
-            if (winner.roundsWon >= 3)
-            {
-                cameraRig.FocusWinner(winner.transform);
-            }
-
-            uiManager.OnWinRound(inGamePlayers, wonGame =>
-                DOVirtual.DelayedCall(2f, () => CheckGameWon(wonGame), false));
-        }
-    }*/
-
-
-    /*private void CheckGameWon(bool wonGame)
-    {
-        if (wonGame)
-        {
-            uiManager.ResetPlayers(inGamePlayers);
-            needsAReset = true;
-            ChangeGameState(GameState.Menu);
-        }
-        else
-        {
-            uiManager.HidePointsPanel();
-
-            uiManager.UpdateReadyPlayers(inGamePlayers);
-            triggerStartGame = true;
-            ChangeGameState(GameState.Prepare);
-        }
-    }*/
 
     private void CheckGameWon(bool wonGame)
     {
@@ -484,7 +428,6 @@ public class GameManager : MonoBehaviour
             {
                 uiManager.HidePointsPanel();
                 needsAReset = true;
-
                 SceneTransitionService.Instance.LoadMenu();
             }, false);
 
@@ -498,7 +441,101 @@ public class GameManager : MonoBehaviour
         ChangeGameState(GameState.Prepare);
     }
 
-
-
     public void FreeKeyboardScheme(string schemeName) => playersManager.FreeKeyboardScheme(schemeName);
+
+#if UNITY_EDITOR
+    // -------------------------------------------------------
+    // Métodos de debug — solo disponibles en el editor
+    // -------------------------------------------------------
+
+    /// <summary>
+    /// Propiedad de solo lectura para que el editor pueda leer inGamePlayers
+    /// sin exponer el array públicamente en runtime.
+    /// </summary>
+    public PlayerController[] Debug_InGamePlayers => inGamePlayers;
+
+    /// <summary>
+    /// Delega al PlayersManager para instanciar un jugador sin input device real.
+    /// </summary>
+    public void Debug_AddPlayer()
+    {
+        if (!Application.isPlaying)
+        {
+            Debug.LogWarning("[Debug] Solo disponible en Play Mode.");
+            return;
+        }
+
+        playersManager.Debug_AddPlayer();
+    }
+
+    /// <summary>
+    /// Fuerza el inicio de la partida saltándose la validación de ready.
+    /// Requiere al menos 2 jugadores en inGamePlayers.
+    /// </summary>
+    public void Debug_ForceStartGame()
+    {
+        if (!Application.isPlaying)
+        {
+            Debug.LogWarning("[Debug] Solo disponible en Play Mode.");
+            return;
+        }
+
+        // Contar jugadores registrados
+        int count = 0;
+        for (int i = 0; i < inGamePlayers.Length; i++)
+        {
+            if (inGamePlayers[i] != null) count++;
+        }
+
+        if (count < 2)
+        {
+            Debug.LogWarning("[Debug] Se necesitan al menos 2 jugadores para iniciar.");
+            return;
+        }
+
+        // Sincronizamos currPlayersInGame del PlayersManager para que
+        // CheckIfAllPlayersReady no lo rechace por mismatch
+        playersManager.currPlayersInGame = count;
+
+        // Marcamos todos los jugadores registrados como "ready"
+        for (int i = 0; i < inGamePlayers.Length; i++)
+        {
+            if (inGamePlayers[i] == null) continue;
+            playersAlive[i] = inGamePlayers[i];
+        }
+
+        triggerStartGame = true;
+        ChangeGameState(GameState.Prepare);
+
+        Debug.Log($"[Debug] Partida forzada con {count} jugadores.");
+    }
+
+    /// <summary>
+    /// Mata al jugador en el índice indicado si está vivo en la partida actual.
+    /// </summary>
+    public void Debug_KillPlayer(int playerIndex)
+    {
+        if (!Application.isPlaying)
+        {
+            Debug.LogWarning("[Debug] Solo disponible en Play Mode.");
+            return;
+        }
+
+        if (playerIndex < 0 || playerIndex >= playersAlive.Length)
+        {
+            Debug.LogWarning($"[Debug] Índice {playerIndex} fuera de rango.");
+            return;
+        }
+
+        PlayerController target = playersAlive[playerIndex];
+        if (target == null)
+        {
+            Debug.LogWarning($"[Debug] El jugador en índice {playerIndex} no está vivo o no existe.");
+            return;
+        }
+
+        OnPlayersDeath(target);
+        Debug.Log($"[Debug] Jugador {playerIndex} eliminado.");
+    }
+#endif
 }
