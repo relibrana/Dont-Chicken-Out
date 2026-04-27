@@ -74,6 +74,8 @@ public class AudioManager : MonoBehaviour
             return;
         }
 
+        StopAllSfxs();
+
         InitializeSoundMap();
         InitializeMelodyMap();
 
@@ -207,6 +209,7 @@ public class AudioManager : MonoBehaviour
         src.spread = 180f;
         src.minDistance = 1f;
         src.maxDistance = 10f;
+        src.pitch = 1f;
         src.transform.position = transform.position;
         src.transform.SetParent(null);
         src.Play();

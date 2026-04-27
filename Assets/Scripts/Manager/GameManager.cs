@@ -28,6 +28,7 @@ public class GameManager : MonoBehaviour
     public Action OnGameEnd;
     /// <summary>Fired when the game enters Prepare state (countdown started).</summary>
     public Action OnPrepare;
+    public Action OnGameStarting;
     /// <summary>Fired whenever the number of joined players changes. int = current count.</summary>
     public Action<int> OnPlayersCountChanged;
     public float autoMoveCameraSpeed = 0.2f;
@@ -169,7 +170,8 @@ public class GameManager : MonoBehaviour
             checkerCoroutine = StartCoroutine(CheckPlayersInGame());
             AudioManager.Instance.PlayMusic("Game");
             uiManager.OnGamePlayersUI();
-        });
+            AudioManager.Instance.PlaySound("game_start");
+        }, () => OnGameStarting.Invoke());
 
         triggerStartGame   = false;
         _repositionOnReset = false;

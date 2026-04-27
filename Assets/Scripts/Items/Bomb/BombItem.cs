@@ -211,6 +211,11 @@ public sealed class BombItem : HoldableItem
             AudioSource.PlayClipAtPoint(explosionSfx, transform.position);
     }
 
+    protected override void OnDisable() {
+        base.OnDisable();
+        AudioManager.Instance.StopSound("bomb_lighter");
+    }
+
 #if UNITY_EDITOR
     private void OnDrawGizmosSelected()
     {

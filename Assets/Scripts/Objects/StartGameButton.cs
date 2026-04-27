@@ -54,7 +54,7 @@ public sealed class StartGameButton : MonoBehaviour, IKickable
     private void OnEnable()
     {
         GameManager.instance.OnPlayersCountChanged += HandlePlayersCountChanged;
-        GameManager.instance.OnGame                += HandleGameStarted;
+        GameManager.instance.OnGameStarting        += HandleGameStarted;
     }
 
     private void OnDisable()
@@ -63,7 +63,7 @@ public sealed class StartGameButton : MonoBehaviour, IKickable
         if (GameManager.instance == null) return;
 
         GameManager.instance.OnPlayersCountChanged -= HandlePlayersCountChanged;
-        GameManager.instance.OnGame                -= HandleGameStarted;
+        GameManager.instance.OnGameStarting        -= HandleGameStarted;
     }
 
     // ── IKickable ─────────────────────────────────────────────────────────────

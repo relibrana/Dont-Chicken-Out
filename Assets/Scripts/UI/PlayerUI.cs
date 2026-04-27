@@ -60,11 +60,11 @@ public class PlayerUI : MonoBehaviour
                 StopCoroutine(waitJoinBlinkCoroutine);
                 InitialText.color = Color.white;
                 InitialText.gameObject.SetActive(true);
-                InitialText.text = "CLUCK CLUCK\nTO BE\nREADY STEADY";
+                InitialText.text = "KICK THE BUTTON TO START";
                 break;
             case PlayerUIState.Ready:
-                InitialText.gameObject.SetActive(true);
-                InitialText.text = $"PLAYER {playerIndex} READY";
+                // InitialText.gameObject.SetActive(true);
+                // InitialText.text = $"PLAYER {playerIndex} READY";
                 break;
             case PlayerUIState.InGame:
                 // InGameBox.SetActive(true);

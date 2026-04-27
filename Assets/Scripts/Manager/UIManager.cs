@@ -295,20 +295,20 @@ public class UIManager : MonoBehaviour
         }
     }
 
-    public void StartInitialGameSequence(Action callback)
+    public void StartInitialGameSequence(Action callback, Action prevCallback)
     {
         if (startGameSequence != null)
             return;
+        
+        AudioManager.Instance.PlaySound("game_countdown");
 
-        AudioManager.Instance.PlaySound("game_start");
-        StartGameText(callback);
+        StartGameText(callback, prevCallback);
     }
 
     public void StopInitialGameSequence()
     {
         if (startGameSequence == null) return;
 
-        AudioManager.Instance.StopSound("game_start");
         startGameSequence.Kill();
         startGameSequence = null;
         startGameTimerText.gameObject.SetActive(false);
@@ -319,7 +319,7 @@ public class UIManager : MonoBehaviour
         playersCount.transform.DOMove(playersCountStart.transform.position, 0.6f).SetEase(Ease.OutBack).SetDelay(0.15f);
     }
 
-    private void StartGameText(Action callback)
+    private void StartGameText(Action callback, Action prevCallback)
     {
         startGameSequence = DOTween.Sequence();
         startGameSequence.AppendCallback(() =>
@@ -340,6 +340,7 @@ public class UIManager : MonoBehaviour
 
         startGameSequence.AppendCallback(() =>
         {
+            prevCallback?.Invoke();
             startGameTimerText.text = "1";
             DOVirtual.DelayedCall(1.15f, () =>
             {
