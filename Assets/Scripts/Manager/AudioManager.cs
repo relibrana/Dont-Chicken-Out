@@ -53,6 +53,7 @@ public class AudioManager : MonoBehaviour
     private Stack<AudioSource> freeSources = new();
     private List<AudioSource> allSources = new();
     private AudioSource musicSource;
+    private Coroutine introToLoopCoroutine;
 
     // Sound trackers
     private int currentStep = 0;
@@ -166,28 +167,91 @@ public class AudioManager : MonoBehaviour
 
     // ── Music ─────────────────────────────────────────────────────────────────
 
+    /// <summary>
+    /// Plays a BGM track. Respects the loop flag set on the Sound asset.
+    /// If the requested clip is already playing, it does nothing.
+    /// Cancels any pending intro→loop transition before switching.
+    /// </summary>
     public AudioSource PlayMusic(string bgmId)
     {
-        Sound bgm = null;
-        foreach (var sound in bgmSounds)
-        {
-            if (sound.id == bgmId) bgm = sound;
-        }
-
+        Sound bgm = FindBgm(bgmId);
         if (bgm == null) return null;
 
         if (musicSource.isPlaying && musicSource.clip == bgm.clip)
             return musicSource;
 
+        CancelIntroToLoop();
+
         musicSource.clip = bgm.clip;
         musicSource.volume = musicVolume * bgm.volume;
-        musicSource.loop = true;
+        musicSource.loop = bgm.loop;
         musicSource.spatialBlend = 0f;
         musicSource.Play();
         return musicSource;
     }
 
-    public void StopMusic() => musicSource.Stop();
+    /// <summary>
+    /// Plays an intro clip (non-looping) and automatically transitions to a
+    /// looping track when the intro finishes. If called while a previous
+    /// intro is still playing, the previous transition is cancelled cleanly.
+    /// </summary>
+    public void PlayMusicWithIntro(string introId, string loopId)
+    {
+        Sound intro = FindBgm(introId);
+        Sound loop  = FindBgm(loopId);
+
+        if (intro == null || loop == null)
+        {
+            Debug.LogWarning($"AudioManager => PlayMusicWithIntro: '{introId}' or '{loopId}' not found.");
+            return;
+        }
+
+        CancelIntroToLoop();
+
+        musicSource.clip = intro.clip;
+        musicSource.volume = musicVolume * intro.volume;
+        musicSource.loop = false;
+        musicSource.spatialBlend = 0f;
+        musicSource.Play();
+
+        introToLoopCoroutine = StartCoroutine(TransitionToLoop(loop));
+    }
+
+    public void StopMusic()
+    {
+        CancelIntroToLoop();
+        musicSource.Stop();
+    }
+
+    private IEnumerator TransitionToLoop(Sound loop)
+    {
+        yield return new WaitWhile(() => musicSource.isPlaying);
+
+        musicSource.clip = loop.clip;
+        musicSource.volume = musicVolume * loop.volume;
+        musicSource.loop = true;
+        musicSource.spatialBlend = 0f;
+        musicSource.Play();
+
+        introToLoopCoroutine = null;
+    }
+
+    private void CancelIntroToLoop()
+    {
+        if (introToLoopCoroutine == null) return;
+        StopCoroutine(introToLoopCoroutine);
+        introToLoopCoroutine = null;
+    }
+
+    private Sound FindBgm(string bgmId)
+    {
+        foreach (var sound in bgmSounds)
+        {
+            if (sound.id == bgmId) return sound;
+        }
+        Debug.LogWarning($"AudioManager => BGM '{bgmId}' not found.");
+        return null;
+    }
 
     // ── SFX ──────────────────────────────────────────────────────────────────
 

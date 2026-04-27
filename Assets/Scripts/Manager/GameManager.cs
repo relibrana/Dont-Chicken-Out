@@ -75,9 +75,10 @@ public class GameManager : MonoBehaviour
 
     private void Start()
     {
-        // Ensures menu BGM plays when Main_Level loads or reloads,
-        // regardless of what was playing before (e.g. after a restart mid-game).
-        AudioManager.Instance.PlayMusic("Menu");
+        // On first load: always play the normal intro → loop sequence.
+        // On return from a won game: GameWasWon is set, handled in ResetValues()
+        // via OnMenuState(), so here we only cover the very first boot.
+        AudioManager.Instance.PlayMusicWithIntro("BGM_Menu_A1", "BGM_Menu_B");
     }
 
     private void Update()
@@ -122,7 +123,13 @@ public class GameManager : MonoBehaviour
 
     private void ResetValues()
     {
-        AudioManager.Instance.PlayMusic("Menu");
+        // Consume the win flag before any early-return path can skip it.
+        bool hadWinner = SessionData.GameWasWon;
+        SessionData.GameWasWon = false;
+
+        string introId = hadWinner ? "BGM_Menu_A2" : "BGM_Menu_A1";
+        AudioManager.Instance.PlayMusicWithIntro(introId, "BGM_Menu_B");
+
         poolManager.ResetPool();
 
         foreach (var player in inGamePlayers)
@@ -410,6 +417,7 @@ public class GameManager : MonoBehaviour
             {
                 uiManager.HidePointsPanel();
                 needsAReset = true;
+                SessionData.GameWasWon = true;
                 SceneTransitionService.Instance.LoadMenu();
             }, false);
 

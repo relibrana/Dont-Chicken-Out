@@ -17,6 +17,13 @@ public static class SessionData
     /// </summary>
     public static string PrimaryScheme { get; set; }
 
+    /// <summary>
+    /// True when a player won the full game (reached the required rounds).
+    /// Set by GameManager before loading the menu; consumed and cleared by GameManager.Start().
+    /// Drives the menu intro music selection: A2 (win fanfare) vs A1 (normal).
+    /// </summary>
+    public static bool GameWasWon { get; set; }
+
     /// <summary>True if a primary device was registered this session.</summary>
     public static bool HasPrimaryDevice => PrimaryDevice != null && !string.IsNullOrEmpty(PrimaryScheme);
 

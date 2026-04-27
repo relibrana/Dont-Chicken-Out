@@ -50,13 +50,21 @@ MonoBehaviour:
   musicVolume: 1
   soundEffectsVolume: 1
   bgmSounds:
-  - clip: {fileID: 8300000, guid: 000939dcbaacc4b318343a0138036f85, type: 3}
-    id: Menu
-    volume: 0.15
-    loop: 1
   - clip: {fileID: 8300000, guid: 65161e1309cae4eefae84c9c9c3d12ee, type: 3}
     id: Game
     volume: 0.18
+    loop: 1
+  - clip: {fileID: 8300000, guid: 000939dcbaacc4b318343a0138036f85, type: 3}
+    id: BGM_Menu_A1
+    volume: 0.15
+    loop: 0
+  - clip: {fileID: 8300000, guid: 000939dcbaacc4b318343a0138036f85, type: 3}
+    id: BGM_Menu_A2
+    volume: 0.15
+    loop: 0
+  - clip: {fileID: 8300000, guid: 000939dcbaacc4b318343a0138036f85, type: 3}
+    id: BGM_Menu_B
+    volume: 0.15
     loop: 1
   playerSfxs:
   - clip: {fileID: 8300000, guid: dde34800a8f55476fa83f7d666620443, type: 3}
