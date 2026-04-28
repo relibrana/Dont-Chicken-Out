@@ -48,6 +48,7 @@ public class AudioManager : MonoBehaviour
 
     [Header("Melodies")]
     [SerializeField] private List<MelodySO> melodies = new();
+    [Range(0f, 1f)] public float melodiesVolume = 0.3f;
     private Dictionary<string, MelodySO> melodyMap = new();
 
     private Stack<AudioSource> freeSources = new();
@@ -355,7 +356,7 @@ public class AudioManager : MonoBehaviour
             return;
         }
 
-        PlayClip(clip);
+        PlayClip(clip, melodiesVolume);
     }
 
     /// <summary>Returns the note count of a melody by id. Returns 0 if not found.</summary>
@@ -423,13 +424,13 @@ public class AudioManager : MonoBehaviour
     // ── Helpers ───────────────────────────────────────────────────────────────
 
     /// <summary>Plays a raw AudioClip directly through the pool.</summary>
-    private void PlayClip(AudioClip clip)
+    private void PlayClip(AudioClip clip, float? volume = null)
     {
         if (clip == null) return;
 
         var src = GetSource();
         src.clip = clip;
-        src.volume = soundEffectsVolume;
+        src.volume = volume ?? soundEffectsVolume;
         src.loop = false;
         src.outputAudioMixerGroup = sfxMixer;
         src.spatialBlend = 0f;

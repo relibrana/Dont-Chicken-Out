@@ -172,9 +172,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   damageSprites:
-  - {fileID: 21300000, guid: d9bdadbfc3a40ac4cb41d85ff2895657, type: 3}
-  - {fileID: 21300000, guid: 0d261773404150544b9d056e6a9ad320, type: 3}
-  - {fileID: 21300000, guid: ebb6ea0eb3ced324eb63d90d327e0340, type: 3}
+  - {fileID: 21300000, guid: 5da69d86a1231ad41bf2953c19c9ae0f, type: 3}
+  - {fileID: 21300000, guid: 5da69d86a1231ad41bf2953c19c9ae0f, type: 3}
+  - {fileID: 21300000, guid: 5da69d86a1231ad41bf2953c19c9ae0f, type: 3}
   sr: {fileID: 1372063501630936787}
 --- !u!114 &6779283618703873815
 MonoBehaviour:
