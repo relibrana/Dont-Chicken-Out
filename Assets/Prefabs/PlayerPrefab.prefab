@@ -43,6 +43,7 @@ Transform:
   - {fileID: 488576167499717323}
   - {fileID: 5993233061682011308}
   - {fileID: 684974575325702435}
+  - {fileID: 779315195528110089}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &5247836333062941182
@@ -60,6 +61,7 @@ MonoBehaviour:
   valuesSO: {fileID: 11400000, guid: 956a695dde2a0554e9f86d3f34dbe37d, type: 2}
   kickCollider: {fileID: 6743993842517759247}
   animController: {fileID: 8830410077484291935}
+  glideFlapOrigin: {fileID: 779315195528110089}
 --- !u!114 &8138197728170424479
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -350,6 +352,37 @@ BoxCollider2D:
   m_AutoTiling: 0
   m_Size: {x: 1.3, y: 0.6}
   m_EdgeRadius: 0
+--- !u!1 &2340353959168240166
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 779315195528110089}
+  m_Layer: 7
+  m_Name: GlideFlapOrigin
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &779315195528110089
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2340353959168240166}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: -0.1, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 4977283796603459819}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &3064483576354577476
 GameObject:
   m_ObjectHideFlags: 0

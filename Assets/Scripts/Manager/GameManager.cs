@@ -280,6 +280,8 @@ public class GameManager : MonoBehaviour
 
     private void OnPlayersDeath(PlayerController player)
     {
+        Vector2 deathPosition = player.transform.position;
+
         player.gameObject.transform.position = deathPos.position;
         player.DropBlock();
 
@@ -288,6 +290,8 @@ public class GameManager : MonoBehaviour
         AudioManager.Instance.MakeDeathSound();
         uiManager.UpdateDeadPlayer(player.playerIndex);
         cameraRig.DoDeathShake();
+
+        FeatherVFXController.Instance?.EmitDeath(deathPosition);
 
         CheckWinner();
     }

@@ -17,6 +17,7 @@ public sealed class PlayerController : MonoBehaviour, IKickable
     [SerializeField] private PlatformerValuesSO valuesSO;
     [SerializeField] private KickCollider kickCollider;
     [SerializeField] private PlayerAnimController animController;
+    [SerializeField] private Transform glideFlapOrigin;
 
     // ── Public state (read by GameManager / UIManager) ────────────────────────
 
@@ -38,6 +39,9 @@ public sealed class PlayerController : MonoBehaviour, IKickable
     private PlayerMovement     _movement;
     private PlayerBlockHandler _blockHandler;
     private CluckSystem        _cluckSystem;
+
+    private bool  _isGliding;
+    private float _flapTimer;
 
     // ── Input / scheme ────────────────────────────────────────────────────────
 
@@ -61,20 +65,41 @@ public sealed class PlayerController : MonoBehaviour, IKickable
         kickCollider.playerController = this;
 
         SubscribeToInputEvents();
+        SubscribeToMovementEvents();
     }
 
     private void OnDestroy()
     {
         UnsubscribeFromInputEvents();
+        UnsubscribeFromMovementEvents();
     }
 
     private void Update()
     {
         _movement.ProcessInput(_inputHandler.CurrentInput);
 
+        if (_isGliding)
+            TickFlapVFX();
+
         if (!isOnGame) return;
 
         _blockHandler.IsAvailable = true;
+    }
+
+    private void TickFlapVFX()
+    {
+        if (FeatherVFXController.Instance == null) return;
+
+        _flapTimer -= Time.deltaTime;
+        if (_flapTimer > 0f) return;
+
+        _flapTimer = FeatherVFXController.Instance.FlapInterval;
+
+        Vector2 origin = glideFlapOrigin != null
+            ? (Vector2)glideFlapOrigin.position
+            : (Vector2)transform.position;
+
+        FeatherVFXController.Instance.EmitFlap(origin);
     }
 
     // ── Input event routing ───────────────────────────────────────────────────
@@ -99,12 +124,31 @@ public sealed class PlayerController : MonoBehaviour, IKickable
         _inputHandler.OnBackUIPressed     -= HandleBackUI;
     }
 
+    private void SubscribeToMovementEvents()
+    {
+        _movement.OnJumped            += HandleJumpVFX;
+        _movement.OnGlideStateChanged += HandleGlideStateChanged;
+    }
+
+    private void UnsubscribeFromMovementEvents()
+    {
+        if (_movement == null) return;
+
+        _movement.OnJumped            -= HandleJumpVFX;
+        _movement.OnGlideStateChanged -= HandleGlideStateChanged;
+    }
+
     private void HandleKick()
     {
         if (IsOnPause()) return;
 
         animController.PlayKick();
         AudioManager.Instance.PlaySound("player_kick");
+
+        FeatherVFXController.Instance?.EmitKickDealt(
+            transform.position,
+            Vector2.right * transform.localScale.x
+        );
     }
 
     private void HandlePlaceBlock()
@@ -146,6 +190,23 @@ public sealed class PlayerController : MonoBehaviour, IKickable
             animController.PlayHitBack();
         else
             animController.PlayHitFront();
+
+        FeatherVFXController.Instance?.EmitKickReceived(transform.position, kickImpulse);
+    }
+
+    // ── VFX handlers (movement events) ───────────────────────────────────────
+
+    private void HandleJumpVFX()
+    {
+        FeatherVFXController.Instance?.EmitJump(transform.position);
+    }
+
+    private void HandleGlideStateChanged(bool isGliding)
+    {
+        _isGliding = isGliding;
+
+        if (isGliding)
+            _flapTimer = 0f; // Emit on the very first frame of glide.
     }
 
     // ── Public API (called by GameManager) ────────────────────────────────────

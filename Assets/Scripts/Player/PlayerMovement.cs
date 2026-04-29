@@ -36,6 +36,12 @@ public sealed class PlayerMovement : MonoBehaviour
     /// <summary>Fired when grounded state changes. bool = isGrounded.</summary>
     public event Action<bool> OnGroundedChanged;
 
+    /// <summary>Fired once when a jump is successfully executed.</summary>
+    public event Action OnJumped;
+
+    /// <summary>Fired when glide state changes. bool = isGliding.</summary>
+    public event Action<bool> OnGlideStateChanged;
+
     // ── Private state ─────────────────────────────────────────────────────────
 
     private Rigidbody2D          _rb;
@@ -49,6 +55,7 @@ public sealed class PlayerMovement : MonoBehaviour
     private bool _isPlayerOnHead;
     private bool _isHoldingJump;
     private bool _jumpLocked;
+    private bool _isGliding;
 
     private float _coyoteTimer;
     private float _jumpBufferTimer;
@@ -185,6 +192,7 @@ public sealed class PlayerMovement : MonoBehaviour
 
         AudioManager.Instance.PlaySound("player_jump");
         _animController?.SetGrounded(false);
+        OnJumped?.Invoke();
     }
 
     private void HandleGravity()
@@ -202,6 +210,13 @@ public sealed class PlayerMovement : MonoBehaviour
         {
             float glideMultiplier = _isHoldingJump ? valuesSO.glideResistance : 0f;
             int   fallLimit       = _isHoldingJump ? -4 : -25;
+
+            bool nowGliding = _isHoldingJump;
+            if (nowGliding != _isGliding)
+            {
+                _isGliding = nowGliding;
+                OnGlideStateChanged?.Invoke(_isGliding);
+            }
 
             _animController?.SetGliding(_isHoldingJump);
 
@@ -228,9 +243,9 @@ public sealed class PlayerMovement : MonoBehaviour
         Vector2 pos = transform.position;
 
         _isGrounded =
-            Physics2D.Raycast(new Vector2(pos.x - checkSpacing, pos.y - spacingY),         Vector2.down, raycastDistance, groundLayer).collider != null
-         || Physics2D.Raycast(new Vector2(pos.x,                pos.y - spacingY - 0.07f), Vector2.down, raycastDistance, groundLayer).collider != null
-         || Physics2D.Raycast(new Vector2(pos.x + checkSpacing, pos.y - spacingY),         Vector2.down, raycastDistance, groundLayer).collider != null;
+            RaycastNonTrigger(new Vector2(pos.x - checkSpacing, pos.y - spacingY), Vector2.down) != null
+         || RaycastNonTrigger(new Vector2(pos.x, pos.y - spacingY - 0.07f), Vector2.down) != null
+         || RaycastNonTrigger(new Vector2(pos.x + checkSpacing, pos.y - spacingY), Vector2.down) != null;
 
         RaycastHit2D headL = Physics2D.Raycast(new Vector2(pos.x - checkSpacing, pos.y + headCheckOffset),         Vector2.up, raycastDistance, groundLayer);
         RaycastHit2D headC = Physics2D.Raycast(new Vector2(pos.x,                pos.y + headCheckOffset + 0.07f), Vector2.up, raycastDistance, groundLayer);
@@ -239,6 +254,17 @@ public sealed class PlayerMovement : MonoBehaviour
         _isPlayerOnHead = IsPlayerCollider(headL.collider)
                        || IsPlayerCollider(headC.collider)
                        || IsPlayerCollider(headR.collider);
+    }
+
+    private Collider2D RaycastNonTrigger(Vector2 origin, Vector2 direction)
+    {
+        RaycastHit2D[] hits = Physics2D.RaycastAll(origin, direction, raycastDistance, groundLayer);
+        foreach (var hit in hits)
+        {
+            if (!hit.collider.isTrigger)
+                return hit.collider;
+        }
+        return null;
     }
 
     private static bool IsPlayerCollider(Collider2D col) =>
@@ -262,8 +288,16 @@ public sealed class PlayerMovement : MonoBehaviour
     {
         if (_isGrounded == _wasGrounded) return;
 
-        if(_isGrounded) 
+        if (_isGrounded)
+        {
             AudioManager.Instance.PlaySound("player_land");
+
+            if (_isGliding)
+            {
+                _isGliding = false;
+                OnGlideStateChanged?.Invoke(false);
+            }
+        }
 
         _wasGrounded = _isGrounded;
         _animController?.SetGrounded(_isGrounded);
