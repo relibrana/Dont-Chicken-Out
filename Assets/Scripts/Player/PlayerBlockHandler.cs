@@ -25,10 +25,17 @@ public sealed class PlayerBlockHandler : MonoBehaviour
     public bool CanPlaceBlock        { get; private set; }
 
     /// <summary>
-    /// Must be true for block logic to run.
-    /// Toggled by PlayerController based on game state and placement cooldown.
+    /// False while the placement cooldown is running. Owned by this class only —
+    /// nothing outside may write it, or the cooldown is lost.
     /// </summary>
-    public bool IsAvailable { get; set; }
+    public bool IsAvailable { get; private set; } = true;
+
+    /// <summary>
+    /// True while the player is taking part in a round. Set by PlayerController.
+    /// Kept separate from IsAvailable so the per-frame "player is playing" flag
+    /// cannot overwrite the placement cooldown.
+    /// </summary>
+    public bool IsInGame { get; set; }
 
     // ── Private refs ──────────────────────────────────────────────────────────
 
@@ -36,7 +43,19 @@ public sealed class PlayerBlockHandler : MonoBehaviour
     private PlayerAnimController _animController;
     private PlayerController    _controller;
 
-    private float _blockPlacementCD;
+    private PlatformerValuesSO _values;
+
+    // ── Progression-scaled values ─────────────────────────────────────────────
+
+    /// <summary>Cooldown between placements, scaled by the current phase.</summary>
+    private float PlacementCooldown => _values != null
+        ? _values.blockPlacementCD * ProgressionManager.Get(ProgressionVar.PlacementCadence)
+        : 0f;
+
+    /// <summary>Delay before a freshly received block can be placed, scaled by the current phase.</summary>
+    private float GenerationDelay => _values != null
+        ? _values.blockGenerationDelay * ProgressionManager.Get(ProgressionVar.BlockGeneration)
+        : 0.3f;
 
     // ── Unity lifecycle ───────────────────────────────────────────────────────
 
@@ -48,10 +67,15 @@ public sealed class PlayerBlockHandler : MonoBehaviour
 
     private void Update()
     {
+        if (!IsInGame) return;
+
+        // The push animation keeps updating during the placement cooldown —
+        // the player is still leaning on the block either way.
+        CheckPushing();
+
         if (!IsAvailable) return;
 
         HandleBlockLogic();
-        CheckPushing();
     }
 
     // ── Public methods ────────────────────────────────────────────────────────
@@ -66,7 +90,7 @@ public sealed class PlayerBlockHandler : MonoBehaviour
         CurrentBlock = newBlock;
         CurrentBlock.StartHold();
         CanPlaceBlock = false;
-        DOVirtual.DelayedCall(0.3f, () => CanPlaceBlock = true, false);
+        DOVirtual.DelayedCall(GenerationDelay, () => CanPlaceBlock = true, false);
     }
 
     /// <summary>
@@ -90,7 +114,7 @@ public sealed class PlayerBlockHandler : MonoBehaviour
         CanPlaceBlock = false;
         IsAvailable   = false;
 
-        DOVirtual.DelayedCall(_blockPlacementCD, () => IsAvailable = true, false);
+        DOVirtual.DelayedCall(PlacementCooldown, () => IsAvailable = true, false);
     }
 
     /// <summary>
@@ -106,11 +130,15 @@ public sealed class PlayerBlockHandler : MonoBehaviour
         CanPlaceBlock = false;
     }
 
-    /// <summary>Called by PlayerController on Awake to inject dependencies and settings.</summary>
-    public void Initialize(float placementCooldown, PlayerAnimController animController)
+    /// <summary>
+    /// Called by PlayerController on Awake to inject dependencies and settings.
+    /// The ScriptableObject is kept as a live reference (not copied) so the
+    /// progression system can scale its values every frame.
+    /// </summary>
+    public void Initialize(PlatformerValuesSO values, PlayerAnimController animController)
     {
-        _blockPlacementCD = placementCooldown;
-        _animController   = animController;
+        _values         = values;
+        _animController = animController;
     }
 
     // ── Private logic ─────────────────────────────────────────────────────────
@@ -137,7 +165,7 @@ public sealed class PlayerBlockHandler : MonoBehaviour
         CurrentBlock.StartHold();
 
         CanPlaceBlock = false;
-        DOVirtual.DelayedCall(0.3f, () => CanPlaceBlock = true, false);
+        DOVirtual.DelayedCall(GenerationDelay, () => CanPlaceBlock = true, false);
     }
 
     private void UpdateBlockTransform()
@@ -183,6 +211,11 @@ public sealed class PlayerBlockHandler : MonoBehaviour
         return false;
     }
 
+    /// <summary>
+    /// Drives the push animation bool. There is no push force by design:
+    /// pushing is the player walking into a block, so it already scales with
+    /// the lateral speed progression variable.
+    /// </summary>
     private void CheckPushing()
     {
         RaycastHit2D hit = Physics2D.Raycast(

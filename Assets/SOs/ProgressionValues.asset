@@ -1,0 +1,57 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7c1e4a9b2d6f43a8b5c0e9d3f8a17b24, type: 3}
+  m_Name: ProgressionValues
+  m_EditorClassIdentifier:
+  firstInterval: 100
+  intervalStepPerPhase: -15
+  minInterval: 40
+  halfRateFromPhase: 7
+  halfRateMultiplier: 0.5
+  cameraSpeed:
+    ratePerPhase: 6
+    floorPercent: 0
+    ceilingPercent: 0
+  lateralSpeed:
+    ratePerPhase: 5
+    floorPercent: 0
+    ceilingPercent: 0
+  blockFall:
+    ratePerPhase: 9
+    floorPercent: 0
+    ceilingPercent: 0
+  push:
+    ratePerPhase: 7
+    floorPercent: 0
+    ceilingPercent: 0
+  blockGeneration:
+    ratePerPhase: -6
+    floorPercent: 50
+    ceilingPercent: 0
+  placementCadence:
+    ratePerPhase: -6
+    floorPercent: 50
+    ceilingPercent: 0
+  cameraPause:
+    ratePerPhase: -8
+    floorPercent: 40
+    ceilingPercent: 0
+  spawnOffsetAboveView: 3
+  ribbonWidth: 0
+  ribbonCenterX: 0
+  ribbonHeight: 0.5
+  autoBreakMarginBelowView: 3
+  cameraPauseDuration: 1.2
+  ribbonBreakSfxId: ribbon_break
+  phaseChangeSfxId: phase_change
+  musicPitchPerPhase: 0.03
+  musicPitchMax: 1.25

@@ -227,6 +227,20 @@ public class AudioManager : MonoBehaviour
         musicSource.Stop();
     }
 
+    /// <summary>
+    /// Scales the tempo of the current BGM. Used by the progression system to
+    /// accompany each phase change.
+    ///
+    /// Interim implementation: AudioSource.pitch shifts speed and key together.
+    /// Replace with an FMOD tempo parameter once audio delivers one — only the
+    /// body of this method needs to change.
+    /// </summary>
+    public void SetMusicPitch(float pitch)
+    {
+        if (musicSource == null) return;
+        musicSource.pitch = Mathf.Max(0.01f, pitch);
+    }
+
     private IEnumerator TransitionToLoop(Sound loop)
     {
         yield return new WaitWhile(() => musicSource.isPlaying);

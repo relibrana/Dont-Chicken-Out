@@ -2,9 +2,9 @@
 
 **Proyecto:** Don't Chicken Out! · Raymi Games
 **Fecha:** 4 de junio de 2026 · **Última actualización:** 15 de julio de 2026
-**Estado:** ✅ **Aceptado** — modelo de autoridad: host-authority. Framework: **Photon Fusion 2** (lock 15 jul 2026).
+**Estado:** ✅ **Aceptado** — modelo de autoridad: host-authority. Framework: **Photon Fusion 2** (lock 15 jul 2026). Alcance ampliado a **reconstrucción del core** (20 jul 2026, ver §14 e `fusion2-integracion.md`).
 **Ámbito:** Arquitectura de red para M4 Beta (Online) y posterior.
-**Documentos relacionados:** [overview.md](overview.md) · [Roadmap.md](Roadmap.md) · [sprintplan.md](sprintplan.md) · [Netcode-Analisis-y-Recomendacion.docx](Netcode-Analisis-y-Recomendacion.docx)
+**Documentos relacionados:** [fusion2-integracion.md](fusion2-integracion.md) · [fusion2-primer.md](fusion2-primer.md) · [overview.md](overview.md) · [Roadmap.md](Roadmap.md) · [sprintplan.md](sprintplan.md) · [Netcode-Analisis-y-Recomendacion.docx](Netcode-Analisis-y-Recomendacion.docx)
 
 > Este registro captura **todas las decisiones y el análisis** realizados durante la evaluación de netcode, para poder retomarlos en cualquier sesión futura. El `.docx` es la versión presentable; este markdown es el registro técnico versionado en git.
 
@@ -24,7 +24,7 @@ Don't Chicken Out! es un party game 2D de acción para 2–4 jugadores (posible 
 - **Sin código de red todavía:** 0 referencias a Photon/Mirror/NGO/FishNet/Fusion en `Assets/Scripts` (55 scripts C#).
 - **Local funcional 2–4P:** join por teclado split + gamepad vía `PlayerInputManager` (`PlayersManager.cs`).
 - **Flujo de partida:** `GameManager` con state machine (Menu/Prepare/Game/Win) y rondas First-to-5.
-- **Arquitectura ya preparada para red (ventaja clave):** `PlayerMovement` consume un `InputPayload` por tick y produce un `StatePayload` (patrón command/predicción); comentarios explícitos de *network-ready* y reconciliación (`PlayerPayloads.cs`, `PlayerMovement.cs`). Mapea directo sobre los modelos de predicción de Fusion y FishNet.
+- **Arquitectura "preparada para red":** `PlayerMovement` consume un `InputPayload` por tick y produce un `StatePayload` (patrón command/predicción); comentarios explícitos de *network-ready* (`PlayerPayloads.cs`, `PlayerMovement.cs`). ⚠️ **Corregido (auditoría jul 2026):** el patrón está *nombrado, no implementado* — `StatePayload` nunca se lee, los payloads no llevan tick, y la simulación corre en `Update()` con `Time.deltaTime`. **No es la ventaja de cronograma que este ADR asumió.** Ver `fusion2-integracion.md` §6–7. Este hallazgo motivó la decisión de reconstruir el core (§14, 20 jul 2026).
 - **Física (restricción dura):** `Rigidbody2D` + `Physics2D` (raycasts, `SmoothDamp`, impulsos para kicks/bombas/springs). **No determinista entre plataformas** → descarta el lockstep determinista (Photon Quantum) salvo reescritura completa de la física.
 - **Contenido a sincronizar:** jugadores, bloques con pooling escalado por rank, items/hazards (Bomb, Spring Disc, Item Capsules, Horizontal Spawner).
 
@@ -81,7 +81,7 @@ Las tres opciones de framework soportan host mode. Se pueden reservar servidores
 | Cómo | Quién es el "jefe" | Equidad | Costo / dificultad |
 |---|---|---|---|
 | Solo host-authority | un jugador | el host gana los choques | barato, fácil |
-| + Lag compensation | un jugador, pero "rebobina el tiempo" | casi parejo en golpes | medio (Fusion lo trae; sprint B-4) |
+| + Lag compensation | un jugador, pero "rebobina el tiempo" | casi parejo en golpes | ⚠️ **no aplica en 2D** — la lag comp de Fusion solo cubre hitboxes 3D (ver corrección abajo) |
 | + Host justo (input en la misma cola) | un jugador | quita el "frame gratis" del host | fácil |
 | Servidor dedicado | PC neutral en la nube | el más parejo (nadie tiene 0) | caro + operación |
 | Delay igual para todos (rollback estilo peleas) | todos esperan lo mismo | muy parejo | complejo con física y 8P; mal encaje aquí |
@@ -89,6 +89,8 @@ Las tres opciones de framework soportan host mode. Se pueden reservar servidores
 **Visión de producto confirmada (16 jun 2026):** el online es **"caos entre amigos" al estilo Party Animals**, NO competitivo ni ranked. En un brawler de caos físico, el desorden es parte del chiste y la "injusticia" del host advantage se diluye en la comedia. La vara real es "¿se siente divertido y responsivo?", no "justo de esports".
 
 **Decisión:** `host-authority + predicción + interpolación + lag compensation ligero en los golpes + host justo (input en la misma cola)`. **Servidores dedicados descartados**, probablemente nunca necesarios; solo reconsiderar si aparece un modo competitivo serio en Live Ops. Esta decisión **no condiciona** la elección de framework (las tres pueden empezar host-authority y migrar modos puntuales a dedicado después).
+
+> ⚠️ **Corrección (jul 2026):** la lag compensation de Fusion 2 solo cubre hitboxes **3D** — **no funciona con los `Collider2D`** del juego (verificado en doc oficial). La parte "lag compensation ligero en los golpes" de esta decisión no es implementable tal cual. La resolución de kicks disputados pasa a ser una **decisión de diseño** (autoritativo en host / emular hitbox 3D en plano fijo / sin compensar); recomendación y opciones en `fusion2-integracion.md` §11. **El resto de la decisión se mantiene** (host-authority + predicción + interpolación + host justo).
 
 ---
 
@@ -168,6 +170,8 @@ El **modelo de autoridad** (host-authority, sin dedicados) ya está resuelto y e
 | Quantum / PUN2 / Mirror puro / Steamworks-solo descartados | ✅ Aceptada |
 | FishNet añadido a los candidatos de A-1 | ✅ Aceptada |
 | Framework final = **Photon Fusion 2** | ✅ Aceptada (15 jul 2026) |
+| Alcance: **reconstrucción del core** (simulación única offline/couch/online) | ✅ Aceptada (20 jul 2026) |
+| Pollo → **character controller cinemático** (bloques siguen dinámicos/interpolados) | 🔄 Aceptada a nivel técnico; **feel pendiente de validar con design leads** |
 
 ---
 
@@ -190,3 +194,4 @@ El **modelo de autoridad** (host-authority, sin dedicados) ya está resuelto y e
 - **2026-06-04** — v1.0: análisis inicial, comparativa de frameworks y modelo de costos.
 - **2026-06-16** — v1.1: confirmada visión casual "caos entre amigos" (ref. Party Animals); añadido modelo de autoridad (host-authority) y análisis de equidad / host advantage; servidores dedicados descartados.
 - **2026-07-15** — v1.2: **DECISIÓN FINAL: Photon Fusion 2** (host mode). Próximos pasos: onboarding del equipo en Fusion 2 (`fusion2-primer.md`), reunión con Photon (pricing/consolas/soporte), dummy session de 2 clientes como validación.
+- **2026-07-20** — v1.3: **DECISIÓN DE ALCANCE: reconstruir el core.** La auditoría de código (jul 2026) encontró que la arquitectura "network-ready" del §2 estaba *nombrada, no implementada*. Ante eso, el equipo acepta reconstruir la simulación como **una sola** (offline/couch/online = mismo código), con el pollo pasando a **controller cinemático** y los bloques manteniéndose dinámicos/interpolados. Framework y modelo host-authority **sin cambios**. Detalle técnico y plan por capas en `fusion2-integracion.md` (v2.0). El **GDD no se modifica** (propiedad de los design leads; el online ya se delega a producción en `gdd.md:80`). Correcciones factuales propagadas a `fusion2-primer.md`.

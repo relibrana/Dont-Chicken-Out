@@ -4,6 +4,7 @@ using System.Linq;
 using System;
 using DG.Tweening;
 using System.Collections;
+using UnityEngine.Serialization;
 
 [Serializable]
 public enum GameState { Menu, Prepare, Game, Win }
@@ -25,18 +26,17 @@ public class GameManager : MonoBehaviour
     [Tooltip("Seconds after the round starts before the camera begins rising.")]
     [SerializeField] private float cameraStartDelay = 3.5f;
 
-    [Tooltip("Initial upward speed of the camera (units per second).")]
-    [SerializeField] private float cameraInitialSpeed = 0.15f;
+    [Tooltip("Upward speed of the camera at phase 1, in units per second.\n"
+             + "The camera no longer accelerates on its own: all acceleration comes from the progression "
+             + "phases (+6% each), so this value sets the pace of the whole round and has to be re-tuned.")]
+    [FormerlySerializedAs("cameraInitialSpeed")]
+    [SerializeField] private float cameraBaseSpeed = 0.15f;
 
-    [Tooltip("How much the speed increases per second of gameplay.")]
-    [SerializeField] private float cameraAcceleration = 0.01f;
-
-    [Tooltip("Maximum upward speed the camera can reach (units per second).")]
-    [SerializeField] private float cameraMaxSpeed = 1.5f;
+    [Header("Progression")]
+    [Tooltip("Optional. Without it the game runs exactly as before, with every progression scalar at 100%.")]
+    [SerializeField] private ProgressionManager progression;
 
 
-    // Current runtime camera speed — reset each round.
-    private float _currentCameraSpeed;
     private float _cameraDelayTimer;
 
     [Header("Game Variables")]
@@ -149,6 +149,7 @@ public class GameManager : MonoBehaviour
             playersAlive[i] = null;
 
         cameraRig.ResetToGameplay();
+        progression?.ResetForRound();
         needsAReset = false;
 
         OnPlayersCountChanged?.Invoke(CountJoinedPlayers());
@@ -178,6 +179,9 @@ public class GameManager : MonoBehaviour
         // Reset the speed and delay timer for this new round.
         ResetCameraSpeed();
 
+        // The match is first-to-N: progression must restart at phase 1 every round.
+        progression?.ResetForRound();
+
         uiManager.StartInitialGameSequence(() =>
         {
             ChangeGameState(GameState.Game);
@@ -201,6 +205,10 @@ public class GameManager : MonoBehaviour
                 playersAlive[i].isOnGame = true;
         }
 
+        // Ticked from here so the progression system inherits the game state and
+        // pause handling, and keeps a single deterministic call site per frame.
+        progression?.Tick(Time.deltaTime);
+
         TickCameraAutoMove();
     }
 
@@ -209,19 +217,23 @@ public class GameManager : MonoBehaviour
     // ── Camera auto-move ──────────────────────────────────────────────────────
 
     /// <summary>
-    /// Resets speed and delay to their initial values. Call at the start of each round.
+    /// Resets the start delay. Call at the start of each round.
     /// </summary>
     private void ResetCameraSpeed()
     {
-        _currentCameraSpeed = cameraInitialSpeed;
-        _cameraDelayTimer   = cameraStartDelay;
+        _cameraDelayTimer = cameraStartDelay;
     }
 
     /// <summary>
     /// Called every frame while in GameState.Game.
-    /// Waits for the initial delay, then pushes MaxHeightReached upward at an
-    /// ever-increasing speed, capped at cameraMaxSpeed.
-    /// Player-height catch-up is handled by CinemachineVerticalRig2D.
+    /// Waits for the initial delay, then pushes MaxHeightReached upward at the
+    /// speed of the current progression phase.
+    ///
+    /// The camera does not accelerate on its own any more: speed is
+    /// base * phase, and a ribbon break momentarily knocks it down to zero
+    /// before it climbs back up (the sawtooth in the design doc).
+    /// Player-height catch-up is handled by CinemachineVerticalRig2D and is not
+    /// affected by the recovery, so a player above the view is never cut off.
     /// </summary>
     private void TickCameraAutoMove()
     {
@@ -231,12 +243,10 @@ public class GameManager : MonoBehaviour
             return;
         }
 
-        // Gradually increase auto-move speed up to the cap.
-        _currentCameraSpeed = Mathf.Min(
-            _currentCameraSpeed + cameraAcceleration * Time.deltaTime,
-            cameraMaxSpeed);
+        float phaseScale = ProgressionManager.Get(ProgressionVar.CameraSpeed);
+        float recovery   = progression != null ? progression.CameraSpeedFactor : 1f;
 
-        cameraRig.MaxHeightReached += _currentCameraSpeed * Time.deltaTime;
+        cameraRig.MaxHeightReached += cameraBaseSpeed * phaseScale * recovery * Time.deltaTime;
     }
 
     // ── Player management ─────────────────────────────────────────────────────

@@ -34,13 +34,20 @@ public class PoolingManager : MonoBehaviour
         InitializePoolObject(itemCapsule, capsuleList);
     }
 
+    /// <summary>
+    /// Applies the shared block physics values.
+    /// Gravity is scaled by the current progression phase, so a block falls at
+    /// the speed of the phase it was handed out in. Blocks already placed in
+    /// the world keep the gravity they were spawned with — changing it under a
+    /// settled tower would jolt the whole level.
+    /// </summary>
     private void SetBlock(GameObject obj)
     {
         if (obj.TryGetComponent(out Rigidbody2D rb))
         {
             rb.mass = blocksSO.mass;
             rb.linearDamping = blocksSO.linearDamping;
-            rb.gravityScale = blocksSO.gravityScale;
+            rb.gravityScale = blocksSO.gravityScale * ProgressionManager.Get(ProgressionVar.BlockFall);
         }
 
     }
@@ -154,6 +161,9 @@ public class PoolingManager : MonoBehaviour
 		pObject.transform.position = _spawnPosition;
 		pObject.transform.localScale = Vector3.one;
 		pObject.transform.SetSiblingIndex(pObject.transform.parent.childCount);
+
+        // Re-applied on every hand-out so the block picks up the current phase.
+        SetBlock(pObject);
 
         ResetSingleBlocks(pObject);
 

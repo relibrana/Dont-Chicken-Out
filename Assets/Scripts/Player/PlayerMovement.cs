@@ -151,7 +151,9 @@ public sealed class PlayerMovement : MonoBehaviour
 
     private void HandleHorizontalMovement(float moveDirection)
     {
-        float targetSpeed = moveDirection * valuesSO.maxSpeed;
+        // Lateral speed is one of the seven progression variables. The jump is
+        // deliberately left untouched (doc §4.3), so only the arc width changes.
+        float targetSpeed = moveDirection * valuesSO.maxSpeed * ProgressionManager.Get(ProgressionVar.LateralSpeed);
 
         if (moveDirection != 0f)
             transform.localScale = new Vector3(Mathf.Sign(moveDirection), 1f, 1f);

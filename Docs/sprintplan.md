@@ -1,6 +1,8 @@
 # 06 — Sprint Plan (Vertical Slice → Launch)
 
-**Versión:** 1.0 · **Última actualización:** 2026-05-16 · **Status:** vigente
+**Versión:** 1.1 · **Última actualización:** 2026-07-20 · **Status:** vigente
+
+> 🔄 **v1.1 (20 jul 2026):** re-scope de netcode B-1→B-4 tras la decisión de reconstruir el core. Ver `fusion2-integracion.md` §10 (plan por capas) y `ADR-0001` §14.
 
 Plan biweekly desde el cierre de **Vertical Slice** (hoy) hasta **Launch en July 2027**. ~30 sprints distribuidos en 4 milestones (M2 wrap, M3 Alpha, M4 Beta, M5 Launch) + Live Ops post-launch.
 
@@ -100,10 +102,10 @@ Plan biweekly desde el cierre de **Vertical Slice** (hoy) hasta **Launch en July
 
 | Sprint | Fechas | Goal | Hito |
 | --- | --- | --- | --- |
-| B-1 | 21 sep - 2 oct 2026 | Netcode integration: foundation (transport, conexión, sync básico) | — |
-| B-2 | 5-16 oct 2026 | Lobby system + matchmaking básico | — |
-| B-3 | 19-30 oct 2026 | Online round flow + sync de items + reconciliación | — |
-| B-4 | 2-13 nov 2026 | Online 4P estable + lag compensation | — |
+| B-1 | 21 sep - 2 oct 2026 | Netcode foundation: capa de sesión, conexión, identidad `(PlayerRef, localIndex)` | — |
+| B-2 | 5-16 oct 2026 | Lobby + matchmaking básico + autoridad de partida (reglas/ranking al host) | — |
+| B-3 | 19-30 oct 2026 | Mundo autoritativo (pool/items tras `ObjectProvider`) + reconciliación | 🚨 Prototipo física antes |
+| B-4 | 2-13 nov 2026 | Online 4P estable + arbitraje de interacciones disputadas (kicks/stomps) | — |
 | B-5 | 16-27 nov 2026 | Modular character rig (foundation para skins + IP collabs) | — |
 | B-6 | 30 nov - 11 dic 2026 | Skins system (data + apply + persistence) | — |
 | B-7 | 14-25 dic 2026 | Account / profile system (reduced — holidays) | ⚠️ Holidays |
@@ -348,10 +350,12 @@ Ambos integran en `develop` semanalmente, branches por feature/sprint.
 
 ### Netcode foundation (B-1 → B-4)
 
-- **B-1 · 21 sep – 2 oct 2026** · Foundation: transport, connection management, basic sync
-- **B-2 · 5 – 16 oct 2026** · Lobby system + matchmaking básico
-- **B-3 · 19 – 30 oct 2026** · Online round flow + item sync + reconciliación
-- **B-4 · 2 – 13 nov 2026** · Online 4P estable + lag compensation + edge cases
+> 🔄 **Re-scope (20 jul 2026):** tras la decisión de reconstruir el core, la simulación pasa a arquitectura por capas (ver `fusion2-integracion.md` §5, §10). Las **capas 1–2 (tick fijo + controller cinemático) son Fusion-independientes** y se solapan con A-4→A-7. B-1→B-4 integra las capas 3–6. **Trabajo nuevo no presupuestado:** invitaciones de Steam (Photon da auth, el flujo lo hacemos nosotros). B-4 deja de ser "lag compensation" (no existe para colliders 2D en Fusion) y pasa a **arbitraje de interacciones**.
+
+- **B-1 · 21 sep – 2 oct 2026** · Foundation: capa de sesión, conexión, identidad `(PlayerRef, localIndex)`
+- **B-2 · 5 – 16 oct 2026** · Lobby + matchmaking básico + autoridad de partida (reglas y ranking al host)
+- **B-3 · 19 – 30 oct 2026** · Mundo autoritativo (pool/items tras `ObjectProvider`) + reconciliación · **precede: prototipo de riesgo** (costo de física + desfase de bloques con latencia)
+- **B-4 · 2 – 13 nov 2026** · Online 4P estable + **arbitraje de interacciones disputadas** (kicks/stomps) + host migration como scope opcional
 
 ### Skins & Shop (B-5 → B-8)
 
@@ -466,6 +470,8 @@ Ambos integran en `develop` semanalmente, branches por feature/sprint.
 | Riesgo | Sprint afectado | Mitigación |
 | --- | --- | --- |
 | 🚨 Netcode lock tardío | A-1 → todo M4 Beta | Investigación arranca en VS-2 (A4), decisión hard-locked al cierre de A-1 |
+| 🚨 Reconstrucción del core no cabe en B-1→B-4 | M4 Beta | Capas 1–2 (simulación) son Fusion-independientes → solapar con A-4→A-7; prototipo de riesgo antes de B-3. Ver `fusion2-integracion.md` §10 |
+| Desfase de bloques interpolados rompe el feel de muertes | B-3 → B-4 | Medir en el prototipo de riesgo; fijar umbral aceptable antes de construir la capa de mundo |
 | Arte de skins no escala con catalog del Shop | B-6 → B-8 | Modular rig en B-5 estandariza pipeline de drops |
 | Console kit access tarda (publisher-driven) | L-7 cert | Coordinar con publisher en M3 Alpha, no esperar a L-7 |
 | Localization no cabe en L-8 | L-8 | Indirección i18n implementada en A-4, traducciones acumuladas durante Beta |

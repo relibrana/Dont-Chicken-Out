@@ -34,6 +34,10 @@ public class PlatformerValuesSO : ScriptableObject
     public float jumpBufferTime = 0.15f;
     [Tooltip("Amount of Force the kick will make")]
     public Vector2 kickForce;
-    [Tooltip("Cooldown time between each block Placement")]
-    public float blockPlacementCD;
+    [Tooltip("Cooldown time between each block Placement. Scaled by the progression system (Placement Cadence).\n"
+             + "This plus Block Generation Delay is the total time between two placements, which is what "
+             + "drives blocks/second in the progression safety check.")]
+    public float blockPlacementCD = 0.15f;
+    [Tooltip("Delay between receiving a block and being able to place it. Scaled by the progression system (Block Generation)")]
+    public float blockGenerationDelay = 0.15f;
 }

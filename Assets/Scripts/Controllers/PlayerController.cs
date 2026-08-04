@@ -59,7 +59,7 @@ public sealed class PlayerController : MonoBehaviour, IKickable
         _cluckSystem  = GetComponent<CluckSystem>();
 
         _movement.SetAnimController(animController);
-        _blockHandler.Initialize(valuesSO.blockPlacementCD, animController);
+        _blockHandler.Initialize(valuesSO, animController);
 
         kickCollider.forceDirection   = valuesSO.kickForce;
         kickCollider.playerController = this;
@@ -81,9 +81,10 @@ public sealed class PlayerController : MonoBehaviour, IKickable
         if (_isGliding)
             TickFlapVFX();
 
-        if (!isOnGame) return;
-
-        _blockHandler.IsAvailable = true;
+        // Only the "is this player playing" flag is driven from here.
+        // The placement cooldown lives inside PlayerBlockHandler.IsAvailable and
+        // must not be touched every frame, or the cooldown never applies.
+        _blockHandler.IsInGame = isOnGame;
     }
 
     private void TickFlapVFX()

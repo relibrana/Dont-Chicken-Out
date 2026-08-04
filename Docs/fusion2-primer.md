@@ -2,6 +2,8 @@
 
 **Objetivo:** base común de conocimiento antes de la reunión con Photon y del primer prototipo online. Framework decidido el 15 jul 2026 (ver `ADR-0001-Netcode-Online.md`). Integración online planificada para B-1→B-4 (sep–nov 2026).
 
+> ⚠️ **Estado (20 jul 2026):** este primer es correcto en sus **conceptos de multiplayer** (§1), pero predata la decisión de **reconstruir el core** (jul 2026). La arquitectura objetivo, el controller cinemático y el plan por capas viven ahora en `fusion2-integracion.md` — usar ese doc como fuente de verdad. Las notas técnicas concretas de este primer se corrigieron abajo.
+
 ---
 
 ## 1. Conceptos de multiplayer online (aplican a cualquier framework)
@@ -24,8 +26,8 @@
 - **NetworkObject / NetworkBehaviour:** componentes que marcan qué GameObjects se sincronizan. Las propiedades `[Networked]` se replican solas.
 - **Input:** defines un struct de input (`INetworkInput`) que el runner recolecta cada tick y envía al host. Mapea casi 1:1 con nuestro `InputPayload` (`PlayerPayloads.cs`) — nuestra arquitectura ya está preparada.
 - **Predicción + resimulación integradas:** los objetos con autoridad de input se predicen localmente; si el estado del host difiere, Fusion re-simula automáticamente. Es nuestro patrón `StatePayload` pero provisto por el framework.
-- **NetworkTransform / NetworkRigidbody2D:** sync de posición/física con interpolación incluida. Nuestros bloques, items y jugadores usan Rigidbody2D → usaremos `NetworkRigidbody2D`.
-- **Lag compensation integrada:** hitboxes con "rewind" para queries (raycasts/overlaps) — aplicable al `KickCollider`.
+- **NetworkTransform / NetworkRigidbody:** sync de posición/física con interpolación. ⚠️ **Corrección:** en Fusion 2.1 el componente se unificó en `NetworkRigidbody` (ya no existe `NetworkRigidbody2D`). Además, con el controller cinemático (ver `fusion2-integracion.md` §3), el **pollo NO usa `NetworkRigidbody`** — se predice como estado propio; solo los **bloques dinámicos** lo usan y se interpolan.
+- **Lag compensation:** ⚠️ **Corrección:** la lag compensation de Fusion solo acepta hitboxes **3D** (sphere/box); los `Collider2D` **no participan**. NO es aplicable directamente al `KickCollider`. Cómo resolver los kicks disputados es una **decisión de diseño** (ver `fusion2-integracion.md` §11), no un detalle de framework.
 - **Rooms + matchmaking nativos:** sesiones = rooms del Photon Cloud (crear/unirse por nombre, propiedades de sesión, lobbies, regiones). El relay/NAT traversal viene incluido — no operamos servidores.
 - **Object pooling:** hook `INetworkObjectProvider` para integrar nuestro `PoolingManager` con el spawn de red.
 - **Dashboard + AppId:** el proyecto se registra en dashboard.photonengine.com; el AppId conecta el cliente al cloud. Ahí se ven CCU, regiones y plan.

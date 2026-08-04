@@ -1,0 +1,705 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Arquitectura objetivo — Don't Chicken Out! con Fusion 2</title>
+
+<style>
+  *, *::before, *::after { box-sizing: border-box; }
+  body { margin: 0; }
+  img, svg { max-width: 100%; }
+
+  :root {
+    --bg:        #EEF1EF;
+    --surface:   #FCFCFB;
+    --surface-2: #E4E9E6;
+    --ink:       #161C1A;
+    --ink-2:     #3A4441;
+    --muted:     #5A6663;
+    --rule:      #CFD8D4;
+    --rule-soft: #DFE5E2;
+
+    --build:     #0F8F7A;
+    --keep:      #7B5EA7;
+    --decide:    #D08A00;
+
+    --build-wash:  #0F8F7A18;
+    --keep-wash:   #7B5EA718;
+    --decide-wash: #D08A0018;
+
+    --mono: ui-monospace, "Cascadia Mono", "Cascadia Code", Consolas, "SF Mono", Menlo, monospace;
+    --sans: "Segoe UI", system-ui, -apple-system, "Helvetica Neue", sans-serif;
+
+    --step--1: clamp(0.75rem, 0.72rem + 0.15vw, 0.82rem);
+    --step-0:  clamp(0.95rem, 0.91rem + 0.2vw, 1.03rem);
+    --step-1:  clamp(1.15rem, 1.05rem + 0.4vw, 1.35rem);
+    --step-2:  clamp(1.45rem, 1.25rem + 0.9vw, 2rem);
+    --step-3:  clamp(1.9rem, 1.45rem + 2.1vw, 3.1rem);
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg:        #121615;  --surface:   #1A1F1E;  --surface-2: #232A28;
+      --ink:       #E6EBE9;  --ink-2:     #C3CCC9;  --muted:     #93A09C;
+      --rule:      #2E3735;  --rule-soft: #242C2A;
+      --build:     #22A892;  --keep:      #8F76C9;  --decide:    #C0850B;
+      --build-wash:  #22A89220;  --keep-wash: #8F76C920;  --decide-wash: #C0850B22;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg:        #121615;  --surface:   #1A1F1E;  --surface-2: #232A28;
+    --ink:       #E6EBE9;  --ink-2:     #C3CCC9;  --muted:     #93A09C;
+    --rule:      #2E3735;  --rule-soft: #242C2A;
+    --build:     #22A892;  --keep:      #8F76C9;  --decide:    #C0850B;
+    --build-wash:  #22A89220;  --keep-wash: #8F76C920;  --decide-wash: #C0850B22;
+  }
+  :root[data-theme="light"] {
+    --bg:        #EEF1EF;  --surface:   #FCFCFB;  --surface-2: #E4E9E6;
+    --ink:       #161C1A;  --ink-2:     #3A4441;  --muted:     #5A6663;
+    --rule:      #CFD8D4;  --rule-soft: #DFE5E2;
+    --build:     #0F8F7A;  --keep:      #7B5EA7;  --decide:    #D08A00;
+    --build-wash:  #0F8F7A18;  --keep-wash: #7B5EA718;  --decide-wash: #D08A0018;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--sans);
+    font-size: var(--step-0);
+    line-height: 1.62;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .wrap {
+    max-width: 62rem;
+    margin: 0 auto;
+    padding: clamp(1.5rem, 1rem + 2vw, 3.5rem) clamp(1.1rem, 0.7rem + 1.8vw, 2.5rem) 5rem;
+    display: flex; flex-direction: column;
+    gap: clamp(2.5rem, 2rem + 2vw, 4.25rem);
+  }
+  .prose { max-width: 40rem; }
+
+  /* ---------- masthead ---------- */
+  .masthead { display: flex; flex-direction: column; gap: 1.4rem; padding-bottom: 2rem; border-bottom: 2px solid var(--ink); }
+  .tag {
+    font-family: var(--mono); font-size: var(--step--1);
+    letter-spacing: 0.13em; text-transform: uppercase; color: var(--build);
+    display: flex; flex-wrap: wrap; gap: 0.5rem 1.1rem;
+  }
+  .tag span:not(:first-child) { color: var(--muted); }
+  h1 {
+    font-family: var(--mono); font-size: var(--step-3); line-height: 1.03;
+    font-weight: 700; letter-spacing: -0.035em; text-wrap: balance; margin: 0;
+  }
+  h1 em { font-style: normal; color: var(--build); }
+  .standfirst { font-size: var(--step-1); line-height: 1.5; color: var(--ink-2); max-width: 36rem; text-wrap: pretty; margin: 0; }
+
+  /* ---------- sections ---------- */
+  section { display: flex; flex-direction: column; gap: 1.2rem; }
+  .eyebrow {
+    font-family: var(--mono); font-size: var(--step--1);
+    letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted);
+    display: flex; align-items: baseline; gap: 0.8rem;
+    padding-bottom: 0.7rem; border-bottom: 1px solid var(--rule);
+  }
+  .eyebrow b { color: var(--build); font-weight: 700; font-variant-numeric: tabular-nums; }
+  h2 {
+    font-family: var(--mono); font-size: var(--step-2); font-weight: 700;
+    letter-spacing: -0.028em; line-height: 1.14; text-wrap: balance; margin: 0; max-width: 30ch;
+  }
+  h3 { font-family: var(--mono); font-size: var(--step-0); font-weight: 700; letter-spacing: 0.01em; margin: 0; }
+  p { margin: 0; text-wrap: pretty; }
+  section > p, section > ul { max-width: 40rem; }
+  ul { margin: 0; padding-left: 1.15rem; display: flex; flex-direction: column; gap: 0.5rem; }
+  li::marker { color: var(--build); }
+  strong { font-weight: 650; }
+  code {
+    font-family: var(--mono); font-size: 0.88em; background: var(--surface-2);
+    padding: 0.1em 0.36em; border-radius: 3px; word-break: break-word;
+  }
+  a { color: var(--build); text-decoration-thickness: 1px; text-underline-offset: 0.18em; }
+  a:focus-visible { outline: 2px solid var(--build); outline-offset: 3px; }
+
+  /* ---------- thesis band ---------- */
+  .thesis {
+    background: var(--surface); border: 1px solid var(--rule);
+    border-left: 3px solid var(--build);
+    padding: clamp(1.3rem, 1rem + 1vw, 2rem);
+    display: flex; flex-direction: column; gap: 1rem;
+  }
+  .thesis-line { font-family: var(--mono); font-size: var(--step-1); font-weight: 700; line-height: 1.35; letter-spacing: -0.02em; }
+  .thesis-line span { color: var(--build); }
+
+  /* ---------- three-way ---------- */
+  .triage { display: grid; grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr)); gap: 1px; background: var(--rule); border: 1px solid var(--rule); }
+  .lane { background: var(--surface); padding: 1.35rem 1.25rem; display: flex; flex-direction: column; gap: 0.85rem; }
+  .lane-head { display: flex; flex-direction: column; gap: 0.3rem; }
+  .lane-kicker {
+    font-family: var(--mono); font-size: 0.72rem; letter-spacing: 0.12em;
+    text-transform: uppercase; font-weight: 700;
+  }
+  .lane.keep  .lane-kicker { color: var(--keep); }
+  .lane.build .lane-kicker { color: var(--build); }
+  .lane.newer .lane-kicker { color: var(--decide); }
+  .lane ul { list-style: none; padding: 0; gap: 0.55rem; font-size: var(--step--1); }
+  .lane li { display: flex; gap: 0.55rem; align-items: baseline; line-height: 1.45; }
+  .dot { width: 7px; height: 7px; border-radius: 2px; flex-shrink: 0; margin-top: 0.42em; }
+  .lane.keep  .dot { background: var(--keep); }
+  .lane.build .dot { background: var(--build); }
+  .lane.newer .dot { background: var(--decide); }
+
+  /* ---------- figure ---------- */
+  figure { margin: 0; background: var(--surface); border: 1px solid var(--rule); display: flex; flex-direction: column; }
+  .fig-body { padding: 1.5rem 1.3rem; overflow-x: auto; }
+  figcaption {
+    font-size: var(--step--1); color: var(--muted); line-height: 1.5;
+    padding: 0.85rem 1.3rem; border-top: 1px solid var(--rule-soft); background: var(--bg);
+  }
+  figcaption b { color: var(--ink-2); font-weight: 650; }
+  svg { display: block; margin: 0 auto; height: auto; }
+  .svg-label { font-family: var(--mono); font-size: 11px; letter-spacing: 0.03em; }
+  .svg-title { font-family: var(--mono); font-size: 12.5px; font-weight: 700; }
+  .svg-small { font-family: var(--mono); font-size: 9.5px; letter-spacing: 0.04em; }
+
+  /* ---------- callout ---------- */
+  .callout {
+    background: var(--surface); border-left: 3px solid var(--decide);
+    padding: 1.15rem 1.3rem; display: flex; flex-direction: column; gap: 0.6rem;
+  }
+  .callout.build { border-left-color: var(--build); }
+  .callout.keep  { border-left-color: var(--keep); }
+  .callout-head {
+    font-family: var(--mono); font-size: var(--step--1);
+    letter-spacing: 0.1em; text-transform: uppercase; color: var(--decide);
+  }
+  .callout.build .callout-head { color: var(--build); }
+  .callout.keep  .callout-head { color: var(--keep); }
+  .callout q { font-style: italic; color: var(--ink-2); }
+
+  /* ---------- fork (A/B decision) ---------- */
+  .fork { display: grid; grid-template-columns: repeat(auto-fit, minmax(17rem, 1fr)); gap: 1px; background: var(--rule); border: 1px solid var(--rule); }
+  .path { background: var(--surface); padding: 1.35rem 1.25rem; display: flex; flex-direction: column; gap: 0.75rem; }
+  .path.rec { background: var(--build-wash); }
+  .path-tag {
+    font-family: var(--mono); font-size: 0.72rem; letter-spacing: 0.1em;
+    text-transform: uppercase; font-weight: 700; color: var(--muted);
+    display: flex; align-items: center; gap: 0.45rem;
+  }
+  .path.rec .path-tag { color: var(--build); }
+  .path-tag::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+  .path p { font-size: var(--step--1); }
+
+  /* ---------- build order ---------- */
+  /* DOM va de la capa 6 a la 1, así que el orden natural ya dibuja la torre:
+     la 6 arriba y el cimiento abajo. Nada de column-reverse. */
+  .layers { display: flex; flex-direction: column; gap: 1px; background: var(--rule); border: 1px solid var(--rule); }
+  .layer { background: var(--surface); padding: 1.15rem 1.25rem; display: grid; grid-template-columns: 2.4rem 1fr minmax(0, 11rem); gap: 0.35rem 1.15rem; align-items: baseline; }
+  .layer-n { font-family: var(--mono); font-weight: 700; color: var(--build); font-variant-numeric: tabular-nums; font-size: var(--step-1); line-height: 1; }
+  .layer-main { display: flex; flex-direction: column; gap: 0.3rem; }
+  .layer-desc { font-size: var(--step--1); color: var(--ink-2); line-height: 1.5; }
+  .layer-auth { font-family: var(--mono); font-size: 0.72rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); line-height: 1.5; }
+  @media (max-width: 44rem) {
+    .layer { grid-template-columns: 2.4rem 1fr; }
+    .layer-auth { grid-column: 2; }
+  }
+
+  /* ---------- tables ---------- */
+  .table-scroll { overflow-x: auto; border: 1px solid var(--rule); background: var(--surface); }
+  table { border-collapse: collapse; width: 100%; font-size: var(--step--1); min-width: 32rem; }
+  th, td { text-align: left; padding: 0.75rem 0.9rem; border-bottom: 1px solid var(--rule-soft); vertical-align: top; line-height: 1.45; }
+  th {
+    font-family: var(--mono); font-size: var(--step--1); letter-spacing: 0.08em;
+    text-transform: uppercase; color: var(--muted); font-weight: 600;
+    border-bottom: 1px solid var(--rule); white-space: nowrap;
+  }
+  tbody tr:last-child td { border-bottom: none; }
+  td.num { font-family: var(--mono); font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .chip {
+    display: inline-flex; align-items: center; gap: 0.35rem;
+    font-family: var(--mono); font-size: 0.72rem; letter-spacing: 0.06em;
+    text-transform: uppercase; font-weight: 700; padding: 0.16rem 0.5rem;
+    border-radius: 2px; white-space: nowrap;
+  }
+  .chip::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+  .chip.c-build  { color: var(--build);  background: var(--build-wash); }
+  .chip.c-keep   { color: var(--keep);   background: var(--keep-wash); }
+  .chip.c-decide { color: var(--decide); background: var(--decide-wash); }
+
+  /* ---------- payoff grid ---------- */
+  .payoff { display: grid; grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr)); gap: 1px; background: var(--rule); border: 1px solid var(--rule); }
+  .win { background: var(--surface); padding: 1.2rem; display: flex; flex-direction: column; gap: 0.4rem; }
+  .win h3 { color: var(--build); }
+  .win p { font-size: var(--step--1); color: var(--ink-2); }
+
+  footer { border-top: 1px solid var(--rule); padding-top: 1.5rem; font-size: var(--step--1); color: var(--muted); display: flex; flex-direction: column; gap: 0.5rem; }
+
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+
+  <header class="masthead">
+    <div class="tag">
+      <span>Raymi Games</span>
+      <span>Don't Chicken Out!</span>
+      <span>Arquitectura objetivo</span>
+      <span>20 jul 2026</span>
+    </div>
+    <h1>Reconstruir el core<br>para que <em>online sea el caso normal</em></h1>
+    <p class="standfirst">
+      Con el core en la mesa, la pregunta deja de ser cómo parchear lo que hay y pasa a ser
+      qué arquitectura queremos tener en 2027. Esto es el destino y el orden para llegar.
+    </p>
+  </header>
+
+  <div class="thesis">
+    <p class="thesis-line">
+      Una sola simulación. <span>Offline, couch y online son el mismo código</span> — cambia
+      cuántos peers hay conectados, nada más.
+    </p>
+    <p class="prose">
+      Hoy tenemos un juego local al que habría que añadirle red. El objetivo es un juego de red
+      que además corre sin nadie conectado. Es la misma cantidad de trabajo la primera vez, y
+      la diferencia entre mantener un código o dos durante los próximos cuatro años.
+    </p>
+  </div>
+
+  <!-- ============ 01 ============ -->
+  <section>
+    <div class="eyebrow"><b>01</b><span>Alcance</span></div>
+    <h2>El juego se conserva. El core se reconstruye.</h2>
+    <p class="prose">
+      "Descartar el core" no significa empezar el juego de cero. Todo lo que define cómo se
+      siente y cómo se ve sobrevive intacto: lo que se rehace es la capa que decide
+      <em>cuándo</em> pasan las cosas y <em>quién</em> lo decide.
+    </p>
+
+    <div class="triage">
+      <div class="lane keep">
+        <div class="lane-head">
+          <span class="lane-kicker">Se conserva</span>
+          <h3>El juego</h3>
+        </div>
+        <ul>
+          <li><span class="dot"></span><span>Valores de feel: jump buffer, coyote, glide, fall multiplier — están en <code>ScriptableObjects</code></span></li>
+          <li><span class="dot"></span><span>Arte, sprites, animaciones, rig del pollo</span></li>
+          <li><span class="dot"></span><span>Audio y melodías, integración FMOD</span></li>
+          <li><span class="dot"></span><span>Diseño de nivel y curva de subida de cámara</span></li>
+          <li><span class="dot"></span><span>Aspecto de la UI y los VFX de plumas</span></li>
+          <li><span class="dot"></span><span>Las mecánicas: kick, bloques, block life, items</span></li>
+        </ul>
+      </div>
+      <div class="lane build">
+        <div class="lane-head">
+          <span class="lane-kicker">Se reconstruye</span>
+          <h3>El core</h3>
+        </div>
+        <ul>
+          <li><span class="dot"></span><span>El loop de simulación → tick fijo, sin <code>Time.deltaTime</code></span></li>
+          <li><span class="dot"></span><span>El movimiento del pollo → cinemático explícito</span></li>
+          <li><span class="dot"></span><span>La identidad de jugador → <code>(PlayerRef, localIndex)</code></span></li>
+          <li><span class="dot"></span><span>La autoridad → host decide, UI solo dibuja</span></li>
+          <li><span class="dot"></span><span>El arbitraje de kicks y muertes</span></li>
+          <li><span class="dot"></span><span>Pooling y spawn → autoritativos</span></li>
+          <li><span class="dot"></span><span>RNG → sembrado y replicable</span></li>
+        </ul>
+      </div>
+      <div class="lane newer">
+        <div class="lane-head">
+          <span class="lane-kicker">Es nuevo</span>
+          <h3>Lo que no existía</h3>
+        </div>
+        <ul>
+          <li><span class="dot"></span><span>Capa de sesión: crear, unirse, códigos de invitación</span></li>
+          <li><span class="dot"></span><span>Lobby online y flujo de reconexión</span></li>
+          <li><span class="dot"></span><span>Invitaciones de Steam <em>(Photon da auth, el flujo lo hacemos nosotros)</em></span></li>
+          <li><span class="dot"></span><span>Pausa que funciona con varios jugadores remotos</span></li>
+          <li><span class="dot"></span><span>Qué pasa si se cae el host</span></li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 02 ============ -->
+  <section>
+    <div class="eyebrow"><b>02</b><span>La decisión de fondo</span></div>
+    <h2>Terminar de salir de la física de Unity</h2>
+    <p class="prose">
+      Esta es la decisión con más impacto a largo plazo, y <strong>solo está disponible porque
+      estamos dispuestos a reconstruir</strong>. Con el core cerrado, no se podía plantear.
+    </p>
+    <p class="prose">
+      El dato clave sale de la auditoría: el pollo <strong>ya casi no usa la física de Unity</strong>.
+      Tiene <code>gravityScale = 0</code>, la gravedad se integra a mano, la rotación está
+      congelada y hay un único punto donde se escribe la velocidad. El <code>Rigidbody2D</code>
+      hoy sirve para dos cosas: resolver colisiones y transportar velocidad.
+    </p>
+    <p class="prose">Estamos a mitad de camino de un character controller cinemático. La decisión es si terminarlo.</p>
+
+    <div class="fork">
+      <div class="path">
+        <span class="path-tag">Camino A — seguir con dinámico</span>
+        <h3>Rigidbody2D + Physics Addon</h3>
+        <p>El pollo sigue siendo un cuerpo dinámico y Fusion sincroniza y resimula la física completa.</p>
+        <p><strong>El costo:</strong> solo los clientes resimulan. Cada corrección de red vuelve a simular
+        pollos <em>y</em> torre de bloques. El costo crece con la altura de la torre — justo cuando la
+        partida se pone interesante.</p>
+        <p><strong>Y además:</strong> el orden del solver de Unity no es determinista entre máquinas,
+        así que la predicción falla más y corrige más seguido.</p>
+      </div>
+      <div class="path rec">
+        <span class="path-tag">Camino B — cinemático · recomendado</span>
+        <h3>Character controller propio</h3>
+        <p>El pollo pasa a kinematic con colisión por barrido (<code>Cast</code> + depenetración manual).
+        Su estado completo cabe en un struct pequeño.</p>
+        <p><strong>Lo que gana:</strong> resimular un pollo pasa a ser aritmética barata. El estado es
+        capturable al 100 %, así que la predicción acierta casi siempre y las correcciones se vuelven raras.</p>
+        <p><strong>Lo que cuesta:</strong> escribir el controller y re-tunear el feel. Los valores del
+        <code>ScriptableObject</code> se conservan, pero hay que volver a sentirlos.</p>
+      </div>
+    </div>
+
+    <figure>
+      <div class="fig-body">
+        <svg viewBox="0 0 720 190" role="img" aria-label="Diagrama del reparto: los pollos son cinemáticos y se predicen en el cliente; los bloques siguen siendo dinámicos, los simula el host y los clientes solo los interpolan.">
+          <rect x="8" y="14" width="344" height="162" rx="4" fill="var(--build-wash)" stroke="var(--build)" stroke-width="1.5"/>
+          <text x="180" y="38" text-anchor="middle" class="svg-title" fill="var(--build)">POLLOS — se predicen</text>
+          <text x="180" y="55" text-anchor="middle" class="svg-small" fill="var(--muted)">cinemáticos · estado pequeño y completo</text>
+          <g stroke="var(--build)" stroke-width="2" fill="none">
+            <rect x="52" y="74" width="34" height="34" rx="4"/>
+            <rect x="106" y="74" width="34" height="34" rx="4"/>
+            <rect x="160" y="74" width="34" height="34" rx="4"/>
+            <rect x="214" y="74" width="34" height="34" rx="4"/>
+          </g>
+          <text x="180" y="132" text-anchor="middle" class="svg-small" fill="var(--ink-2)">resimular 4 pollos = aritmética barata</text>
+          <text x="180" y="152" text-anchor="middle" class="svg-small" fill="var(--build)">respuesta instantánea al input local</text>
+
+          <rect x="368" y="14" width="344" height="162" rx="4" fill="var(--keep-wash)" stroke="var(--keep)" stroke-width="1.5"/>
+          <text x="540" y="38" text-anchor="middle" class="svg-title" fill="var(--keep)">BLOQUES — se interpolan</text>
+          <text x="540" y="55" text-anchor="middle" class="svg-small" fill="var(--muted)">dinámicos · el host es la única verdad</text>
+          <g stroke="var(--keep)" stroke-width="2" fill="none">
+            <rect x="470" y="98" width="30" height="24"/><rect x="502" y="98" width="30" height="24"/>
+            <rect x="534" y="98" width="30" height="24"/><rect x="566" y="98" width="30" height="24"/>
+            <rect x="486" y="72" width="30" height="24"/><rect x="518" y="72" width="30" height="24"/>
+            <rect x="550" y="72" width="30" height="24"/>
+          </g>
+          <text x="540" y="140" text-anchor="middle" class="svg-small" fill="var(--ink-2)">el cliente nunca los resimula</text>
+          <text x="540" y="158" text-anchor="middle" class="svg-small" fill="var(--keep)">el costo ya no crece con la altura de la torre</text>
+        </svg>
+      </div>
+      <figcaption>
+        El reparto que habilita el camino B: <b>predecir lo barato, interpolar lo caro</b>. Los bloques
+        necesitan física real para apilarse y tambalearse, pero nadie los controla con un mando —
+        no hace falta predecirlos.
+      </figcaption>
+    </figure>
+
+    <div class="callout">
+      <div class="callout-head">El tradeoff honesto de este reparto</div>
+      <p>
+        Si los bloques solo se interpolan, un cliente los ve unos milisegundos por detrás de donde
+        el host los tiene. Como en este juego los bloques <strong>matan y se pisan</strong>, en teoría
+        podrías morir por un bloque que en tu pantalla aún no había llegado.
+      </p>
+      <p>
+        Juega a favor que los bloques son lentos y pesados comparados con un pollo, así que el
+        desfase visible es pequeño. Aun así <strong>esto hay que medirlo en el prototipo</strong>,
+        no darlo por bueno: es la única incógnita seria del camino B.
+      </p>
+    </div>
+  </section>
+
+  <!-- ============ 03 ============ -->
+  <section>
+    <div class="eyebrow"><b>03</b><span>Identidad</span></div>
+    <h2>Un solo modelo de jugador, desde el primer día</h2>
+    <p class="prose">
+      Fusion cuenta máquinas, no jugadores: asigna un <code>PlayerRef</code> por peer. Como tenemos
+      couch co-op, cuatro pollos pueden compartir uno. Si la identidad se diseña una sola vez
+      alrededor de <code>(PlayerRef, localIndex)</code>, los tres modos caen solos.
+    </p>
+
+    <figure>
+      <div class="fig-body">
+        <svg viewBox="0 0 720 236" role="img" aria-label="Diagrama: los tres modos de juego (offline, couch y online) desembocan en la misma simulación; solo cambia el número de peers conectados.">
+          <rect x="10" y="14" width="200" height="76" rx="4" fill="var(--surface)" stroke="var(--rule)" stroke-width="1.5"/>
+          <text x="110" y="38" text-anchor="middle" class="svg-title" fill="var(--ink-2)">OFFLINE</text>
+          <text x="110" y="56" text-anchor="middle" class="svg-small" fill="var(--muted)">1 peer · 1 jugador local</text>
+          <text x="110" y="74" text-anchor="middle" class="svg-small" fill="var(--muted)">host sin nadie conectado</text>
+
+          <rect x="260" y="14" width="200" height="76" rx="4" fill="var(--surface)" stroke="var(--rule)" stroke-width="1.5"/>
+          <text x="360" y="38" text-anchor="middle" class="svg-title" fill="var(--ink-2)">COUCH</text>
+          <text x="360" y="56" text-anchor="middle" class="svg-small" fill="var(--muted)">1 peer · 2–4 jugadores locales</text>
+          <text x="360" y="74" text-anchor="middle" class="svg-small" fill="var(--muted)">host sin nadie conectado</text>
+
+          <rect x="510" y="14" width="200" height="76" rx="4" fill="var(--surface)" stroke="var(--rule)" stroke-width="1.5"/>
+          <text x="610" y="38" text-anchor="middle" class="svg-title" fill="var(--ink-2)">ONLINE</text>
+          <text x="610" y="56" text-anchor="middle" class="svg-small" fill="var(--muted)">2–4 peers · 1–4 locales c/u</text>
+          <text x="610" y="74" text-anchor="middle" class="svg-small" fill="var(--muted)">host + clientes</text>
+
+          <path d="M110 90 L110 112 L360 112" stroke="var(--rule)" stroke-width="1.5" fill="none"/>
+          <path d="M610 90 L610 112 L360 112" stroke="var(--rule)" stroke-width="1.5" fill="none"/>
+          <path d="M360 90 L360 140" stroke="var(--build)" stroke-width="2" fill="none" marker-end="url(#ar)"/>
+
+          <rect x="150" y="146" width="420" height="76" rx="4" fill="var(--build-wash)" stroke="var(--build)" stroke-width="2"/>
+          <text x="360" y="172" text-anchor="middle" class="svg-title" fill="var(--build)">LA MISMA SIMULACIÓN</text>
+          <text x="360" y="192" text-anchor="middle" class="svg-small" fill="var(--ink-2)">identidad = (PlayerRef, localIndex)</text>
+          <text x="360" y="209" text-anchor="middle" class="svg-small" fill="var(--muted)">un solo código que probar, balancear y arreglar</text>
+
+          <defs>
+            <marker id="ar" viewBox="0 0 8 8" refX="6" refY="4" markerWidth="6" markerHeight="6" orient="auto">
+              <path d="M0 1 L6 4 L0 7 z" fill="var(--build)"/>
+            </marker>
+          </defs>
+        </svg>
+      </div>
+      <figcaption>
+        El pollo 2 de tu sofá y el pollo de alguien en Chile son <b>la misma clase con distinto dueño</b>.
+        Es lo que evita que "funciona en local pero no en online" vuelva a ser una categoría de bug.
+      </figcaption>
+    </figure>
+
+    <div class="callout keep">
+      <div class="callout-head">Doc oficial de Fusion 2 · PlayerRef</div>
+      <q>If the game allows for more than one local physical player on a single NetworkRunner
+      (for example, couch co-op combined with online players), then game specific logic will be
+      needed to differentiate the local players, independent of Fusion's 'Player' concept.</q>
+    </div>
+  </section>
+
+  <!-- ============ 04 ============ -->
+  <section>
+    <div class="eyebrow"><b>04</b><span>Arquitectura</span></div>
+    <h2>Seis capas, construidas de abajo hacia arriba</h2>
+    <p class="prose">
+      Cada capa solo puede apoyarse en las de abajo. Esto es a la vez el diseño y el orden de
+      trabajo: <strong>ninguna capa se empieza hasta que la anterior aguanta peso</strong>.
+      Se lee desde abajo, como se construye la torre del juego.
+    </p>
+
+    <div class="layers">
+      <div class="layer">
+        <span class="layer-n">6</span>
+        <div class="layer-main">
+          <h3>Presentación</h3>
+          <p class="layer-desc">UI, VFX de plumas, audio, cámara, screen shake. Solo <em>lee</em> el estado y lo dibuja; nunca decide nada. Aquí es donde vive la guardia de resimulación para que las plumas y los sonidos no se disparen dos veces.</p>
+        </div>
+        <span class="layer-auth">Local · cada cliente</span>
+      </div>
+      <div class="layer">
+        <span class="layer-n">5</span>
+        <div class="layer-main">
+          <h3>Reglas de partida</h3>
+          <p class="layer-desc">Rondas, First-to-N, condición de victoria, ranking, rank de dificultad. Estado replicado; los clientes lo reciben, no lo calculan.</p>
+        </div>
+        <span class="layer-auth">Host</span>
+      </div>
+      <div class="layer">
+        <span class="layer-n">4</span>
+        <div class="layer-main">
+          <h3>Mundo</h3>
+          <p class="layer-desc">Bloques dinámicos, items, cápsulas, spawner horizontal. Spawn y despawn autoritativos con el pool detrás del <code>ObjectProvider</code> de Fusion.</p>
+        </div>
+        <span class="layer-auth">Host · cliente interpola</span>
+      </div>
+      <div class="layer">
+        <span class="layer-n">3</span>
+        <div class="layer-main">
+          <h3>Interacciones</h3>
+          <p class="layer-desc">Kicks, head-stomps, daño a bloques, muerte. Todas necesitan arbitraje: quién golpeó, a quién, en qué tick, y una sola resolución por evento.</p>
+        </div>
+        <span class="layer-auth">Host arbitra</span>
+      </div>
+      <div class="layer">
+        <span class="layer-n">2</span>
+        <div class="layer-main">
+          <h3>Movimiento del pollo</h3>
+          <p class="layer-desc">Character controller cinemático: gravedad, salto, coyote, glide, colisión por barrido. Función pura de <code>(estado, input) → estado</code>, sin efectos secundarios.</p>
+        </div>
+        <span class="layer-auth">Predicho en cliente</span>
+      </div>
+      <div class="layer">
+        <span class="layer-n">1</span>
+        <div class="layer-main">
+          <h3>Tick y estado</h3>
+          <p class="layer-desc">El cimiento. Todo avanza en <code>FixedUpdateNetwork()</code> con paso fijo. El estado de juego vive en propiedades replicadas, el RNG está sembrado, y nada de gameplay depende de DOTween, corrutinas ni <code>Time.deltaTime</code>.</p>
+        </div>
+        <span class="layer-auth">Host</span>
+      </div>
+    </div>
+
+    <div class="callout build">
+      <div class="callout-head">La regla que hace que esto funcione</div>
+      <p>
+        La presentación <strong>nunca decide</strong>. Si una capa de arriba toma una decisión de juego,
+        la arquitectura ya se rompió — porque en online esa capa corre en una máquina sin autoridad.
+        Es la única regla que hay que defender en code review durante los próximos meses.
+      </p>
+    </div>
+  </section>
+
+  <!-- ============ 05 ============ -->
+  <section>
+    <div class="eyebrow"><b>05</b><span>Secuencia</span></div>
+    <h2>Qué se construye primero</h2>
+    <p class="prose">
+      Las capas 1 y 2 no necesitan Fusion instalado: son refactor de simulación pura y se pueden
+      empezar ya, en paralelo a los sprints de Alpha. Las capas 3 a 6 sí quieren la red presente
+      para no construir a ciegas.
+    </p>
+
+    <div class="table-scroll">
+      <table>
+        <thead>
+          <tr><th>Bloque de trabajo</th><th>Capas</th><th>¿Necesita Fusion?</th><th>Cuándo</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Simulación en tick fijo</strong><br>controller cinemático, estado completo, RNG sembrado</td>
+            <td class="num">1 · 2</td>
+            <td><span class="chip c-keep">No</span></td>
+            <td>Ya — en paralelo a A-4→A-7</td>
+          </tr>
+          <tr>
+            <td><strong>Prototipo de riesgo</strong><br>medir costo de resimulación y desfase de bloques con latencia</td>
+            <td class="num">1 · 2 · 4</td>
+            <td><span class="chip c-build">Sí</span></td>
+            <td>Antes de cerrar el diseño de B-3</td>
+          </tr>
+          <tr>
+            <td><strong>Identidad y sesión</strong><br><code>(PlayerRef, localIndex)</code>, join, lobby, reconexión</td>
+            <td class="num">1 · 5</td>
+            <td><span class="chip c-build">Sí</span></td>
+            <td>B-1 → B-2</td>
+          </tr>
+          <tr>
+            <td><strong>Autoridad de partida</strong><br>reglas y ranking al host, UI como proyección</td>
+            <td class="num">5 · 6</td>
+            <td><span class="chip c-build">Sí</span></td>
+            <td>B-2 → B-3</td>
+          </tr>
+          <tr>
+            <td><strong>Mundo autoritativo</strong><br>pool tras el <code>ObjectProvider</code>, items, spawner</td>
+            <td class="num">4</td>
+            <td><span class="chip c-build">Sí</span></td>
+            <td>B-3</td>
+          </tr>
+          <tr>
+            <td><strong>Arbitraje de interacciones</strong><br>kicks, stomps y muertes con resolución única</td>
+            <td class="num">3</td>
+            <td><span class="chip c-build">Sí</span></td>
+            <td>B-4</td>
+          </tr>
+          <tr>
+            <td><strong>Invitaciones de Steam</strong><br>overlay, rich presence, join por sesión</td>
+            <td class="num">5</td>
+            <td><span class="chip c-decide">Nuevo</span></td>
+            <td>No estaba presupuestado</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout build">
+      <div class="callout-head">Por qué empezar por las capas 1 y 2 aunque no toquen red</div>
+      <p>
+        Son el trabajo que <strong>mejora el juego local igualmente</strong>: hoy la altura de salto
+        depende del framerate, porque la velocidad se calcula a ritmo de render y se aplica a ritmo
+        de física. Arreglar eso es una mejora que se siente con o sin online, y es exactamente el
+        cimiento que la red necesita. No hay que elegir entre pulir Alpha y preparar Beta.
+      </p>
+    </div>
+  </section>
+
+  <!-- ============ 06 ============ -->
+  <section>
+    <div class="eyebrow"><b>06</b><span>Retorno</span></div>
+    <h2>Lo que esta arquitectura desbloquea</h2>
+    <p class="prose">
+      Son consecuencias directas de tener la simulación en un tick determinista con el estado
+      separado de la presentación. Ninguna requiere trabajo extra significativo una vez está el cimiento.
+    </p>
+
+    <div class="payoff">
+      <div class="win">
+        <h3>Un solo código</h3>
+        <p>Se acaba la categoría de bug "funciona en local pero no en online". Un balance, un fix, un test.</p>
+      </div>
+      <div class="win">
+        <h3>Tests deterministas</h3>
+        <p>Con estado e input separados se puede alimentar una secuencia de inputs y afirmar el estado final. Hoy es imposible.</p>
+      </div>
+      <div class="win">
+        <h3>Repeticiones</h3>
+        <p>Guardar inputs por tick y re-simular da replays casi gratis — material de trailer y de debug de bugs difíciles.</p>
+      </div>
+      <div class="win">
+        <h3>Espectador</h3>
+        <p>Un peer que solo recibe estado y no envía input. Útil para torneos de comunidad en Live Ops.</p>
+      </div>
+      <div class="win">
+        <h3>Servidor dedicado opcional</h3>
+        <p>Si algún día aparece un modo competitivo, pasar de host a servidor es cambiar quién tiene la autoridad, no reescribir.</p>
+      </div>
+      <div class="win">
+        <h3>Consola más barata</h3>
+        <p>Menos dependencia del solver de Unity y del framerate significa menos sorpresas de comportamiento al certificar.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 07 ============ -->
+  <section>
+    <div class="eyebrow"><b>07</b><span>Decisiones</span></div>
+    <h2>Lo que necesita una llamada, no código</h2>
+    <p class="prose">
+      Cuatro cosas no las puede decidir la arquitectura porque cambian cómo se juega.
+      Van a los design leads antes de implementarse.
+    </p>
+
+    <div class="table-scroll">
+      <table>
+        <thead>
+          <tr><th>Decisión</th><th>Opciones</th><th>Recomendación</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Cómo se resuelven los kicks disputados</strong><br><span style="color:var(--muted)">La lag compensation de Fusion no acepta colliders 2D, así que hay que elegir</span></td>
+            <td>Emular hitboxes 3D en plano fijo · resolver autoritativo en el host · dejarlo sin compensar</td>
+            <td>Autoritativo en el host — encaja con "caos entre amigos" y es lo más barato, pero cambia cómo se siente un choque simultáneo</td>
+          </tr>
+          <tr>
+            <td><strong>Qué pasa si se cae el host</strong></td>
+            <td>Host migration completa · abortar la ronda y volver al lobby</td>
+            <td>Abortar al lobby en rondas cortas; host migration es trabajo real y no un flag</td>
+          </tr>
+          <tr>
+            <td><strong>Qué significa pausar en online</strong><br><span style="color:var(--muted)">Congelar el juego de todos deja de ser una opción</span></td>
+            <td>Pausa solo local con el pollo en piloto automático · votación · sin pausa online</td>
+            <td>Sin decidir — necesita criterio de diseño</td>
+          </tr>
+          <tr>
+            <td><strong>Cuánto desfase de bloques es aceptable</strong></td>
+            <td>Se mide en el prototipo y se fija un umbral</td>
+            <td>Definirlo como criterio de aceptación antes de construir la capa 4</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <footer>
+    <p><strong>Documento técnico completo:</strong> <code>Docs/fusion2-integracion.md</code> — inventario
+    script por script, datos verificados de Fusion 2.1, costos y preguntas para la reunión con Photon.</p>
+    <p>Basado en la auditoría de los 55 scripts del proyecto y la documentación de Fusion 2.1 (SDK 2.1.1,
+    jun 2026). El framework y el modelo host-authority siguen siendo los del
+    <code>ADR-0001-Netcode-Online.md</code>; lo que cambia es el alcance de la reconstrucción.</p>
+  </footer>
+
+</div>
+
+</body>
+</html>
