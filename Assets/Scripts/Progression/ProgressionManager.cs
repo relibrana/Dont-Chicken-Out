@@ -54,6 +54,13 @@ public sealed class ProgressionManager : MonoBehaviour
 
     // ── Public state ──────────────────────────────────────────────────────────
 
+    /// <summary>
+    /// Tuning asset in use. Exposed so consumers can read the base values that
+    /// live here — today the camera base speed, read by GameManager.
+    /// Null when the system is inert.
+    /// </summary>
+    public ProgressionValuesSO Values => values;
+
     /// <summary>Current phase, 1-based. Phase 1 is the untouched round start.</summary>
     public int CurrentPhase { get; private set; } = 1;
 
@@ -169,24 +176,51 @@ public sealed class ProgressionManager : MonoBehaviour
     }
 
     /// <summary>
-    /// Returns the system to phase 1. Called at the start of every round —
-    /// the match is first-to-N, so progression must not leak between rounds.
+    /// Returns the system to its starting phase. Called at the start of every
+    /// round — the match is first-to-N, so progression must not leak between
+    /// rounds.
+    /// Normally that means phase 1; during balancing the asset can force a later
+    /// phase so a rate change is visible from the first second instead of after
+    /// the first ribbon.
     /// </summary>
     public void ResetForRound()
     {
-        CurrentPhase      = 1;
+        CurrentPhase      = values != null ? values.StartPhase : 1;
         _recoveryTimer    = 0f;
         _recoveryDuration = 0f;
 
         RecalculateScalars();
 
-        _timer        = values != null ? values.IntervalForPhase(1) : 0f;
+        _timer        = values != null ? values.IntervalForPhase(CurrentPhase) : 0f;
         _timerRunning = values != null;
 
         _ribbon?.Despawn();
 
-        AudioManager.Instance?.SetMusicPitch(1f);
+        // ApplyMusicTempo already resolves to pitch 1 at phase 1, so this also
+        // keeps the tempo right when the round starts at a later phase.
+        if (values != null) ApplyMusicTempo();
+        else                AudioManager.Instance?.SetMusicPitch(1f);
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        WarnIfDebugOverridesActive();
+#endif
     }
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+    /// <summary>
+    /// The testing levers live in a committed asset, so they are easy to leave
+    /// on by accident. They are ignored in a final build, but a warning per
+    /// round keeps them from silently poisoning a playtest.
+    /// </summary>
+    private void WarnIfDebugOverridesActive()
+    {
+        if (values == null || !values.DebugOverridesActive) return;
+
+        Debug.LogWarning($"[Progression] Palancas de testing activas en '{values.name}': fase inicial "
+                         + $"{values.StartPhase}, intervalos x{values.debugIntervalScale:0.##}. "
+                         + "No afectan a la build final, pero devuélvelas a 1 antes de commitear.");
+    }
+#endif
 
     // ── Phase logic ───────────────────────────────────────────────────────────
 

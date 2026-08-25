@@ -11,10 +11,13 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 7c1e4a9b2d6f43a8b5c0e9d3f8a17b24, type: 3}
   m_Name: ProgressionValues
-  m_EditorClassIdentifier:
-  firstInterval: 100
-  intervalStepPerPhase: -15
-  minInterval: 40
+  m_EditorClassIdentifier: 
+  cameraBaseSpeed: 0.65
+  platformerValues: {fileID: 11400000, guid: 7dd54a8ef4e502444b0e082693e12d69, type: 2}
+  blocksValues: {fileID: 11400000, guid: f22672e008a4b8b478a9c8a0daaade9f, type: 2}
+  firstInterval: 20
+  intervalStepPerPhase: -5
+  minInterval: 1
   halfRateFromPhase: 7
   halfRateMultiplier: 0.5
   cameraSpeed:
@@ -55,3 +58,5 @@ MonoBehaviour:
   phaseChangeSfxId: phase_change
   musicPitchPerPhase: 0.03
   musicPitchMax: 1.25
+  debugStartPhase: 1
+  debugIntervalScale: 1

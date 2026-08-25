@@ -13,6 +13,17 @@ public class HoldableItem : MonoBehaviour
 	[HideInInspector] public bool overlapping = false;
     public List<SpriteRenderer> spriteRenderers = new();
 
+	/// <summary>Player currently holding (or who last held) this item. Set by PlayerBlockHandler.</summary>
+	public PlayerController Owner { get; private set; }
+
+	/// <summary>
+	/// True for items that launch on the place input instead of being placed
+	/// (throwables). Skips the grounded/overlap placement checks.
+	/// </summary>
+	public virtual bool BypassPlacementChecks => false;
+
+	public void SetOwner(PlayerController owner) => Owner = owner;
+
 	protected virtual void OnDisable()
 	{
 		foreach (Collider2D col in colliders)

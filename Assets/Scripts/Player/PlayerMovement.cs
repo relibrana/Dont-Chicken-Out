@@ -42,6 +42,28 @@ public sealed class PlayerMovement : MonoBehaviour
     /// <summary>Fired when glide state changes. bool = isGliding.</summary>
     public event Action<bool> OnGlideStateChanged;
 
+    // ── Item state hooks ──────────────────────────────────────────────────────
+    // Written only by PlayerItemState subclasses; every state must restore its
+    // hook to the default on end so effects never leak across rounds.
+
+    /// <summary>Lateral speed multiplier (papa caliente). 1 = normal.</summary>
+    public float SpeedMultiplier { get; set; } = 1f;
+
+    /// <summary>Initial jump velocity multiplier (pollo metálico). 1 = normal.</summary>
+    public float JumpMultiplier { get; set; } = 1f;
+
+    /// <summary>Gravity multiplier (pollo metálico). 1 = normal.</summary>
+    public float GravityMultiplier { get; set; } = 1f;
+
+    /// <summary>Air jumps left (doble salto). Consumed by HandleJump when airborne past coyote.</summary>
+    public int AirJumpsRemaining { get; set; }
+
+    /// <summary>Air jump height relative to the first jump (doble salto). 1 = same.</summary>
+    public float AirJumpMultiplier { get; set; } = 1f;
+
+    /// <summary>While true the body is frozen in place: no input velocity, no gravity (moco).</summary>
+    public bool HoldPosition { get; set; }
+
     // ── Private state ─────────────────────────────────────────────────────────
 
     private Rigidbody2D          _rb;
@@ -115,8 +137,16 @@ public sealed class PlayerMovement : MonoBehaviour
     {
         _isHoldingJump = input.jumpHeld;
 
-        HandleHorizontalMovement(input.moveDirection);
-        HandleJump(input.jumpPressed);
+        if (HoldPosition)
+        {
+            _currentVelocity   = Vector2.zero;
+            _velocitySmoothing = 0f;
+        }
+        else
+        {
+            HandleHorizontalMovement(input.moveDirection);
+            HandleJump(input.jumpPressed);
+        }
 
         CurrentState = new StatePayload
         {
@@ -138,6 +168,18 @@ public sealed class PlayerMovement : MonoBehaviour
         _coyoteTimer      = 0f;
     }
 
+    /// <summary>Instantly moves the body (teleport item). Clears velocity and airborne timers.</summary>
+    public void Teleport(Vector2 position)
+    {
+        _rb.position       = position;
+        transform.position = position;
+
+        _currentVelocity   = Vector2.zero;
+        _velocitySmoothing = 0f;
+        _isGrounded        = false;
+        _coyoteTimer       = 0f;
+    }
+
     /// <summary>Recalculates gravity and jump velocity from the ScriptableObject values.</summary>
     public void CalculateJumpValues()
     {
@@ -153,7 +195,7 @@ public sealed class PlayerMovement : MonoBehaviour
     {
         // Lateral speed is one of the seven progression variables. The jump is
         // deliberately left untouched (doc §4.3), so only the arc width changes.
-        float targetSpeed = moveDirection * valuesSO.maxSpeed * ProgressionManager.Get(ProgressionVar.LateralSpeed);
+        float targetSpeed = moveDirection * valuesSO.maxSpeed * ProgressionManager.Get(ProgressionVar.LateralSpeed) * SpeedMultiplier;
 
         if (moveDirection != 0f)
             transform.localScale = new Vector3(Mathf.Sign(moveDirection), 1f, 1f);
@@ -182,15 +224,34 @@ public sealed class PlayerMovement : MonoBehaviour
                     && !_isPlayerOnHead
                     && !_jumpLocked;
 
-        if (!canJump) return;
+        // Air jump (doble salto item): a fresh press while airborne, past coyote.
+        // Ignores _jumpLocked on purpose — it only guards the ground jump, and
+        // would otherwise block a double jump within 0.5 s of takeoff.
+        bool canAirJump = !canJump
+                       && _jumpBufferTimer   > 0f
+                       && !_isGrounded
+                       && _coyoteTimer      <= 0f
+                       && AirJumpsRemaining  > 0
+                       && !_isPlayerOnHead;
 
-        _currentVelocity.y = _calculatedInitialJumpVelocity;
+        if (!canJump && !canAirJump) return;
+
+        float multiplier = JumpMultiplier * (canAirJump ? AirJumpMultiplier : 1f);
+
+        _currentVelocity.y = _calculatedInitialJumpVelocity * multiplier;
         _isGrounded        = false;
-        _jumpLocked        = true;
         _jumpBufferTimer   = 0f;
         _coyoteTimer       = 0f;
 
-        DOVirtual.DelayedCall(0.5f, () => _jumpLocked = false, false);
+        if (canAirJump)
+        {
+            AirJumpsRemaining--;
+        }
+        else
+        {
+            _jumpLocked = true;
+            DOVirtual.DelayedCall(0.5f, () => _jumpLocked = false, false);
+        }
 
         AudioManager.Instance.PlaySound("player_jump");
         _animController?.SetGrounded(false);
@@ -199,6 +260,12 @@ public sealed class PlayerMovement : MonoBehaviour
 
     private void HandleGravity()
     {
+        if (HoldPosition)
+        {
+            _currentVelocity.y = 0f;
+            return;
+        }
+
         if (_isGrounded)
         {
             if (_currentVelocity.y <= 0f)
@@ -206,7 +273,9 @@ public sealed class PlayerMovement : MonoBehaviour
             return;
         }
 
-        _currentVelocity.y += _calculatedGravity * Time.deltaTime;
+        float gravity = _calculatedGravity * GravityMultiplier;
+
+        _currentVelocity.y += gravity * Time.deltaTime;
 
         if (_currentVelocity.y < 0f)
         {
@@ -223,13 +292,13 @@ public sealed class PlayerMovement : MonoBehaviour
             _animController?.SetGliding(_isHoldingJump);
 
             float nextY = _currentVelocity.y
-                        + _calculatedGravity * (valuesSO.fallMultiplier - 1f - glideMultiplier) * Time.deltaTime;
+                        + gravity * (valuesSO.fallMultiplier - 1f - glideMultiplier) * Time.deltaTime;
 
             _currentVelocity.y = Mathf.Clamp(nextY, fallLimit, 50f);
         }
         else if (_currentVelocity.y > 0f && !_isHoldingJump)
         {
-            _currentVelocity.y += _calculatedGravity * (valuesSO.lowJumpMultiplier - 1f) * Time.deltaTime;
+            _currentVelocity.y += gravity * (valuesSO.lowJumpMultiplier - 1f) * Time.deltaTime;
         }
     }
 

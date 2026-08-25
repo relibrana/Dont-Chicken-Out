@@ -41,6 +41,23 @@ public struct ScalingRate
 [CreateAssetMenu(fileName = "Progression Values")]
 public class ProgressionValuesSO : ScriptableObject
 {
+    // ── Base values ───────────────────────────────────────────────────────────
+
+    [Header("Valores base (fase 1)")]
+    [Tooltip("Velocidad de subida de la cámara en la fase 1, en unidades por segundo.\n"
+             + "Es un valor real, no un porcentaje: esta es la palanca para cambiar el ritmo de toda la "
+             + "ronda. Los porcentajes de más abajo solo dicen cuánto se acelera a partir de la fase 2.")]
+    public float cameraBaseSpeed = 0.65f;
+
+    [Tooltip("Referencia al SO donde viven las bases de velocidad lateral y de los tiempos de bloque "
+             + "(maxSpeed, blockGenerationDelay, blockPlacementCD). Se usa para la tabla de valores "
+             + "absolutos: el juego los sigue leyendo desde PlayerMovement y PlayerBlockHandler.")]
+    public PlatformerValuesSO platformerValues;
+
+    [Tooltip("Referencia al SO donde vive la gravedad base de los bloques. Se usa para la tabla de "
+             + "valores absolutos: el juego la sigue leyendo desde PoolingManager.")]
+    public BlocksValuesSO blocksValues;
+
     // ── Ribbon cadence (doc §3) ───────────────────────────────────────────────
 
     [Header("Ribbon cadence")]
@@ -135,13 +152,64 @@ public class ProgressionValuesSO : ScriptableObject
     [Tooltip("Hard cap for the music pitch so high phases do not turn the track into chipmunks.")]
     public float musicPitchMax = 1.25f;
 
+    // ── Testing ───────────────────────────────────────────────────────────────
+
+    [Header("Testing (se ignora en build final)")]
+    [Tooltip("Fase en la que arranca la ronda. 1 = normal.\n"
+             + "La fase 1 vale siempre 100%, así que ningún porcentaje de arriba se nota hasta la fase 2: "
+             + "subir esto a 4-5 permite ver el efecto de un cambio de rate desde el primer segundo.")]
+    [Min(1)] public int debugStartPhase = 1;
+
+    [Tooltip("Multiplica todos los intervalos entre listones, incluido el mínimo. 1 = normal, "
+             + "0.1 = primer listón a los 10s en vez de a los 100s.\n"
+             + "Sirve para recorrer varias fases en una partida corta sin tocar la cadencia real.")]
+    [Min(0.01f)] public float debugIntervalScale = 1f;
+
+    /// <summary>
+    /// Fase en la que empieza la ronda. Siempre 1 fuera del editor y de las
+    /// development builds, para que una palanca de testing olvidada en el asset
+    /// no pueda llegar a producción.
+    /// </summary>
+    public int StartPhase
+    {
+        get
+        {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            return Mathf.Max(1, debugStartPhase);
+#else
+            return 1;
+#endif
+        }
+    }
+
+    /// <summary>True cuando alguna palanca de testing está alterando el ritmo real de la ronda.</summary>
+    public bool DebugOverridesActive
+    {
+        get
+        {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            return debugStartPhase > 1 || !Mathf.Approximately(debugIntervalScale, 1f);
+#else
+            return false;
+#endif
+        }
+    }
+
     // ── Queries ───────────────────────────────────────────────────────────────
 
     /// <summary>Seconds the given phase lasts before its ribbon appears (doc §3 table).</summary>
     public float IntervalForPhase(int phase)
     {
         float interval = firstInterval + intervalStepPerPhase * (phase - 1);
-        return Mathf.Max(minInterval, interval);
+        interval = Mathf.Max(minInterval, interval);
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        // La escala va DESPUÉS del clamp: si fuese antes, minInterval dejaría el
+        // atajo en 40 s y no serviría para nada.
+        interval *= Mathf.Max(0.01f, debugIntervalScale);
+#endif
+
+        return interval;
     }
 
     /// <summary>Percentage of the base value for a variable at a given phase. Phase 1 is always 100.</summary>
@@ -212,6 +280,54 @@ public class ProgressionValuesSO : ScriptableObject
             Debug.Log($"[Progression] Verificación de seguridad §4.3 correcta:\n{sb}");
     }
 
+    /// <summary>
+    /// Tabla de valores REALES por fase, no porcentajes: es lo que hay que mirar
+    /// para decidir si una fase se siente bien. Cada columna es base * escalar,
+    /// con la base sacada del SO que la posee.
+    /// Una columna sale como "—" si falta su referencia en Valores base.
+    /// </summary>
+    [ContextMenu("Log valores absolutos por fase")]
+    public void LogAbsoluteValues()
+    {
+        var sb = new System.Text.StringBuilder();
+        sb.AppendLine("[Progression] Valores reales por fase (base x porcentaje):");
+        sb.AppendLine("Fase | Listón(s) | Cámara(u/s) | Lateral | Gravedad | Generación(s) | Cadencia(s) | Pausa cám.(s)");
+
+        for (int phase = 1; phase <= 12; phase++)
+        {
+            string lateral = platformerValues != null
+                ? $"{platformerValues.maxSpeed * ScalarForPhase(ProgressionVar.LateralSpeed, phase),7:0.00}"
+                : "      —";
+
+            string gravity = blocksValues != null
+                ? $"{blocksValues.gravityScale * ScalarForPhase(ProgressionVar.BlockFall, phase),8:0.00}"
+                : "       —";
+
+            string generation = platformerValues != null
+                ? $"{platformerValues.blockGenerationDelay * ScalarForPhase(ProgressionVar.BlockGeneration, phase),13:0.000}"
+                : "            —";
+
+            string cadence = platformerValues != null
+                ? $"{platformerValues.blockPlacementCD * ScalarForPhase(ProgressionVar.PlacementCadence, phase),11:0.000}"
+                : "          —";
+
+            float camera = cameraBaseSpeed * ScalarForPhase(ProgressionVar.CameraSpeed, phase);
+            float pause  = cameraPauseDuration * ScalarForPhase(ProgressionVar.CameraPause, phase);
+
+            sb.AppendLine($"{phase,4} | {IntervalForPhase(phase),9:0.0} | {camera,11:0.000} | {lateral} | "
+                          + $"{gravity} | {generation} | {cadence} | {pause,13:0.00}");
+        }
+
+        if (platformerValues == null || blocksValues == null)
+            sb.AppendLine("Faltan referencias en 'Valores base' — asigna BasePlatformerValues y Blocks para ver todas las columnas.");
+
+        if (DebugOverridesActive)
+            sb.AppendLine($"OJO: palancas de testing activas (fase inicial {StartPhase}, intervalos x{debugIntervalScale:0.##}). "
+                          + "La columna Listón ya las incluye.");
+
+        Debug.Log(sb.ToString());
+    }
+
     private void OnValidate()
     {
         firstInterval      = Mathf.Max(1f, firstInterval);
@@ -220,5 +336,8 @@ public class ProgressionValuesSO : ScriptableObject
         ribbonWidth        = Mathf.Max(0f, ribbonWidth);
         ribbonHeight       = Mathf.Max(0.05f, ribbonHeight);
         cameraPauseDuration = Mathf.Max(0f, cameraPauseDuration);
+        cameraBaseSpeed    = Mathf.Max(0f, cameraBaseSpeed);
+        debugStartPhase    = Mathf.Max(1,  debugStartPhase);
+        debugIntervalScale = Mathf.Max(0.01f, debugIntervalScale);
     }
 }

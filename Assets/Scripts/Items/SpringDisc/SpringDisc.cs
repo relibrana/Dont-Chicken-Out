@@ -1,17 +1,23 @@
 using DG.Tweening;
 using UnityEngine;
 
-public class SpringDisc : HoldableItem
+/// <summary>
+/// Llanta (item catalog #5). Replaces the old placeable spring disc (design
+/// decision, ago 2026): carried like any holdable but thrown on the place
+/// input. It sticks where it first lands — pushing the player it hits, if
+/// any — and stays there for the whole round as a trampoline that works for
+/// everyone. Keeps the original disc's bounce feel and squash/recoil
+/// animations. Once stuck it is immovable: kicks no longer shove it around.
+/// </summary>
+public class SpringDisc : ThrowableItem
 {
-    private Rigidbody2D _rb;
     [SerializeField] private SpriteRenderer spriteRenderer;
 
     [Header("Bounce Forces")]
     [SerializeField] private Vector2 bounceForce;
 
-    [Header("On Kick Settings")]
-    [SerializeField] private float attenuationOnMovement;
-    [SerializeField] private KickResponse kickResponse;
+    [SerializeField, Tooltip("Empuje al jugador si el proyectil lo golpea en vuelo (doc: 'lo empuja y queda suspendida').")]
+    private Vector2 hitPushForce = new Vector2(8f, 6f);
 
     [Header("Collission Settings")]
     [SerializeField] private LayerMask detectLayer;
@@ -28,21 +34,54 @@ public class SpringDisc : HoldableItem
     [SerializeField] private Ease recoilAnimationReturnEasing;
     private Sequence recoilAnimation;
     private Vector3 spriteInitialPos;
-    private int objectDirection;
+    private int objectDirection = 1;
+
+    private bool _stuck;
 
     void Awake()
     {
-        _rb = GetComponent<Rigidbody2D>();
         spriteInitialPos = spriteRenderer.transform.localPosition;
-        kickResponse.OnBeforeKick += () => _rb.bodyType = RigidbodyType2D.Dynamic;
     }
 
-    void FixedUpdate()
+    public override void PlaceHoldable()
     {
-        AttenuationOfMovement();
+        base.PlaceHoldable();
+        objectDirection = (int)Mathf.Sign(transform.localScale.x);
     }
 
-    private void OnCollisionEnter2D(Collision2D collision)
+    protected override void OnCollisionEnter2D(Collision2D collision)
+    {
+        if (!_stuck)
+        {
+            base.OnCollisionEnter2D(collision);
+            return;
+        }
+
+        Bounce(collision);
+    }
+
+    protected override void OnProjectileHit(Collision2D collision)
+    {
+        Rigidbody2D hitBody = collision.collider.attachedRigidbody;
+
+        if (hitBody != null && hitBody.TryGetComponent(out PlayerController victim))
+        {
+            Vector2 direction = ((Vector2)(victim.transform.position - transform.position)).normalized;
+            victim.AddImpulse(Vector2.Scale(direction, hitPushForce), isKick: true, resetSpeed: true);
+        }
+
+        Stick();
+    }
+
+    private void Stick()
+    {
+        _stuck = true;
+
+        rb2d.linearVelocity = Vector2.zero;
+        rb2d.bodyType       = RigidbodyType2D.Static;
+    }
+
+    private void Bounce(Collision2D collision)
     {
         if (((1 << collision.gameObject.layer) & detectLayer) == 0) return;
 
@@ -58,27 +97,11 @@ public class SpringDisc : HoldableItem
         TriggerAnimation();
         RecoilAnimation(-direction);
     }
-    public override void PlaceHoldable()
-    {
-        base.PlaceHoldable();
-        objectDirection = (int)Mathf.Sign(transform.localScale.x);
-    }
 
-    private void AttenuationOfMovement()
+    protected override void OnDisable()
     {
-        Vector2 velocity = _rb.linearVelocity;
-        if (velocity.sqrMagnitude > 0)
-        {
-            float x = Mathf.Lerp(velocity.x, 0, attenuationOnMovement * Time.fixedDeltaTime);
-            float y = Mathf.Lerp(velocity.y, 0, attenuationOnMovement * 2f * Time.fixedDeltaTime);
-            _rb.linearVelocity = new Vector2(x, y);
-
-            if(_rb.linearVelocity.sqrMagnitude < 0.01f)
-            {
-                _rb.linearVelocity = Vector2.zero;
-                _rb.bodyType = RigidbodyType2D.Kinematic;
-            }
-        }
+        base.OnDisable();
+        _stuck = false;
     }
 
     private void TriggerAnimation()

@@ -135,6 +135,8 @@ Las tres opciones de framework soportan host mode. Se pueden reservar servidores
 | Lanzamiento exitoso | 2,000 | ~$500/mes (incl. 6 TB) | ~$500–700/mes | ~$800/mes |
 | Hit | 5,000 | ~$2,500/mes ($0.50/CCU) | ~$1,200–1,800/mes | ~$1,400/mes |
 
+> ⚠️ **Matiz (ago 2026):** el supuesto "~2 GB egress/CCU/mes cabe en los 3 GB incluidos" descansa en una **hipótesis de utilización que no está escrita** (CCU promedio ÷ CCU pico). Con una tasa de 8 KB/s por peer y utilización normal de picos tarde/finde, no cabe, y el overage queda en el mismo orden que el plan base. Sensibilidad, consumo por sesión y escenarios comerciales en [fusion2-integracion.md](fusion2-integracion.md) §9.6. **El número está sin medir** — pendiente de FusionStats en el prototipo de Fase 1. La conclusión central de este §9 (el costo de infra no es el factor decisivo) **se mantiene**.
+
 **Lectura:** la beta es gratis/casi gratis en las tres (el tier gratis de Photon la cubre entera). Hasta ~2,000 CCU las tres caben en cientos de USD/mes. A escala "hit" el modelo CCU plano de Photon es el más caro; los modelos por egress escalan más barato (pero ya con ingresos). **Conclusión central:** a esta escala, el costo de infraestructura NO es el factor decisivo; lo es el **tiempo de desarrollo y el riesgo de cronograma** frente al costo recurrente de licencia.
 
 ---

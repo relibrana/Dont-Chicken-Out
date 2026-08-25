@@ -88,6 +88,7 @@ public sealed class PlayerBlockHandler : MonoBehaviour
     {
         DropBlock();
         CurrentBlock = newBlock;
+        CurrentBlock.SetOwner(_controller);
         CurrentBlock.StartHold();
         CanPlaceBlock = false;
         DOVirtual.DelayedCall(GenerationDelay, () => CanPlaceBlock = true, false);
@@ -99,7 +100,14 @@ public sealed class PlayerBlockHandler : MonoBehaviour
     /// </summary>
     public void TryPlaceBlock()
     {
-        if (!_movement.IsGrounded || !CanPlaceBlock || IsBlockUnavailable)
+        if (CurrentBlock == null) return;
+
+        // Throwables launch from anywhere: only the generation delay applies.
+        if (CurrentBlock.BypassPlacementChecks)
+        {
+            if (!CanPlaceBlock) return;
+        }
+        else if (!_movement.IsGrounded || !CanPlaceBlock || IsBlockUnavailable)
         {
             if (!_movement.IsGrounded || !CanPlaceBlock)
                 return;
@@ -161,6 +169,7 @@ public sealed class PlayerBlockHandler : MonoBehaviour
         GameObject randomBlock     = poolManager.GetPooledBlock(blockPosition.position, _controller.GameRank);
 
         CurrentBlock = randomBlock.GetComponent<HoldableItem>();
+        CurrentBlock.SetOwner(_controller);
         CurrentBlock.SetMaterial(_controller.HayMaterial);
         CurrentBlock.StartHold();
 
@@ -176,6 +185,13 @@ public sealed class PlayerBlockHandler : MonoBehaviour
 
     private void UpdateBlockAvailability()
     {
+        if (CurrentBlock.BypassPlacementChecks)
+        {
+            IsBlockUnavailable      = false;
+            CurrentBlock.overlapping = false;
+            return;
+        }
+
         IsBlockUnavailable = !_movement.IsGrounded;
 
         if (!IsBlockUnavailable)

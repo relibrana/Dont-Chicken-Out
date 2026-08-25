@@ -83,11 +83,31 @@ exactamente como antes.
 
 ### Cómo testearlo
 
+Todo el tuning está en `Assets/SOs/ProgressionValues.asset`, incluida la velocidad base de la cámara.
+Las bases de las otras variables viven en el SO de su sistema (`BasePlatformerValues`, `Blocks`);
+el asset de progresión las referencia en *Valores base* para poder previsualizarlas.
+
+- **Sección Testing del asset** — las dos palancas para no perder tiempo:
+  - `debugStartPhase`: arranca la ronda en la fase que pongas. **La fase 1 vale siempre 100%**, así
+    que cambiar un `ratePerPhase` no se nota hasta la fase 2; poniendo 5 aquí el cambio se ve desde
+    el primer segundo.
+  - `debugIntervalScale`: multiplica todos los intervalos, mínimo incluido. Con `0.1` el primer
+    listón sale a los 10 s y se recorren varias fases en una partida corta.
+
+  Las dos se ignoran fuera del editor y de las development builds, así que un valor olvidado no puede
+  llegar a la build final. Aun así el ProgressionManager avisa por consola en cada ronda mientras
+  estén activas.
+- Click derecho en `ProgressionValues.asset` → **Log valores absolutos por fase**: la tabla de
+  números reales (u/s de cámara, velocidad lateral, gravedad, segundos de cada espera) de las 12
+  primeras fases. Es lo que hay que mirar para decidir si una fase se siente bien; los porcentajes
+  del inspector por sí solos no dicen nada.
+- Click derecho en `ProgressionValues.asset` → **Log safety check (§4.3)**: tabla cámara vs
+  bloques/seg, avisa si la cámara adelanta a la construcción.
 - **P** hace aparecer el listón, **O** lo rompe (solo en editor, igual que las teclas Z/X de la cámara).
 - Click derecho en el componente ProgressionManager → *Force ribbon now* / *Force break ribbon* / *Log current scalars*.
-- Click derecho en `ProgressionValues.asset` → **Log safety check (§4.3)**: imprime la tabla
-  cámara vs bloques/seg de las 12 primeras fases y avisa si la cámara adelanta a la construcción.
-- Para no esperar 100 s, bajar `firstInterval` a 10 en el asset.
+
+> Los escalares se calculan al empezar la ronda y al cambiar de fase, no cada frame: si tocas el asset
+> **en Play Mode**, reinicia la ronda para que se apliquen.
 
 ### Notas de montaje aprendidas en el primer test
 
@@ -112,7 +132,7 @@ casilla de la matriz.
 
 ## 5. Estado de las decisiones de diseño
 
-### 5.1 Velocidad de cámara — `cameraBaseSpeed = 0.65` en la escena
+### 5.1 Velocidad de cámara — `cameraBaseSpeed = 0.65` en `ProgressionValues.asset`
 
 La rampa continua vieja queda eliminada, como se decidió. Pero esa rampa **era el motor de ritmo del
 juego**, así que la velocidad base pasa a definir el ritmo de toda la ronda:
@@ -159,8 +179,12 @@ El seguimiento a jugadores no se ve afectado, para no dejar fuera de plano a qui
 *Para cambiar la forma de la curva de recuperación: `ProgressionManager.CameraSpeedFactor`, una línea.*
 
 ### 5.4 Rampa continua de cámara — eliminada
-Campos `cameraAcceleration` y `cameraMaxSpeed` fuera. `cameraInitialSpeed` pasa a llamarse
-`cameraBaseSpeed` (con `FormerlySerializedAs`, así que la escena no pierde el valor).
+Campos `cameraAcceleration` y `cameraMaxSpeed` fuera. `cameraInitialSpeed` pasó a llamarse
+`cameraBaseSpeed` y hoy vive en `ProgressionValues.asset`, no en la escena: era el único valor base
+del sistema escondido en un componente, y buscarlo en el GameManager mientras el resto del tuning
+estaba en el SO era una trampa. El campo del GameManager sigue existiendo como
+`cameraBaseSpeedFallback`, y **solo** se usa en escenas sin ProgressionManager.
+Las dos cadenas de `FormerlySerializedAs` conservan el valor de la escena en la migración.
 
 ### 5.5 Velocidad lateral — cerrado
 Escalada sobre `maxSpeed` del jugador. El arco del salto se alarga en la misma proporción

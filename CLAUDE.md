@@ -33,7 +33,7 @@ Party game 2D (Unity 6, URP) para 2–4 jugadores: pollos trepan bloques tipo Te
 - `Player/` — `PlayerMovement` (jump buffer, coyote, glide, fall multiplier; consume `InputPayload`→`StatePayload` por tick, patrón network-ready en `PlayerPayloads.cs`), `PlayerInputHandler`, `PlayerBlockHandler`, `CluckSystem`, `HeadCollider`
 - `Controllers/` — `PlayerController`, `PlayerAnimController`, `KickCollider`/`KickResponse`, `FeatherVFXController`, `CameraController`
 - `Camera/` — `CinemachineVerticalRig2D` (auto-rise con curva de aceleración)
-- `Items/` — `BombItem`, `SpringDisc`, `HorizontalSpawner`; `Objects/ItemCapsule`, `HoldableItem`
+- `Items/` — catálogo completo implementado (ver `Docs/items-implementacion.md`): `PlayerItemState` (base de estados con timer/tinte/cleanup), `Throwing/ThrowableItem` (lanzables), por carpeta: `SuperKick`, `Pow`, `Moco`, `HotPotato`, `Teleport`, `Anvil`, `MetalChicken`, `DoubleJump`, más `Bomb` y `SpringDisc` (= la llanta lanzable del catálogo); `Objects/ItemCapsule` (pool con pesos + `IInstantItem` vs `HoldableItem`)
 - `Objects/` — `BlockScript`, `BlockDamageable` (vida de bloques), `BlockOverlapCheck`, `PlayerKiller`, interfaces `IDamageable`/`IKickable`
 - `SOs/` — config en ScriptableObjects: `PlatformerValuesSO`, `BlocksPoolSO`, `BlocksValuesSO`, `FeatherVFXConfigSO`, `MelodySO`, `SoundData`
 - `SceneChange/` — transiciones, `MainMenuController`, `MenuInputRouter`, `SessionData`

@@ -1130,6 +1130,7 @@ MonoBehaviour:
   values: {fileID: 11400000, guid: a3f8b21c9d7e4056b18c2f4d9e63a705, type: 2}
   ribbonPrefab: {fileID: 0}
   ribbonParent: {fileID: 0}
+  viewCamera: {fileID: 0}
   placeholderColor: {r: 1, g: 0.19999999, b: 0.6492008, a: 0.9}
   isAuthority: 1
 --- !u!4 &161733517
@@ -16382,6 +16383,12 @@ PrefabInstance:
       propertyPath: blocksSO
       value: 
       objectReference: {fileID: 11400000, guid: f22672e008a4b8b478a9c8a0daaade9f,
+        type: 2}
+    - target: {fileID: 1306948335560172110, guid: eb5ad07b62b54435ba110d7614a039e6,
+        type: 3}
+      propertyPath: itemsPool
+      value: 
+      objectReference: {fileID: 11400000, guid: 9d506e26f7ba0384ba0ca45293ed55fa,
         type: 2}
     - target: {fileID: 1306948335560172110, guid: eb5ad07b62b54435ba110d7614a039e6,
         type: 3}

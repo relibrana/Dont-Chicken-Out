@@ -42,15 +42,25 @@ public class ItemCapsule : MonoBehaviour, IDamageable
     private void Break(PlayerController player)
     {
         PoolingManager poolManager = GameManager.instance.poolManager;
-        int randomIndex = Random.Range(0, poolManager.pooledItems.Count);
 
-        GameObject randomItem = poolManager.GetPooledItem(
-            randomIndex,
-            player.GetBlockPosition()
-        );
+        GameObject rolledPrefab = poolManager.itemsPool != null
+            ? poolManager.itemsPool.GetWeightedPrefab()
+            : null;
 
-        HoldableItem newBlock = randomItem.GetComponent<HoldableItem>();
-        player.SwapBlock(newBlock);
+        GameObject randomItem = rolledPrefab != null
+            ? poolManager.GetPooledItem(rolledPrefab, player.GetBlockPosition())
+            : poolManager.GetPooledItem(Random.Range(0, poolManager.pooledItems.Count), player.GetBlockPosition());
+
+        if (randomItem.TryGetComponent(out IInstantItem instantItem))
+        {
+            instantItem.Apply(player);
+            randomItem.SetActive(false);
+        }
+        else
+        {
+            HoldableItem newBlock = randomItem.GetComponent<HoldableItem>();
+            player.SwapBlock(newBlock);
+        }
 
         gameObject.SetActive(false);
     }

@@ -4,6 +4,7 @@ using System.Linq;
 using System;
 using DG.Tweening;
 using System.Collections;
+using UnityEngine.SceneManagement;
 using UnityEngine.Serialization;
 
 [Serializable]
@@ -26,11 +27,12 @@ public class GameManager : MonoBehaviour
     [Tooltip("Seconds after the round starts before the camera begins rising.")]
     [SerializeField] private float cameraStartDelay = 3.5f;
 
-    [Tooltip("Upward speed of the camera at phase 1, in units per second.\n"
-             + "The camera no longer accelerates on its own: all acceleration comes from the progression "
-             + "phases (+6% each), so this value sets the pace of the whole round and has to be re-tuned.")]
+    [Tooltip("FALLBACK. Solo se usa en escenas sin ProgressionManager.\n"
+             + "Con progresión, la velocidad base de la cámara vive en el asset ProgressionValues, junto "
+             + "al resto del tuning — cambiar este campo no hace nada en Main_Level.")]
     [FormerlySerializedAs("cameraInitialSpeed")]
-    [SerializeField] private float cameraBaseSpeed = 0.15f;
+    [FormerlySerializedAs("cameraBaseSpeed")]
+    [SerializeField] private float cameraBaseSpeedFallback = 0.65f;
 
     [Header("Progression")]
     [Tooltip("Optional. Without it the game runs exactly as before, with every progression scalar at 100%.")]
@@ -243,10 +245,15 @@ public class GameManager : MonoBehaviour
             return;
         }
 
+        // The base speed lives in ProgressionValues so the whole tuning surface
+        // is one asset. The serialized field is only the no-progression fallback.
+        ProgressionValuesSO values = progression != null ? progression.Values : null;
+
+        float baseSpeed  = values != null ? values.cameraBaseSpeed : cameraBaseSpeedFallback;
         float phaseScale = ProgressionManager.Get(ProgressionVar.CameraSpeed);
         float recovery   = progression != null ? progression.CameraSpeedFactor : 1f;
 
-        cameraRig.MaxHeightReached += cameraBaseSpeed * phaseScale * recovery * Time.deltaTime;
+        cameraRig.MaxHeightReached += baseSpeed * phaseScale * recovery * Time.deltaTime;
     }
 
     // ── Player management ─────────────────────────────────────────────────────
@@ -470,7 +477,15 @@ public class GameManager : MonoBehaviour
             {
                 uiManager.HidePointsPanel();
                 needsAReset = true;
-                SceneTransitionService.Instance.LoadMenu();
+
+                // The transition service is a DontDestroyOnLoad singleton that only
+                // spawns in the MainMenu scene. Playing Main_Level directly in the
+                // editor skips it, so fall back to a plain load instead of dying
+                // on a null Instance inside this tween callback.
+                if (SceneTransitionService.Instance != null)
+                    SceneTransitionService.Instance.LoadMenu();
+                else
+                    SceneManager.LoadScene("MainMenu");
             }, false);
 
             return;

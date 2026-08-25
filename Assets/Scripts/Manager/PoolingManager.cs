@@ -8,6 +8,8 @@ public class PoolingManager : MonoBehaviour
     [SerializeField] private BlocksPoolSO easyBlocks;
     [SerializeField] private BlocksPoolSO mediumBlocks;
     [SerializeField] private BlocksPoolSO hardBlocks;
+    [Tooltip("Pesos de aparición de cada ítem al romper una cápsula (palanca de Distribución). Si está vacío, la cápsula usa el azar uniforme sobre pooledItems.")]
+    public ItemsPoolSO itemsPool;
     public List<PooledObject> pooledBlocks = new List<PooledObject>();
     public List<PooledObject> pooledItems = new List<PooledObject>();
     public PooledObject itemCapsule;
@@ -187,6 +189,56 @@ public class PoolingManager : MonoBehaviour
         return pObject;
     }
     
+    /// <summary>
+    /// Prefab-based variant used by the weighted item pool (ItemsPoolSO).
+    /// If the prefab has no pre-initialized pool parent, one is created on the
+    /// fly so a pool/SO wiring mismatch never null-refs mid-round.
+    /// </summary>
+    public GameObject GetPooledItem(GameObject itemPrefab, Vector3 _spawnPosition)
+    {
+        GameObject parentObj = null;
+
+        foreach (GameObject parent in itemList)
+        {
+            if (parent.name == itemPrefab.ToString())
+            {
+                parentObj = parent;
+                break;
+            }
+        }
+
+        if (parentObj == null)
+        {
+            parentObj = new GameObject(itemPrefab.ToString());
+            parentObj.transform.parent = transform;
+            itemList.Add(parentObj);
+        }
+
+        GameObject pObject = null;
+
+        foreach (Transform child in parentObj.transform)
+        {
+            if (!child.gameObject.activeSelf)
+            {
+                pObject = child.gameObject;
+                break;
+            }
+        }
+
+        if (pObject == null)
+        {
+            Debug.Log($"{itemPrefab.name}'s pool is full, spawn new one");
+            pObject = Instantiate(itemPrefab, parentObj.transform);
+        }
+
+        pObject.SetActive(false);
+        pObject.SetActive(true);
+        pObject.transform.position = _spawnPosition;
+        pObject.transform.localScale = Vector3.one;
+        pObject.transform.SetSiblingIndex(pObject.transform.parent.childCount);
+        return pObject;
+    }
+
     public GameObject GetCapsule()
 	{
 		GameObject pObject = capsuleList[0];

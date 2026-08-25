@@ -29,6 +29,27 @@ public sealed class PlayerController : MonoBehaviour, IKickable
     public GameStatus GameRank    { get; private set; } = GameStatus.Neutral;
     public Material   HayMaterial { get; private set; }
 
+    // ── Item state hooks ──────────────────────────────────────────────────────
+
+    /// <summary>
+    /// True while any item state (stun, moco) is locking the player's actions.
+    /// While locked, the movement tick receives a neutral InputPayload and
+    /// kick/place inputs are swallowed. Counter-based so overlapping states
+    /// compose without stepping on each other.
+    /// </summary>
+    public bool IsMovementLocked => _movementLocks > 0;
+
+    /// <summary>While true, incoming kicks and impulses are ignored (pollo metálico).</summary>
+    public bool ImpulseImmune { get; set; }
+
+    /// <summary>Facing sign of the sprite: 1 = right, -1 = left. Used by throwable items.</summary>
+    public float FacingSign => Mathf.Sign(transform.localScale.x);
+
+    private int _movementLocks;
+
+    public void PushMovementLock() => _movementLocks++;
+    public void PopMovementLock()  => _movementLocks = Mathf.Max(0, _movementLocks - 1);
+
     // ── External callbacks (set by GameManager) ───────────────────────────────
 
     public Action<PlayerController> onDeath;
@@ -76,7 +97,7 @@ public sealed class PlayerController : MonoBehaviour, IKickable
 
     private void Update()
     {
-        _movement.ProcessInput(_inputHandler.CurrentInput);
+        _movement.ProcessInput(IsMovementLocked ? default : _inputHandler.CurrentInput);
 
         if (_isGliding)
             TickFlapVFX();
@@ -143,6 +164,15 @@ public sealed class PlayerController : MonoBehaviour, IKickable
     {
         if (IsOnPause()) return;
 
+        // Stuck in moco: the kick press becomes the struggle input.
+        if (TryGetComponent(out MocoStuckState stuck) && stuck.IsActive)
+        {
+            stuck.OnStrugglePress();
+            return;
+        }
+
+        if (IsMovementLocked) return;
+
         animController.PlayKick();
         AudioManager.Instance.PlaySound("player_kick");
 
@@ -156,6 +186,7 @@ public sealed class PlayerController : MonoBehaviour, IKickable
     {
         if (IsOnPause()) return;
         if (!isOnGame) return;
+        if (IsMovementLocked) return;
 
         _blockHandler.TryPlaceBlock();
     }
@@ -185,6 +216,8 @@ public sealed class PlayerController : MonoBehaviour, IKickable
 
     public void ReceiveKick(Vector2 kickImpulse)
     {
+        if (ImpulseImmune) return;
+
         _movement.AddImpulse(kickImpulse);
 
         if (Mathf.Sign(kickImpulse.x) == Mathf.Sign(transform.localScale.x))
@@ -227,6 +260,8 @@ public sealed class PlayerController : MonoBehaviour, IKickable
     /// </summary>
     public void AddImpulse(Vector2 impulse, bool isKick = false, bool resetSpeed = false)
     {
+        if (ImpulseImmune) return;
+
         _movement.AddImpulse(impulse, resetSpeed);
 
         if (!isKick) return;
@@ -255,6 +290,9 @@ public sealed class PlayerController : MonoBehaviour, IKickable
 
     /// <summary>Returns the world position used to spawn/hold blocks.</summary>
     public Vector2 GetBlockPosition() => _blockHandler.GetBlockSpawnPosition();
+
+    /// <summary>Instantly moves the player (teleport item).</summary>
+    public void TeleportTo(Vector2 position) => _movement.Teleport(position);
 
     /// <summary>Drops the currently held block. Called on death and reset.</summary>
     public void DropBlock() => _blockHandler.DropBlock();

@@ -1,7 +1,7 @@
 # Arquitectura objetivo — Don't Chicken Out! con Fusion 2
 
 **Proyecto:** Don't Chicken Out! · Raymi Games
-**Fecha:** 20 de julio de 2026
+**Fecha:** 20 de julio de 2026 · **Última actualización:** 4 de agosto de 2026
 **Estado:** dirección técnica — insumo para B-1→B-4 y para la reunión con Photon
 **Relacionados:** [ADR-0001-Netcode-Online.md](ADR-0001-Netcode-Online.md) · [fusion2-primer.md](fusion2-primer.md) · [fusion2-puntos-clave.html](fusion2-puntos-clave.html) · [sprintplan.md](sprintplan.md)
 
@@ -130,6 +130,31 @@ public struct CombinedPlayerInputs : INetworkInput {
 - ⚠️ El **tamaño máximo del struct `INetworkInput` no está documentado** — con 4 locales crece linealmente; medir con FusionStats.
 
 El beneficio de fondo: **desaparece la categoría de bug "funciona en local pero no en online"**, porque es literalmente el mismo código.
+
+### 4.1 Lobby unificado y loadout (ago 2026) 📊
+
+**Decisión: un solo diseño de lobby para local y online.** Se evaluó un wireframe alternativo, minimalista, exclusivo para online (solo tu propio carrusel + lista de ready/waiting/disconnected), bajo la hipótesis de que mostrar a todos los jugadores encarecía el online. **La hipótesis es falsa en los dos escenarios analizados:**
+
+| Escenario | Wireframe minimalista | Lobby unificado |
+|---|---|---|
+| 4 jugadores en 2 PCs (couch mixto) | Imposible: fuerza 1 jugador = 1 peer → **4 CCU** | **2 CCU** |
+| 4 jugadores en 4 PCs | 4 CCU | 4 CCU (idéntico) |
+
+- **CCU:** Photon factura **peers, no jugadores**. El wireframe "barato" es el que maximiza CCU, porque prohíbe compartir máquina. El unificado es un descuento por cada jugador que comparte peer.
+- **Egress:** a igual número de peers, lo único que el unificado manda de más es el loadout de los otros jugadores. Techo teórico patológico (4 jugadores scrolleando sin parar 90 s a 30 Hz) ≈ **100 KB/lobby**; caso real ≈ **3–8 KB**. Una ronda de gameplay son ~1–3 MB. El lobby entero de una sesión de 2 h es **<1 % del consumo** (§9.6).
+- ⚠️ **Requisito duro:** un solo `NetworkRunner` por máquina. Abrir un runner por jugador local convierte 2 CCU en 4 y anula toda la ventaja.
+
+**Los cosméticos no escalan el costo de red.** Un loadout viaja como **IDs de ancho fijo**, nunca como assets: tipo de pollo (`byte`) + gorro/ropa/accesorio (`ushort` c/u) + variante de color (`byte`) ≈ **8 bytes**. El costo lo fija el número de *slots*, no el tamaño del catálogo: pasar de 20 a 500 gorros cuesta **cero bytes**. Cada slot nuevo (mochila, calzado) suma ~2 bytes.
+
+**Reglas de implementación:**
+- **Commit-on-confirm:** la selección en curso vive en estado **local, no networked**; se escribe a la propiedad `[Networked]` solo al confirmar. Reduce el tráfico de loadout al mínimo teórico (una escritura por visita al ropero) y es mejor que debounce, que sigue mandando cada combinación en la que el jugador se detiene.
+- **La cortina no ahorra tráfico** — ocultar visualmente no impide enviar. Ahorra el commit; la cortina es el contrato de UI que evita que el commit se sienta como lag. Se justifica por experiencia (mata el estroboscopio de un jugador scrolleando 200 gorros, tapa el pop-in de carga de assets, da un punto único de validación de entitlements, y genera el momento de reveal), **no por costo**.
+- **Estado `[Networked]`, no RPCs por cambio:** Fusion deltea el estado y resuelve el late-join gratis — quien entre a mitad de lobby ve los loadouts actuales sin replay de eventos.
+- **Sincronizar el loadout en el lobby es una ventaja técnica**, no un gasto: da una ventana de precarga de 30–90 s para los assets cosméticos ajenos. Diferirlo al arranque de la ronda mete la carga en el peor momento posible (hitch/pop-in en el primer segundo). Relevante sobre todo en Switch.
+- El cap total de pollos (4) **no** lo da `MaxPlayers` de Fusion, que es máximo de *peers*: 4 peers × 4 locales serían 16. Se impone en lógica propia, junto con la UX de "quiero sumar un local pero la sala está llena".
+- Si cae un peer con 2+ locales, **desaparecen varios pollos a la vez**: la lógica de rondas / last-man-standing tiene que aguantarlo.
+
+**El costo real del lobby unificado no es red: es render local.** Cuatro previews de pollo animadas con capas de cosméticos en menú, en la plataforma más floja del target. Presupuestarlo como riesgo de cliente, no de ancho de banda.
 
 ---
 
@@ -302,6 +327,49 @@ Gaming Circle: STARTER $500/mes · PRO $1,000/mes (sin CCU); trial de 1 mes grat
 ### 9.5 Matchmaking
 Nativo ✅: lobbies, `SessionProperties`, `FillRoom`/`SerialMatching`/`RandomMatching`, `SessionName` (→ códigos de invitación). **No** trae skill-based, amigos ni party. Steam Auth existe ✅, pero las **invitaciones de amigos las construimos nosotros** — presupuestar ese sprint (capa 5, §5).
 
+### 9.6 Consumo real y sensibilidad del egress 📊 (ago 2026)
+
+Todo lo de esta sección son **estimaciones propias sin medir**. Existe para dimensionar y para saber qué medir, no como cifra de presupuesto.
+
+**Sesión típica de 2 h** (4 jugadores, First-to-5, ~5–6 matches, ~75 % en simulación activa):
+
+| Fase | Tiempo | Tasa estimada | Total por peer |
+|---|---|---|---|
+| Lobby inicial | ~3 min | ~0,5–1 KB/s | ~0,2 MB |
+| Gameplay activo | ~90 min | 5–15 KB/s | **27–81 MB** |
+| Entre rondas / resultados / re-lobby | ~27 min | ~0,5–1 KB/s | ~1–1,6 MB |
+| **Total** | 120 min | | **~30–85 MB** (central ≈ 50 MB) |
+
+→ La cuota incluida (3 GB/peak-CCU/mes) da **~60 sesiones de 2 h**, o ~120 h de juego, por CCU. **El lobby es <1 % del total; el 99 % son ticks de gameplay.**
+
+**La variable oculta es la utilización** (CCU promedio ÷ CCU pico): se factura la cuota por el **pico**, pero se consume por el promedio. GB por peak-CCU/mes, contra los 3 GB incluidos:
+
+| Tasa \ Utilización | 15 % | 25 % | 35 % |
+|---|---|---|---|
+| **5 KB/s** | 2,0 ✅ | 3,3 ⚠️ | 4,6 🚩 |
+| **8 KB/s** | 3,1 ⚠️ | 5,3 🚩 | 7,4 🚩 |
+| **15 KB/s** | 5,9 🚩 | 9,9 🚩 | 13,8 🚩 |
+
+⚠️ **Esto matiza el supuesto del `ADR-0001` §9** ("~2 GB egress/CCU/mes, cabe en los 3 GB incluidos"): ese 2 GB descansa en un supuesto de utilización que no está escrito. A 8 KB/s con utilización normal (picos de tarde/finde), **no cabe**, y el overage queda en el mismo orden de magnitud que el plan base — +45 % a 8 KB/s @ 25 %, +215 % a 15 KB/s @ 35 %. Desde `sa` el overage es $0.10/GB, el doble (§9.3). No es que el ADR esté mal; es que su conclusión es más frágil de lo que aparenta.
+
+**Riesgo #1 que puede duplicar la tasa: bloques dinámicos que no se duermen.** Los bloques siguen siendo `Rigidbody2D` dinámicos (§3). Un bloque asentado tiene que dejar de emitir deltas por completo — si 40 bloques apilados micro-tiemblan, se paga esa vibración a 30 Hz para siempre sin que se vea nada en pantalla, y se pasa de ~8 a 30+ KB/s. Forzar sleep / congelar bloques asentados y **verificarlo con FusionStats**, no asumirlo.
+
+**Palancas si la medición sale alta:** (1) tick 30 en vez de 60 Hz → mitad directa; (2) **culling vertical** — el juego sube, los bloques que salen por debajo de la cámara no necesitan replicarse (ahorro específico de un climber que el Area of Interest genérico no da solo); (3) cuantización de posiciones.
+
+**Cuatro escenarios comerciales.** CCU = peers online concurrentes, no ventas: buena parte de la audiencia de un party game juega solo en couch (0 CCU) y el couch-en-online comprime jugadores por peer (§4.1). Sumar 15–30 % de colchón porque **los picos se suman por región** (§9.2). Proyecciones de copias/CCU = reglas de industria, **no datos del publisher** — sustituir por la concurrencia objetivo real (`ADR-0001` §11 paso 3).
+
+| Escenario | Copias año 1 | Peak CCU online | Plan | Base | Overage est. | Total/mes |
+|---|---|---|---|---|---|---|
+| **Pesimista** | 5–20k | 60–120 | Free 100 → 200 CCU Plus | ~$8 | $0–15 | **~$10–25** |
+| **Realista** | 50–150k | 300–700 pico · 100–250 estable | 500 CCU en lanzamiento → bajar a 200 | $125 → $8 | $30–80 | **$155 lanz. · ~$40 estable** |
+| **Optimista** | 300–500k | 1.200–2.500 | 2.000 CCU o Gaming Circle STARTER | $500 | $150–400 | **$650–900** |
+| **Muy optimista** | 1M+ | 5.000–12.000 | 5.000 CCU ($0.50/CCU) o Gaming Circle | $2.500–6.000 | $500–1.500 | **$3.000–7.500** |
+
+En el escenario optimista la factura anual de Photon es ~0,3 % de ingresos. **En ningún escenario el monto compromete la viabilidad.** Los problemas son otros dos, y son los accionables:
+
+1. 🚩 **Burst obligatorio el mes de lanzamiento.** Sin burst por debajo de 500 CCU, un pico de lanzamiento por encima del tier **desconecta jugadores** — el día exacto en que se escriben las reviews de Steam. El pico de lanzamiento es un spike que decae 80–90 % en un mes y no representa el estado estable. **No forecastear ese mes: comprar headroom.** Subir a 500 CCU ($125) para el mes de lanzamiento y bajar después. Es seguro barato contra un desastre de día 1.
+2. 📊 **Gaming Circle puede mover el techo 5x.** STARTER $500/mes **"sin CCU"** (§9.4): si eso es literalmente sin tope, el escenario muy optimista cuesta $500–1.000/mes en vez de $3.000–7.500. Es la diferencia más grande de toda la tabla y sale de una línea sin confirmar → §12.
+
 ---
 
 ## 10. Secuencia de construcción
@@ -321,7 +389,8 @@ Las **capas 1 y 2 no necesitan Fusion** (refactor de simulación pura) y **mejor
 ### Fase 1 — el prototipo de riesgo responde tres preguntas con código
 1. **¿Cuánto cuesta la física de los bloques interpolados + resimulación?** 4 pollos + torre, latencia 80–150 ms.
 2. **¿Cuánto desfase visible tienen los bloques?** — el tradeoff de §3. Fijar un umbral aceptable como criterio (§11).
-3. **¿Cuánto pesa `CombinedPlayerInputs` con 4 locales?** — FusionStats.
+3. **¿Cuánto pesa `CombinedPlayerInputs` con 4 locales?** — FusionStats. Ojo: el struct de `INetworkInput` es de **tamaño fijo**, así que 4 slots declarados se envían cada tick aunque haya un solo jugador local. Bit-packing (dirección 2 bits, jump 1, kick 1…) lo baja a ~1 byte por slot.
+4. **¿Cuál es la tasa real en KB/s por peer?** — 10 min de gameplay 4P con FusionStats. Todo el modelo de costos (§9.6) cuelga de un número hoy estimado entre 5 y 15 KB/s, un rango de 3x que mueve la factura entre "cabe en la cuota" y "el overage duplica el plan". Medirlo **antes** de la reunión con Photon para negociar con cifra propia. Verificar en la misma corrida que los bloques asentados dejan de emitir deltas.
 
 Si el reparto cinemático/interpolado resultara inviable, es mucho mejor saberlo en B-1 que en B-4.
 
@@ -336,6 +405,9 @@ Si el reparto cinemático/interpolado resultara inviable, es mucho mejor saberlo
 | **Caída del host** | Host migration · abortar al lobby | Abortar al lobby en rondas cortas |
 | **Pausa en online** | Solo local con pollo en auto · votación · sin pausa | Sin decidir — necesita criterio de diseño |
 | **Umbral de desfase de bloques** | Se mide en Fase 1 y se fija | Definirlo como criterio de aceptación antes de la capa 4 |
+| **¿Se permiten pollos duplicados?** (§4.1) | Permitir · bloquear el ya elegido · resolver al arrancar | Bloquear en vivo: en 4 pollos la legibilidad de quién es quién es funcional, no estética |
+| **Reparto de la cortina del ropero** (§4.1) | Todo tras cortina · nada · solo cosméticos | **Tipo de pollo visible y en vivo** (identidad, hay que ver quién lo tomó) + **cosméticos tras cortina** (sabor; ahí está el estroboscopio y el reveal). Con todo oculto vuelve el arbitraje de duplicados en el reveal |
+| **Presupuesto de render del lobby** (§4.1) | 4 previews animadas con capas cosméticas · versiones estáticas/simplificadas | Medir en la plataforma más floja del target antes de comprometer el arte del lobby |
 
 ---
 
@@ -343,7 +415,7 @@ Si el reparto cinemático/interpolado resultara inviable, es mucho mejor saberlo
 
 Las de `fusion2-primer.md` §4 siguen vigentes. Nuevas de esta investigación:
 
-**Pricing:** ¿peak CCU se suma por región? · ¿tier intermedio entre 200 y 500 CCU o burst en 200? · ¿sigue el descuento anual "2 meses gratis"? · ¿`sa` confirmado en overage $0.10/GB? · ¿compromiso de estabilidad de precios (lanzamos jul 2027)?
+**Pricing:** ¿peak CCU se suma por región? · ¿tier intermedio entre 200 y 500 CCU o burst en 200? · ¿sigue el descuento anual "2 meses gratis"? · ¿`sa` confirmado en overage $0.10/GB? · ¿compromiso de estabilidad de precios (lanzamos jul 2027)? · 🚩 **¿Gaming Circle STARTER es realmente sin tope de CCU, y qué pasa con el egress bajo ese plan?** (§9.6 — mueve el escenario muy optimista de $3.000–7.500/mes a $500–1.000) · ¿se puede subir de tier solo el mes de lanzamiento y bajar después?
 **Técnico:** ¿Forecast o Physics Addon para bloques `Rigidbody2D` + personajes cinemáticos? · ¿best practices de kicks 2D sin lag comp? · ¿límite práctico de `INetworkInput`? · ¿host migration realista en rondas cortas?
 **Consolas:** ¿cambia el CCU en consola? ¿fee/NDA del lado de Photon?
 **Soporte:** ¿programa para estudios pequeños más allá del trial?
@@ -359,6 +431,9 @@ Las de `fusion2-primer.md` §4 siguen vigentes. Nuevas de esta investigación:
 | Las capas 1–2 no caben antes de B-1 | Alta | 🟠 Medio | Solapar con A-4→A-7; mejoran el juego local igual |
 | Re-tuneo del feel del controller tarda | Media | 🟠 Medio | Conservar valores del SO; playtest temprano con design leads |
 | Beta desconecta jugadores por falta de burst | Baja | 🟠 Medio | Pack 200 CCU ($95/año) |
+| **Bloques asentados que no se duermen** → deltas constantes, tasa 3–4x | Media | 🔴 Alto | Forzar sleep de bloques asentados; verificar con FusionStats en Fase 1 (§9.6) |
+| **Overage subestimado** — el supuesto de 2 GB/CCU del ADR asume utilización no escrita | Media | 🟠 Medio | Medir KB/s reales antes de la reunión con Photon; palancas de tick/culling/cuantización (§9.6) |
+| **Desconexiones el día de lanzamiento** por pico sobre el tier sin burst | Media | 🔴 Alto | Subir a 500 CCU el mes de lanzamiento sin forecastear; bajar después (§9.6) |
 | Lock-in de Photon | Baja | 🔴 Alto | Aislar la red tras interfaces propias (capa 1) |
 | Acceso a SDK de consola tarda | Media | 🟠 Medio | Iniciar trámite con plataformas en M3, no en L-7 |
 
@@ -377,4 +452,5 @@ Las de `fusion2-primer.md` §4 siguen vigentes. Nuevas de esta investigación:
 ## 15. Historial
 
 - **2026-07-20 · v1.0** — investigación inicial (auditoría 55 scripts + doc Fusion 2.1). Encuadre: qué corregir para ir online.
+- **2026-08-04 · v2.1** — análisis de **lobby, cosméticos y consumo real**. Añade §4.1 (lobby unificado local+online, loadout como IDs, commit-on-confirm, la cortina es UX y no ahorro) y §9.6 (consumo de una sesión de 2 h, sensibilidad del egress a la utilización, cuatro escenarios comerciales). Matiza el supuesto de egress del `ADR-0001` §9. Nuevos riesgos: bloques que no duermen, overage subestimado, desconexiones de día 1 sin burst. Nuevas decisiones para design leads: duplicados, reparto de la cortina, presupuesto de render del lobby. **A tener muy en cuenta durante el traspaso del gameplay actual a online** (capas 3–6, B-1→B-4).
 - **2026-07-20 · v2.0** — **reencuadre a arquitectura objetivo** tras la decisión de reconstruir el core. Añade: una sola simulación (§4), controller cinemático + reparto predecir/interpolar (§3), seis capas (§5), secuencia por capas (§10), decisiones para design leads (§11). La auditoría pasa a "estado de partida" (§6). El GDD **no se modifica** (decisión del equipo; el online ya se delega a docs de producción en `gdd.md:80`).
