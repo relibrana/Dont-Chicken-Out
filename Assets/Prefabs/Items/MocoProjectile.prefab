@@ -65,8 +65,8 @@ MonoBehaviour:
   launchAngle: 25
   projectileGravity: 2
   ownerGraceSeconds: 0.25
-  strugglePresses: 8
-  maxStuckSeconds: 2
+  strugglePresses: 6
+  maxStuckSeconds: 200
   stuckTint: {r: 0.55, g: 0.9, b: 0.3, a: 1}
   trapColor: {r: 0.55, g: 0.9, b: 0.3, a: 0.85}
   trapSingleUse: 1

@@ -15,7 +15,7 @@ MonoBehaviour:
   Path: FMOD/Desktop/Items.bank
   Name: Items
   StudioPath: bank:/New Folder/Items
-  lastModified: 639199932245611723
+  lastModified: 639214751202852600
   FileSizes: []
   Exists: 1
 --- !u!114 &-1026441089196131494
@@ -33,7 +33,7 @@ MonoBehaviour:
   Path: FMOD/Desktop/Master.bank
   Name: Master
   StudioPath: bank:/Master
-  lastModified: 639199932245173886
+  lastModified: 639214751202852600
   FileSizes: []
   Exists: 1
 --- !u!114 &11400000
@@ -62,10 +62,12 @@ MonoBehaviour:
   StringsBanks:
   - {fileID: 3629482631584508902}
   cacheVersion: 131860
-  cacheTime: 639199932245611723
+  cacheTime: 639214751202852600
   SerializableEventsDict:
   - key: event:/New Event
     index: 0
+  - key: event:/New Event 2
+    index: 1
 --- !u!114 &2974326143483386196
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -108,7 +110,7 @@ MonoBehaviour:
   Path: FMOD/Desktop/Master.strings.bank
   Name: Master.strings
   StudioPath: bank:/Master.strings
-  lastModified: 639199932245183952
+  lastModified: 639214751202852600
   FileSizes:
   - Name: 
     Value: 906
@@ -128,7 +130,7 @@ MonoBehaviour:
   Path: FMOD/Desktop/UI.bank
   Name: UI
   StudioPath: bank:/UI
-  lastModified: 639199929496292686
+  lastModified: 639214751202852600
   FileSizes: []
   Exists: 1
 --- !u!114 &6803804550098020333

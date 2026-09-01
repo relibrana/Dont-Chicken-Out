@@ -213,10 +213,10 @@ MonoBehaviour:
   spriteRenderers:
   - {fileID: 4093260496131078878}
   explosionPoint: {fileID: 8006819928533086999}
-  fuseSeconds: 4
-  explosionRadius: 1.65
+  fuseSeconds: 2
+  explosionRadius: 1.7
   explosionImpulse: 60
-  destroyDelay: 0.4
+  destroyDelay: 0.3
   detectLayer:
     serializedVersion: 2
     m_Bits: 1152

@@ -207,7 +207,7 @@ MonoBehaviour:
   ownerGraceSeconds: 0.25
   spriteRenderer: {fileID: 2464309141000911678}
   bounceForce: {x: 25, y: 35}
-  hitPushForce: {x: 8, y: 6}
+  hitPushForce: {x: 16, y: 8}
   detectLayer:
     serializedVersion: 2
     m_Bits: 128

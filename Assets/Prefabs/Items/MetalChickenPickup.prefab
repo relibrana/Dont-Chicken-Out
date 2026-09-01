@@ -42,10 +42,10 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: f1eaa88fd9950384e9d277e05bf3f160, type: 3}
-  m_Name:
-  m_EditorClassIdentifier:
+  m_Name: 
+  m_EditorClassIdentifier: 
   duration: 6
-  jumpMultiplier: 0.75
-  gravityMultiplier: 1.6
-  kickMultiplier: 1.6
+  jumpMultiplier: 1
+  gravityMultiplier: 1
+  kickMultiplier: 10
   metalTint: {r: 0.62, g: 0.66, b: 0.72, a: 1}
