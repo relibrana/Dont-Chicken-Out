@@ -9,7 +9,7 @@
 
 - **`ItemsPoolSO`** — pool con pesos por ítem (palanca "Distribución" del doc). La cápsula tira de aquí; sin asset asignado cae al azar uniforme viejo.
 - **Dos tipos de premio de cápsula:**
-  - `HoldableItem` — va a la mano y sustituye el bloque (bomba, disco, lanzables).
+  - `HoldableItem` — va a la mano y sustituye el bloque (lanzables, teleporte).
   - `IInstantItem` — se aplica al instante al romper la cápsula y **conservas tu bloque** (estados propios: súper patada, papa, yunque, metálico, doble salto).
   - **Excepciones (sep 2026), por petición de diseño (la activación automática confundía):** el **teleporte** pasó a `HoldableItem` (se lleva en la mano y lo activas con el botón de colocar) y el **POW** pasó a `ThrowableItem` (se lanza como el moco y la cuenta atrás arranca en el impacto).
 - **`PlayerItemState`** — base de estados con temporizador en el jugador: tinte placeholder, limpieza automática al morir o acabar la ronda (`isOnGame`), y hooks a `PlayerMovement` (multiplicadores de velocidad/salto/gravedad, salto aéreo, congelación) y `PlayerController` (bloqueo de input, inmunidad a empujes).
@@ -21,7 +21,7 @@ Todo vive en `Assets/Prefabs/Items/`. `Assets/SOs/ItemsPool.asset` ya tiene las 
 
 | Prefab | Peso | Valores serializados (default / rango doc) |
 |---|---|---|
-| `BombItem` (existente) | 20 | sin cambios |
+| `BombItem` (existente) | 20 | **ahora lanzable** (sep 2026): vel 12, ángulo 25°, grav 2 · la mecha arranca al lanzarla (2 s) · conserva `KickResponse`, se puede patear en el suelo |
 | `SpringDisc` (= **Llanta**, ítem 5) | 12 | ahora lanzable: vel 12, ángulo 25°, grav 2 · conserva su rebote (25,35) y squash/recoil · empuje al impactar en vuelo (8,6) |
 | `MocoProjectile` | 12 | lanzamiento: vel 12, ángulo 25°, grav 2 · barra de 8 puntos (patada 2, movimiento 1, descarga 3/s), tope 3 s, trampa un solo uso ✔ |
 | `DoubleJumpPickup` | 12 | duración 6 s, altura 2º salto ×0.85, repetible ✔ |
@@ -54,13 +54,14 @@ POW crea su propio canvas en runtime (placeholder hasta integrarlo a UIManager).
 8. **Yunque**: aparece parpadeando arriba de tu columna ~1 s; cae recto matando jugadores (tú incluido si te quedas debajo) y borrando los sub-bloques que atraviesa; sigue hasta abajo y despawnea.
 9. **Metálico**: **el salto es el mismo que el de un pollo normal** (referencia: Mario metálico) pero la caída es mucho más pesada y no planea; patadas/bombas/muelles no lo empujan (la bomba SÍ lo mata); su patada empuja bastante más fuerte; expira limpio.
 10. **Doble salto**: un salto extra en el aire (recargable al aterrizar por default); sirve para recuperarse tras una patada; interactúa con el planeo (mantener salto tras el 2º salto planea — validar sensación, doc §A.4).
-11. **Combos**: súper patada + metálico multiplican empuje; aturdido puede recibir la papa; morir en cualquier estado limpia tintes y multiplicadores.
+11. **Bomba**: se lanza en arco con el botón de colocar, sin checks de suelo ni de solape; la mecha arranca en el aire y estalla donde esté a los 2 s; al caer recupera su gravedad normal y un rival puede patearla lejos antes de que reviente.
+12. **Combos**: súper patada + metálico multiplican empuje; aturdido puede recibir la papa; morir en cualquier estado limpia tintes y multiplicadores.
 
 ## Decisiones v1 — validar con los design leads
 
 1. **Activación al recoger**: no hay inventario ni botón de "usar ítem"; los estados/globales se activan al romper la cápsula (el timing = cuándo la pateas). **Teleporte y POW ya son la excepción (sep 2026): van a la mano y los activa el jugador.** Pendiente: ¿se lleva el mismo patrón al resto de instantáneos?
 2. **Apuntado v1 = dirección + ángulo fijo**: no existe input de apuntar (Move es 1D). ¿Se añade apuntado real (stick/8-way) al esquema de controles?
-3. **La bomba sigue siendo colocable** (como en build), aunque el doc la describe como proyectil apuntado. Con `ThrowableItem` hecho, la versión lanzada es ~1 h — pero cambia una mecánica ya shippeada: decisión de diseño.
+3. **Resuelto (sep 2026): la bomba es lanzable**, como pedía el doc original y confirmó diseño. Se lanza igual que el moco y la mecha arranca en el lanzamiento, no al impactar (toggle `fuseStartsOnThrow` para probar la otra variante). No se queda clavada al chocar: sigue siendo un cuerpo físico pateable, que era su counterplay.
 4. Los ítems instantáneos **no sustituyen el bloque en mano** (antes la cápsula siempre lo sustituía).
 5. Papa caliente: explosión final **no letal** para los vecinos (solo empuje + daño a bloques); el doc dice "daña" sin definir. Toggle fácil si debe matar.
 6. Moco como trampa: **un solo uso** por default para evitar stunlock junto a la mancha (el doc dice "permanece toda la ronda" — hay un bool serializado para probar ambas).

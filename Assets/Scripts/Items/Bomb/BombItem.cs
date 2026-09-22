@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 
 [DisallowMultipleComponent]
-public sealed class BombItem : HoldableItem
+public sealed class BombItem : ThrowableItem
 {
     [Header("Explosion")]
     [SerializeField, Tooltip("Transform del punto de explosión")]
@@ -32,12 +32,17 @@ public sealed class BombItem : HoldableItem
     [Header("Animator")]
     [SerializeField] private Animator animator;
 
+    [Header("Throw")]
+    [SerializeField, Tooltip("La mecha arranca al lanzarla. Si se desmarca, arranca al primer impacto.")]
+    private bool fuseStartsOnThrow = true;
+
     [Header("Optional FX")]
     [SerializeField] private ParticleSystem[] explosionParticles;
     [SerializeField] private AudioClip explosionSfx;
 
     private SpriteRenderer[] cachedSpriteRenderers;
     private Coroutine fuseRoutine;
+    private float landedGravityScale = 1f;
 
     private bool hasExploded;
 
@@ -49,6 +54,10 @@ public sealed class BombItem : HoldableItem
     private void Awake()
     {
         cachedSpriteRenderers = GetComponentsInChildren<SpriteRenderer>(includeInactive: true);
+
+        // El lanzamiento pisa la gravedad con la del proyectil; se restaura
+        // al aterrizar para que la bomba caída pese lo mismo que siempre.
+        landedGravityScale = rb2d != null ? rb2d.gravityScale : 1f;
     }
 
     private void Update()
@@ -61,10 +70,34 @@ public sealed class BombItem : HoldableItem
 #endif
     }
 
+    /// <summary>
+    /// La bomba se lanza en vez de colocarse (diseño, sep 2026: es un ítem
+    /// lanzable como el moco). base.PlaceHoldable() de ThrowableItem ya hace
+    /// el disparo; aquí sólo se decide cuándo empieza a correr la mecha.
+    /// </summary>
     public override void PlaceHoldable()
     {
         base.PlaceHoldable();
 
+        if (fuseStartsOnThrow)
+            TryStartFuse();
+    }
+
+    /// <summary>
+    /// Primer impacto tras el lanzamiento. La bomba NO se queda clavada como
+    /// el moco: sigue siendo un cuerpo físico normal para que los rivales
+    /// puedan patearla lejos, que es su counterplay de siempre.
+    /// </summary>
+    protected override void OnProjectileHit(Collision2D collision)
+    {
+        rb2d.gravityScale = landedGravityScale;
+
+        if (!fuseStartsOnThrow)
+            TryStartFuse();
+    }
+
+    private void TryStartFuse()
+    {
         if (fuseRoutine == null && !hasExploded)
             StartFuse();
     }

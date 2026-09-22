@@ -212,6 +212,10 @@ MonoBehaviour:
   overlapping: 0
   spriteRenderers:
   - {fileID: 4093260496131078878}
+  throwSpeed: 12
+  launchAngle: 25
+  projectileGravity: 2
+  ownerGraceSeconds: 0.25
   explosionPoint: {fileID: 8006819928533086999}
   fuseSeconds: 2
   explosionRadius: 1.7
@@ -223,6 +227,7 @@ MonoBehaviour:
   startColor: {r: 1, g: 1, b: 1, a: 1}
   endColor: {r: 1, g: 1, b: 1, a: 1}
   animator: {fileID: 8064756802529601347}
+  fuseStartsOnThrow: 1
   explosionParticles: []
   explosionSfx: {fileID: 0}
 --- !u!50 &732177368487052202
