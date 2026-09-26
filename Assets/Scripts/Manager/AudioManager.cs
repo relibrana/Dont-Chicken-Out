@@ -34,6 +34,12 @@ public class AudioManager : MonoBehaviour
     [SerializeField, Range(0f, 1f)] private float musicVolume = 0.5f;
     [SerializeField, Range(0f, 1f)] private float soundEffectsVolume = 0.8f;
 
+    [SerializeField, Range(0f, 1f), Tooltip("Paneo máximo de los SFX posicionales. 1 = un lado del todo; "
+             + "por debajo de 1 un sonido al borde de la pantalla sigue oyéndose por los dos altavoces.")]
+    private float maxStereoPan = 0.8f;
+
+    private Camera _pannningCamera;
+
     [Header("SFX Lists")]
     [SerializeField] private List<Sound> bgmSounds = new List<Sound>();
     [SerializeField] private List<Sound> playerSfxs;
@@ -64,7 +70,7 @@ public class AudioManager : MonoBehaviour
     private int currentJoin = 0;
     private int currentDeath = 0;
 
-    // ── Unity lifecycle ───────────────────────────────────────────────────────
+    // ââ Unity lifecycle âââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 
     protected void Awake()
     {
@@ -92,7 +98,7 @@ public class AudioManager : MonoBehaviour
         musicSource.volume = musicVolume;
     }
 
-    // ── Initialization ────────────────────────────────────────────────────────
+    // ââ Initialization ââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 
     private void InitializeSoundMap()
     {
@@ -122,7 +128,7 @@ public class AudioManager : MonoBehaviour
         }
     }
 
-    // ── Source pool ───────────────────────────────────────────────────────────
+    // ââ Source pool âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 
     private AudioSource CreateSource()
     {
@@ -169,12 +175,12 @@ public class AudioManager : MonoBehaviour
             ReleaseSource(src);
     }
 
-    // ── Music ─────────────────────────────────────────────────────────────────
+    // ââ Music âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 
     /// <summary>
     /// Plays a BGM track directly. Respects the loop flag set on the Sound asset.
     /// If the requested clip is already playing, does nothing.
-    /// Cancels any pending intro→loop transition before switching.
+    /// Cancels any pending introâloop transition before switching.
     /// </summary>
     public AudioSource PlayMusic(string bgmId)
     {
@@ -232,7 +238,7 @@ public class AudioManager : MonoBehaviour
     /// accompany each phase change.
     ///
     /// Interim implementation: AudioSource.pitch shifts speed and key together.
-    /// Replace with an FMOD tempo parameter once audio delivers one — only the
+    /// Replace with an FMOD tempo parameter once audio delivers one â only the
     /// body of this method needs to change.
     /// </summary>
     public void SetMusicPitch(float pitch)
@@ -271,7 +277,7 @@ public class AudioManager : MonoBehaviour
         return null;
     }
 
-    // ── SFX ──────────────────────────────────────────────────────────────────
+    // ââ SFX ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 
     public AudioSource PlaySound(string id)
     {
@@ -307,6 +313,53 @@ public class AudioManager : MonoBehaviour
         var src = PlaySound(id);
         if (src != null) src.pitch = pitch;
         return src;
+    }
+
+    /// <summary>
+    /// Plays a SFX panned by where it happens on screen: something that goes
+    /// off on the left comes out of the left speaker. Used by the bomb and any
+    /// other positional one-shot.
+    /// The SFX stay 2D on purpose — full 3D audio would also attenuate them by
+    /// distance and drop the ones near the edge of a 4-player screen.
+    /// </summary>
+    public AudioSource PlaySoundAt(string id, Vector3 worldPosition, float pitch = 1f)
+    {
+        var src = PlaySound(id);
+        if (src == null) return null;
+
+        src.pitch     = pitch;
+        src.panStereo = PanForWorldPosition(worldPosition);
+
+        return src;
+    }
+
+    /// <summary>
+    /// -1 (hard left) .. 1 (hard right) from a world position, using the
+    /// visible width of the play camera. Clamped below full pan so a sound at
+    /// the very edge is still audible on both speakers.
+    /// </summary>
+    public float PanForWorldPosition(Vector3 worldPosition)
+    {
+        Camera cam = ResolveCamera();
+        if (cam == null) return 0f;
+
+        // Camera.main is null in this project (the play camera is inside
+        // CameraRig.prefab and is Untagged), hence ResolveCamera.
+        float viewportX = cam.WorldToViewportPoint(worldPosition).x;
+        float centred   = (viewportX - 0.5f) * 2f;
+
+        return Mathf.Clamp(centred, -1f, 1f) * maxStereoPan;
+    }
+
+    private Camera ResolveCamera()
+    {
+        if (_pannningCamera != null) return _pannningCamera;
+
+        _pannningCamera = Camera.main != null
+            ? Camera.main
+            : FindFirstObjectByType<Camera>();
+
+        return _pannningCamera;
     }
 
     public void StopSound(string id)
@@ -349,7 +402,7 @@ public class AudioManager : MonoBehaviour
             ReleaseSource(src);
     }
 
-    // ── Melodies ──────────────────────────────────────────────────────────────
+    // ââ Melodies ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 
     /// <summary>
     /// Plays a specific note from a melody by melodyId and note index.
@@ -380,7 +433,7 @@ public class AudioManager : MonoBehaviour
         return melody.NoteCount;
     }
 
-    // ── Volume ────────────────────────────────────────────────────────────────
+    // ââ Volume ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 
     public void ChangeVolume(SoundsType type, float value)
     {
@@ -405,7 +458,7 @@ public class AudioManager : MonoBehaviour
         }
     }
 
-    // ── Simple sound accessors ────────────────────────────────────────────────
+    // ââ Simple sound accessors ââââââââââââââââââââââââââââââââââââââââââââââââ
 
     public void MakeStepSound()
     {
@@ -435,7 +488,7 @@ public class AudioManager : MonoBehaviour
 
     public void MakeButtonHoverSound() => PlaySound("button_hover");
 
-    // ── Helpers ───────────────────────────────────────────────────────────────
+    // ââ Helpers âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 
     /// <summary>Plays a raw AudioClip directly through the pool.</summary>
     private void PlayClip(AudioClip clip, float? volume = null)

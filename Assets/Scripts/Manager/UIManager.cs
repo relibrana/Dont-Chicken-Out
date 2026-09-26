@@ -9,6 +9,18 @@ public class UIManager : MonoBehaviour
 {
     public PlayerUI[] playersUI = new PlayerUI[4];
     [SerializeField] private GameObject dimLayerBG;
+
+    [Header("Orden de render")]
+    [Tooltip("Sorting layer al que sube el canvas del HUD durante la pantalla de fin de ronda, "
+             + "para quedar por encima de bloques y pollos. Tiene que estar por encima de 'Characters'.")]
+    [SerializeField] private string overlaySortingLayer = "Pause";
+
+    [SerializeField] private int overlaySortingOrder = 100;
+
+    private Canvas _hudCanvas;
+    private int    _baseSortingLayerId;
+    private int    _baseSortingOrder;
+    private bool   _overlayRaised;
     [SerializeField] private TextMeshProUGUI startGameTimerText;
 
     [Header("Kick Button Prompt")]
@@ -36,6 +48,8 @@ public class UIManager : MonoBehaviour
 
     private void Awake()
     {
+        CacheHudCanvas();
+
         pointsCanvasGroup = pointsPanelHUD.GetComponent<CanvasGroup>();
 
         if (pointsPanelHUD != null)
@@ -51,6 +65,21 @@ public class UIManager : MonoBehaviour
             playersUI[i].playerIndex = i + 1;
             playersUI[i].ChangeUIState(PlayerUIState.WaitJoin);
         }
+    }
+
+    private void CacheHudCanvas()
+    {
+        Canvas canvas = dimLayerBG != null
+            ? dimLayerBG.GetComponentInParent<Canvas>()
+            : GetComponentInParent<Canvas>();
+
+        if (canvas == null) return;
+
+        // rootCanvas: los canvas anidados heredan el orden del padre salvo que
+        // tengan overrideSorting, así que el que manda es el de arriba.
+        _hudCanvas          = canvas.rootCanvas != null ? canvas.rootCanvas : canvas;
+        _baseSortingLayerId = _hudCanvas.sortingLayerID;
+        _baseSortingOrder   = _hudCanvas.sortingOrder;
     }
 
     private void OnEnable()
@@ -86,6 +115,8 @@ public class UIManager : MonoBehaviour
 
     private void HandlePrepare()
     {
+        SetOverlayOnTop(false);
+
         // Countdown started — hide the prompt.
         if (kickButtonPrompt != null)
             kickButtonPrompt.SetActive(false);
@@ -93,6 +124,8 @@ public class UIManager : MonoBehaviour
 
     private void HandleGame()
     {
+        SetOverlayOnTop(false);
+
         // Game started — prompt is already hidden, nothing extra needed.
         if (kickButtonPrompt != null)
             kickButtonPrompt.SetActive(false);
@@ -100,6 +133,9 @@ public class UIManager : MonoBehaviour
 
     private void HandleGameEnd()
     {
+        // La pantalla de fin de ronda tiene que tapar la torre entera.
+        SetOverlayOnTop(true);
+
         // Win or back to Menu — re-evaluate based on current player count.
         if (kickButtonPrompt == null) return;
 
@@ -113,6 +149,50 @@ public class UIManager : MonoBehaviour
                        && GameManager.instance.gameState == GameState.Menu;
 
         kickButtonPrompt.SetActive(shouldShow);
+    }
+
+    // ── Orden de render de la pantalla final ──────────────────────────────────
+
+    /// <summary>
+    /// El canvas del HUD vive en el sorting layer "UI", que en este proyecto
+    /// está POR DEBAJO de "Items" (bloques) y "Characters" (pollos). Por eso la
+    /// capa oscura del victory salía detrás de la torre.
+    /// Mientras dura la pantalla final el canvas sube a un layer que está por
+    /// encima de todo, y al volver al juego recupera el suyo — así no hay que
+    /// tocar el sorting layer de los bloques ni reordenar los layers del
+    /// proyecto, que afectaría a todo lo demás.
+    /// </summary>
+    private void SetOverlayOnTop(bool onTop)
+    {
+        if (_hudCanvas == null || _overlayRaised == onTop) return;
+
+        if (onTop)
+        {
+            int layerId = FindSortingLayerId(overlaySortingLayer);
+            if (layerId == int.MinValue) return;
+
+            _hudCanvas.sortingLayerID = layerId;
+            _hudCanvas.sortingOrder   = overlaySortingOrder;
+        }
+        else
+        {
+            _hudCanvas.sortingLayerID = _baseSortingLayerId;
+            _hudCanvas.sortingOrder   = _baseSortingOrder;
+        }
+
+        _overlayRaised = onTop;
+    }
+
+    /// <summary>int.MinValue if the layer does not exist — NameToID would answer 0 (Default).</summary>
+    private static int FindSortingLayerId(string layerName)
+    {
+        foreach (SortingLayer layer in SortingLayer.layers)
+        {
+            if (layer.name == layerName) return layer.id;
+        }
+
+        Debug.LogWarning($"UIManager => sorting layer '{layerName}' no existe; la pantalla final no sube.");
+        return int.MinValue;
     }
 
     // ── Players UI ────────────────────────────────────────────────────────────

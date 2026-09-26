@@ -19,6 +19,19 @@ public sealed class PlayerController : MonoBehaviour, IKickable
     [SerializeField] private PlayerAnimController animController;
     [SerializeField] private Transform glideFlapOrigin;
 
+    [Header("Etiqueta de jugador")]
+    [SerializeField, Tooltip("Muestra la etiqueta 'Player N' flotando sobre el pollo.")]
+    private bool showNameTag = true;
+
+    [SerializeField, Tooltip("Desplazamiento de la etiqueta respecto al pollo.")]
+    private Vector3 nameTagOffset = new Vector3(0f, 1.6f, 0f);
+
+    [SerializeField, Min(0.5f), Tooltip("Tamaño del texto de la etiqueta, en unidades de mundo.")]
+    private float nameTagSize = 4f;
+
+    [SerializeField, Tooltip("Recuadro detrás del nombre para que se lea sobre cualquier fondo.")]
+    private Color nameTagBackdrop = new Color(0f, 0f, 0f, 0.55f);
+
     // ── Public state (read by GameManager / UIManager) ────────────────────────
 
     [NonSerialized] public int     playerIndex;
@@ -28,6 +41,36 @@ public sealed class PlayerController : MonoBehaviour, IKickable
 
     public GameStatus GameRank    { get; private set; } = GameStatus.Neutral;
     public Material   HayMaterial { get; private set; }
+
+    /// <summary>This player's colour for the name tag. Comes from MaterialsSO.</summary>
+    public Color LabelColor { get; private set; } = new Color(1f, 1f, 1f, 0f);
+
+    /// <summary>
+    /// Main body colour of the chicken in the colour-swap shader. The tag reads
+    /// it straight off the material so the label always matches the chicken,
+    /// even if Arte retoca los materiales sin avisar.
+    /// </summary>
+    private static readonly int BodyColorId = Shader.PropertyToID("_ReplacementColor1");
+
+    private PlayerNameTag _nameTag;
+
+    /// <summary>
+    /// Colour priority: lo que Arte haya puesto a mano en MaterialsSO, si no el
+    /// color del cuerpo en el shader del pollo, y si no la paleta por defecto.
+    /// </summary>
+    private static Color ResolveLabelColor(PlayerMaterial mats)
+    {
+        if (mats.labelColor.a > 0f) return mats.labelColor;
+
+        if (mats.playerMat != null && mats.playerMat.HasProperty(BodyColorId))
+        {
+            Color fromShader = mats.playerMat.GetColor(BodyColorId);
+            fromShader.a = 1f;
+            return fromShader;
+        }
+
+        return new Color(1f, 1f, 1f, 0f); // sin definir: la paleta decide
+    }
 
     // ── Item state hooks ──────────────────────────────────────────────────────
 
@@ -169,7 +212,7 @@ public sealed class PlayerController : MonoBehaviour, IKickable
         // Stuck in moco: the kick press becomes the struggle input.
         if (TryGetComponent(out MocoStuckState stuck) && stuck.IsActive)
         {
-            stuck.OnStrugglePress(fromKick: true);
+            stuck.OnStrugglePress(fromKick: true, FacingSign);
             return;
         }
 
@@ -189,13 +232,20 @@ public sealed class PlayerController : MonoBehaviour, IKickable
     /// struggle bar (less than a kick) so the player is never left mashing a
     /// single button. Outside that state the axis is read by PlayerMovement.
     /// </summary>
-    private void HandleMovePress()
+    private void HandleMovePress(float direction)
     {
         if (IsOnPause()) return;
 
         if (TryGetComponent(out MocoStuckState stuck) && stuck.IsActive)
-            stuck.OnStrugglePress(fromKick: false);
+            stuck.OnStrugglePress(fromKick: false, direction);
     }
+
+    /// <summary>
+    /// The chicken's visual rig. Items that need to shake or nudge the chicken
+    /// move THIS and not the body: the body is driven by the Rigidbody2D, and
+    /// while stuck in moco it is frozen on purpose.
+    /// </summary>
+    public Transform VisualRoot => animController != null ? animController.transform : transform;
 
     private void HandlePlaceBlock()
     {
@@ -264,7 +314,27 @@ public sealed class PlayerController : MonoBehaviour, IKickable
     public void OnPlayerIndexAssigned()
     {
         _cluckSystem?.SetPlayerIndex(playerIndex);
+
+        // Aquí y no en Awake: la etiqueta necesita el índice y el color, y los
+        // dos los pone GameManager.AddPlayer justo antes de esta llamada.
+        CreateNameTag();
     }
+
+    private void CreateNameTag()
+    {
+        if (!showNameTag || _nameTag != null) return;
+
+        _nameTag = PlayerNameTag.Create(
+            this,
+            $"Player {playerIndex + 1}",
+            PlayerNameTag.ResolveColor(LabelColor, playerIndex),
+            nameTagOffset,
+            nameTagSize,
+            nameTagBackdrop);
+    }
+
+    /// <summary>Entry point for the future name-customisation screen.</summary>
+    public void SetDisplayName(string displayName) => _nameTag?.SetLabel(displayName);
 
     /// <summary>Triggers the player death flow.</summary>
     public void OnDeath() => onDeath?.Invoke(this);
@@ -291,6 +361,7 @@ public sealed class PlayerController : MonoBehaviour, IKickable
     public void SetMaterials(PlayerMaterial mats)
     {
         HayMaterial = mats.hayMat;
+        LabelColor  = ResolveLabelColor(mats);
         _blockHandler.CurrentBlock?.SetMaterial(HayMaterial);
 
         var renderers = GetComponentsInChildren<SpriteRenderer>();
@@ -314,6 +385,40 @@ public sealed class PlayerController : MonoBehaviour, IKickable
     /// single courtesy jump after reappearing in the air.
     /// </summary>
     public void GrantAirJump(int count = 1) => _movement.AirJumpsRemaining += count;
+
+    /// <summary>
+    /// Rumbles this player's gamepad. No-op for keyboard players, so callers
+    /// never have to check which scheme somebody is on.
+    /// Motors are always stopped on a timer: a rumble left running because the
+    /// round ended is the worst bug this feature can have.
+    /// </summary>
+    public void Rumble(float lowFrequency, float highFrequency, float duration)
+    {
+        Gamepad pad = FindGamepad();
+        if (pad == null) return;
+
+        pad.SetMotorSpeeds(lowFrequency, highFrequency);
+
+        DOVirtual.DelayedCall(duration, () =>
+        {
+            if (pad.added) pad.SetMotorSpeeds(0f, 0f);
+        }, false);
+    }
+
+    /// <summary>Stops any rumble on this player's gamepad right now.</summary>
+    public void StopRumble() => FindGamepad()?.SetMotorSpeeds(0f, 0f);
+
+    private Gamepad FindGamepad()
+    {
+        if (playerInput == null) return null;
+
+        foreach (InputDevice device in playerInput.devices)
+        {
+            if (device is Gamepad gamepad) return gamepad;
+        }
+
+        return null;
+    }
 
     /// <summary>Drops the currently held block. Called on death and reset.</summary>
     public void DropBlock() => _blockHandler.DropBlock();

@@ -20,6 +20,10 @@ Party game 2D (Unity 6, URP) para 2–4 jugadores: pollos trepan bloques tipo Te
 | `Docs/sprintplan.md` | Plan sprint a sprint (VS→Launch) + estado de sistemas en código |
 | `Docs/Roadmap.md` | Roadmap publisher-facing |
 | `Docs/ADR-0001-Netcode-Online.md` | Decisión de netcode: host-authority aceptado; framework (Fusion 2 / NGO+UGS / FishNet) pendiente de lock |
+| `Docs/items-implementacion.md` | Catálogo de ítems: estado por ítem, valores serializados, plan de pruebas y decisiones de diseño abiertas |
+| `Docs/progression-system.md` | Sistema del listón: variables, montaje en escena, cómo tunear y dónde vive cada valor |
+| `Docs/assets-arte-audio-items-progresion.md` | Lista de assets de Arte y Audio pendientes por ítem (fuente: sesión con Mateo) |
+| `Docs/deuda-tecnica.md` | Cosas ya rotas o frágiles en el código, ordenadas por cuánto duelen. Leer antes de tocar muerte de jugadores, pooling o sorting layers |
 
 ## Estado actual (actualizar al cambiar de fase)
 

@@ -65,8 +65,11 @@ MonoBehaviour:
   projectileGravity: 2
   ownerGraceSeconds: 0.25
   countFrom: 3
-  stunSeconds: 2
+  stunSeconds: 2.5
   stunTint: {r: 0.6, g: 0.6, b: 0.75, a: 1}
+  countdownSize: 140
+  shakeDuration: 0.22
+  shakeAmplitude: 0.9
 --- !u!50 &1000000000000000004
 Rigidbody2D:
   serializedVersion: 5

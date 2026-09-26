@@ -33,9 +33,10 @@ public sealed class PlayerInputHandler : MonoBehaviour
     /// <summary>
     /// Fired on a *fresh* directional press: the axis leaving neutral or
     /// flipping side. Holding a key does not re-fire — the struggle mechanics
-    /// count presses, not held input.
+    /// count presses, not held input. The float is the direction pressed,
+    /// so a struggle can shake the chicken towards it.
     /// </summary>
-    public event Action OnMovePressed;
+    public event Action<float> OnMovePressed;
 
     // ── Private state ─────────────────────────────────────────────────────────
 
@@ -178,7 +179,7 @@ public sealed class PlayerInputHandler : MonoBehaviour
         _moveDirection = ctx.ReadValue<float>();
 
         if (_moveDirection != 0f && (previous == 0f || Mathf.Sign(previous) != Mathf.Sign(_moveDirection)))
-            OnMovePressed?.Invoke();
+            OnMovePressed?.Invoke(_moveDirection);
     }
 
     private void OnMoveCanceled(InputAction.CallbackContext ctx) =>

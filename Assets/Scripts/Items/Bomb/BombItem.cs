@@ -36,6 +36,43 @@ public sealed class BombItem : ThrowableItem
     [SerializeField, Tooltip("La mecha arranca al lanzarla. Si se desmarca, arranca al primer impacto.")]
     private bool fuseStartsOnThrow = true;
 
+    [Header("Feedback: respiración")]
+    [SerializeField, Tooltip("Transform que se infla y desinfla. Vacío = el sprite de la bomba.")]
+    private Transform breathingVisual;
+
+    [SerializeField, Min(0f), Tooltip("Respiraciones por segundo al encender la mecha.")]
+    private float breathStartHz = 1.5f;
+
+    [SerializeField, Min(0f), Tooltip("Respiraciones por segundo justo antes de estallar.")]
+    private float breathEndHz = 9f;
+
+    [SerializeField, Range(0f, 0.5f), Tooltip("Cuánto se deforma al principio (0.04 = 4%).")]
+    private float breathStartAmplitude = 0.04f;
+
+    [SerializeField, Range(0f, 0.5f), Tooltip("Cuánto se deforma al final.")]
+    private float breathEndAmplitude = 0.16f;
+
+    [Header("Feedback: mecha")]
+    [SerializeField, Tooltip("Mecha procedural (placeholder). Desmarcar cuando Arte entregue la suya.")]
+    private bool useProceduralFuse = true;
+
+    [SerializeField, Tooltip("Origen de la mecha en local, relativo a la bomba.")]
+    private Vector2 fuseAnchor = new Vector2(0f, 0.35f);
+
+    [SerializeField, Min(0.05f), Tooltip("Largo de la mecha entera, en unidades.")]
+    private float fuseLength = 0.5f;
+
+    [SerializeField, Min(0.01f)] private float fuseWidth = 0.06f;
+    [SerializeField] private Color fuseColor  = new Color(0.32f, 0.25f, 0.18f, 1f);
+    [SerializeField] private Color sparkColor = new Color(1f, 0.88f, 0.35f, 1f);
+
+    [Header("Feedback: explosión")]
+    [SerializeField, Min(0f), Tooltip("Duración del sacudón de cámara. Corto y fuerte.")]
+    private float shakeDuration = 0.25f;
+
+    [SerializeField, Min(0f), Tooltip("Amplitud del sacudón, en unidades de mundo.")]
+    private float shakeAmplitude = 0.55f;
+
     [Header("Optional FX")]
     [SerializeField] private ParticleSystem[] explosionParticles;
     [SerializeField] private AudioClip explosionSfx;
@@ -43,6 +80,14 @@ public sealed class BombItem : ThrowableItem
     private SpriteRenderer[] cachedSpriteRenderers;
     private Coroutine fuseRoutine;
     private float landedGravityScale = 1f;
+
+    // Breathing / fuse visuals.
+    private Transform    _breathTarget;
+    private Vector3      _breathBaseScale = Vector3.one;
+    private float        _breathPhase;
+    private LineRenderer _fuseLine;
+
+    private static Material _sharedFuseMaterial;
 
     private bool hasExploded;
 
@@ -58,6 +103,12 @@ public sealed class BombItem : ThrowableItem
         // El lanzamiento pisa la gravedad con la del proyectil; se restaura
         // al aterrizar para que la bomba caída pese lo mismo que siempre.
         landedGravityScale = rb2d != null ? rb2d.gravityScale : 1f;
+
+        _breathTarget = breathingVisual != null
+            ? breathingVisual
+            : (cachedSpriteRenderers.Length > 0 ? cachedSpriteRenderers[0].transform : transform);
+
+        _breathBaseScale = _breathTarget.localScale;
     }
 
     private void Update()
@@ -126,13 +177,23 @@ public sealed class BombItem : ThrowableItem
         float elapsed = 0f;
         float fuseSafe = Mathf.Max(0.0001f, fuseSeconds);
 
+        _breathPhase = 0f;
+        EnsureFuseLine();
+
         while (elapsed < fuseSafe)
         {
             elapsed += Time.deltaTime;
             float t = Mathf.Clamp01(elapsed / fuseSafe);
+
             SetSpriteColor(Color.Lerp(startColor, endColor, t));
+            TickBreathing(t);
+            TickFuse(t);
+
             yield return null;
         }
+
+        ResetBreathing();
+        HideFuse();
 
         Explosion();
 
@@ -149,8 +210,16 @@ public sealed class BombItem : ThrowableItem
         
 		rb2d.bodyType = RigidbodyType2D.Kinematic;
         
+        ResetBreathing();
+        HideFuse();
+
         AudioManager.Instance.StopSound("bomb_lighter");
-        AudioManager.Instance.PlaySound("bomb_explosion");
+
+        // Paneado por su posición en pantalla: una bomba que estalla a la
+        // izquierda suena por el altavoz izquierdo.
+        AudioManager.Instance.PlaySoundAt("bomb_explosion", explosionPoint.position);
+
+        ScreenShake.Punch(shakeDuration, shakeAmplitude);
 
         if (animator != null)
             animator.SetTrigger(BoomHash);
@@ -247,6 +316,99 @@ public sealed class BombItem : ThrowableItem
     protected override void OnDisable() {
         base.OnDisable();
         AudioManager.Instance.StopSound("bomb_lighter");
+
+        ResetBreathing();
+        HideFuse();
+    }
+
+    // ── Respiración ───────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// La bomba se infla y se desinfla, y el ritmo se acelera a medida que se
+    /// acaba la mecha: es el reloj visual del item. La fase se acumula en vez
+    /// de calcularse como Time.time * frecuencia, porque al subir la
+    /// frecuencia sobre un reloj absoluto el seno pega saltos.
+    /// </summary>
+    private void TickBreathing(float t)
+    {
+        if (_breathTarget == null) return;
+
+        float hz        = Mathf.Lerp(breathStartHz, breathEndHz, t);
+        float amplitude = Mathf.Lerp(breathStartAmplitude, breathEndAmplitude, t);
+
+        _breathPhase += hz * Time.deltaTime;
+
+        float pulse = Mathf.Sin(_breathPhase * 2f * Mathf.PI);
+
+        // Con algo de squash: al hincharse se ensancha más de lo que crece a lo
+        // alto, que es lo que hace que se lea como aire y no como un zoom.
+        _breathTarget.localScale = new Vector3(
+            _breathBaseScale.x * (1f + pulse * amplitude),
+            _breathBaseScale.y * (1f + pulse * amplitude * 0.6f),
+            _breathBaseScale.z);
+    }
+
+    private void ResetBreathing()
+    {
+        if (_breathTarget != null)
+            _breathTarget.localScale = _breathBaseScale;
+    }
+
+    // ── Mecha y chispa ────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Mecha placeholder por código: una línea que se acorta desde la punta
+    /// mientras la chispa la consume. Se sustituye por el asset de Arte
+    /// apagando Use Procedural Fuse.
+    /// </summary>
+    private void EnsureFuseLine()
+    {
+        if (!useProceduralFuse || _fuseLine != null) return;
+
+        var go = new GameObject("FuseProcedural");
+        go.transform.SetParent(transform, false);
+
+        _fuseLine = go.AddComponent<LineRenderer>();
+        _fuseLine.useWorldSpace  = false;
+        _fuseLine.positionCount  = 2;
+        _fuseLine.numCapVertices = 2;
+        _fuseLine.textureMode    = LineTextureMode.Stretch;
+        _fuseLine.startWidth     = fuseWidth;
+        _fuseLine.endWidth       = fuseWidth;
+        _fuseLine.sortingOrder   = 10;
+
+        if (_sharedFuseMaterial == null)
+            _sharedFuseMaterial = new Material(Shader.Find("Sprites/Default"));
+
+        _fuseLine.sharedMaterial = _sharedFuseMaterial;
+    }
+
+    private void TickFuse(float t)
+    {
+        if (_fuseLine == null) return;
+
+        _fuseLine.enabled = true;
+
+        // La mecha se consume desde la punta hacia la bomba.
+        float remaining = fuseLength * (1f - t);
+        Vector3 start   = fuseAnchor;
+        Vector3 end     = start + Vector3.up * remaining;
+
+        _fuseLine.SetPosition(0, start);
+        _fuseLine.SetPosition(1, end);
+
+        // La chispa parpadea al mismo ritmo que la respiración, para que los
+        // dos feedbacks cuenten exactamente el mismo tiempo.
+        float flicker = 0.65f + 0.35f * Mathf.Abs(Mathf.Sin(_breathPhase * 2f * Mathf.PI));
+
+        _fuseLine.startColor = fuseColor;
+        _fuseLine.endColor   = Color.Lerp(fuseColor, sparkColor, flicker);
+    }
+
+    private void HideFuse()
+    {
+        if (_fuseLine != null)
+            _fuseLine.enabled = false;
     }
 
 #if UNITY_EDITOR

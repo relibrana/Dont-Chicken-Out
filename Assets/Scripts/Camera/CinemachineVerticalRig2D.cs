@@ -68,6 +68,10 @@ public class CinemachineVerticalRig2D : MonoBehaviour
     [Tooltip("Whether the shake affects the Y axis.")]
     [SerializeField] private bool shakeAffectsY = true;
 
+    [Tooltip("Curva de ca�da de la amplitud. 1 = lineal. Por debajo de 1 el temblor "
+             + "se mantiene fuerte casi hasta el final y corta de golpe (estilo Mario).")]
+    [SerializeField, Range(0.2f, 3f)] private float shakeFalloff = 0.6f;
+
     // ── Public state ──────────────────────────────────────────────────────────
 
     /// <summary>
@@ -97,6 +101,7 @@ public class CinemachineVerticalRig2D : MonoBehaviour
     // Shake state — lives on shakeTarget, completely isolated from baseFollowTarget.
     private Transform _shakeTarget;   // child of baseFollowTarget, created in Awake
     private float     _shakeTimeLeft;
+    private float     _shakeDuration = 1f;
     private float     _shakeAmplitude;
     private Vector2   _shakeSeed;
 
@@ -259,8 +264,10 @@ public class CinemachineVerticalRig2D : MonoBehaviour
         _shakeTimeLeft -= Time.deltaTime;
 
         // Fade amplitude to zero as the shake expires (smooth tail-off).
-        float normalizedTime = Mathf.Clamp01(_shakeTimeLeft / defaultShakeDuration);
-        float amp            = _shakeAmplitude * normalizedTime;
+        // Normalised against THIS shake's own duration: using the default here
+        // made a short punchy shake start at a fraction of its amplitude.
+        float normalizedTime = Mathf.Clamp01(_shakeTimeLeft / Mathf.Max(0.0001f, _shakeDuration));
+        float amp            = _shakeAmplitude * Mathf.Pow(normalizedTime, shakeFalloff);
 
         float t  = Time.time * shakeFrequency;
         float nx = Mathf.PerlinNoise(_shakeSeed.x, t) * 2f - 1f;
@@ -276,11 +283,32 @@ public class CinemachineVerticalRig2D : MonoBehaviour
 
     /// <summary>
     /// Triggers a camera shake. Safe to call at any time and from any state.
+    /// A new shake replaces the current one only if it is stronger, so a weak
+    /// tail never cuts short a big hit that is already playing.
     /// </summary>
-    public void DoDeathShake(float duration = -1f, float amplitude = -1f)
+    public void DoShake(float duration = -1f, float amplitude = -1f)
     {
-        _shakeTimeLeft  = duration  > 0f ? duration  : defaultShakeDuration;
-        _shakeAmplitude = amplitude > 0f ? amplitude : defaultShakeAmplitude;
+        float newDuration  = duration  > 0f ? duration  : defaultShakeDuration;
+        float newAmplitude = amplitude > 0f ? amplitude : defaultShakeAmplitude;
+
+        if (_shakeTimeLeft > 0f && newAmplitude < _shakeAmplitude) return;
+
+        _shakeTimeLeft  = newDuration;
+        _shakeDuration  = newDuration;
+        _shakeAmplitude = newAmplitude;
+    }
+
+    /// <summary>Kept for the existing death call sites. Same thing as DoShake.</summary>
+    public void DoDeathShake(float duration = -1f, float amplitude = -1f) => DoShake(duration, amplitude);
+
+    /// <summary>
+    /// Short, hard hit: full amplitude almost all the way, then a fast cut.
+    /// This is the Mario-style punch the POW and the bomb ask for, as opposed
+    /// to the long soft wobble of the death shake.
+    /// </summary>
+    public void DoPunchShake(float duration, float amplitude)
+    {
+        DoShake(duration, amplitude);
     }
 
     /// <summary>

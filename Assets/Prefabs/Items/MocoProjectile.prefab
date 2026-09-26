@@ -69,6 +69,9 @@ MonoBehaviour:
   kickStrugglePoints: 2
   moveStrugglePoints: 1
   struggleDrainPerSecond: 3
+  moveYank: 0.08
+  kickYank: 0.18
+  yankDecay: 1.2
   maxStuckSeconds: 2
   stuckTint: {r: 0.55, g: 0.9, b: 0.3, a: 1}
   trapColor: {r: 0.55, g: 0.9, b: 0.3, a: 0.85}

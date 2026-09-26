@@ -21,6 +21,15 @@ public sealed class MocoProjectile : ThrowableItem
     [SerializeField, Min(0f), Tooltip("Puntos que se descargan por segundo: hay que machacar más rápido que esto. 0 = barra sin descarga.")]
     private float struggleDrainPerSecond = 3f;
 
+    [SerializeField, Min(0f), Tooltip("Cuánto se desplaza el pollo al forcejear con movimiento, en unidades.")]
+    private float moveYank = 0.08f;
+
+    [SerializeField, Min(0f), Tooltip("Lo mismo al forcejear con patada: más amplio y marcado.")]
+    private float kickYank = 0.18f;
+
+    [SerializeField, Min(0.1f), Tooltip("Velocidad a la que el moco devuelve al pollo al centro (unidades/s).")]
+    private float yankDecay = 1.2f;
+
     [SerializeField, Min(0.5f), Tooltip("Tope de tiempo pegado (accesibilidad): se libera solo al cumplirse.")]
     private float maxStuckSeconds = 3f;
 
@@ -91,6 +100,9 @@ public sealed class MocoProjectile : ThrowableItem
             moveStrugglePoints,
             struggleDrainPerSecond,
             maxStuckSeconds,
+            moveYank,
+            kickYank,
+            yankDecay,
             stuckTint);
     }
 

@@ -81,7 +81,7 @@ public class PoolingManager : MonoBehaviour
 
         foreach (GameObject capsule in capsuleList)
         {
-            capsule.SetActive(false);
+            if (capsule != null) capsule.SetActive(false);
         }
     }
 
@@ -241,12 +241,26 @@ public class PoolingManager : MonoBehaviour
 
     public GameObject GetCapsule()
 	{
-		GameObject pObject = capsuleList[0];
+		GameObject pObject = null;
 
-		if (pObject.activeSelf)
+		// Antes esto miraba SIEMPRE capsuleList[0] y, si estaba ocupada,
+		// instanciaba una nueva sin registrarla. Esas cápsulas quedaban fuera
+		// de capsuleList, así que ResetPool no las apagaba y los huevos de una
+		// ronda seguían en pantalla en la siguiente.
+		foreach (GameObject capsule in capsuleList)
+		{
+			if (capsule != null && !capsule.activeSelf)
+			{
+				pObject = capsule;
+				break;
+			}
+		}
+
+		if (pObject == null)
 		{
 			Debug.Log ("All instances are busy, spawn new one");
 			pObject = Instantiate(itemCapsule.pooledObjPrefab, capsuleParent.transform);
+			capsuleList.Add(pObject);
 		}
 
 		pObject.SetActive(false);

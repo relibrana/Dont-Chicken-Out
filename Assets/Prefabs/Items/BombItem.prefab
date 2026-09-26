@@ -228,6 +228,19 @@ MonoBehaviour:
   endColor: {r: 1, g: 1, b: 1, a: 1}
   animator: {fileID: 8064756802529601347}
   fuseStartsOnThrow: 1
+  breathingVisual: {fileID: 0}
+  breathStartHz: 1.5
+  breathEndHz: 9
+  breathStartAmplitude: 0.04
+  breathEndAmplitude: 0.16
+  useProceduralFuse: 1
+  fuseAnchor: {x: 0, y: 0.35}
+  fuseLength: 0.5
+  fuseWidth: 0.06
+  fuseColor: {r: 0.32, g: 0.25, b: 0.18, a: 1}
+  sparkColor: {r: 1, g: 0.88, b: 0.35, a: 1}
+  shakeDuration: 0.25
+  shakeAmplitude: 0.55
   explosionParticles: []
   explosionSfx: {fileID: 0}
 --- !u!50 &732177368487052202

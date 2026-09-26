@@ -175,6 +175,17 @@ public sealed class PlayerMovement : MonoBehaviour
         _coyoteTimer      = 0f;
     }
 
+    /// <summary>
+    /// Kills lateral momentum without touching the fall. Used by the stun: a
+    /// player who only has input locked keeps sliding by deceleration, which
+    /// reads as skidding rather than as being dazed.
+    /// </summary>
+    public void StopHorizontal()
+    {
+        _currentVelocity.x = 0f;
+        _velocitySmoothing = 0f;
+    }
+
     /// <summary>Instantly moves the body (teleport item). Clears velocity and airborne timers.</summary>
     public void Teleport(Vector2 position)
     {

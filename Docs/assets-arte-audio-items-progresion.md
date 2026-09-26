@@ -1,6 +1,6 @@
 # Lista de assets — Arte y Audio (Items + Progresión)
 
-**Última actualización:** 2026-09-11 · **Status:** en construcción, sesión de trabajo con Mateo.
+**Última actualización:** 2026-09-25 · **Status:** en construcción, sesión de trabajo con Mateo.
 
 Este doc junta lo que falta producir en Arte y Audio para el catálogo de items (`Docs/items-implementacion.md`) y el sistema de progresión (`Docs/progression-system.md`). Ahora mismo casi todo el arte de items es el sprite de la bomba tintado por código — este doc es el pendiente real para reemplazar eso.
 
@@ -27,14 +27,16 @@ No van en la tabla de un item porque aplican a varios.
 
 | # | Tipo | Asset | Descripción | Estado |
 |---|---|---|---|---|
-| 1 | Código | Idle de respiración | La bomba se infla y desinfla en bucle. El ritmo se acelera de forma progresiva a medida que se acerca la explosión, marcando cuánto tiempo queda. Se resuelve por programación deformando el sprite, sin asset de Arte. | ⬜ Pendiente |
+| 1 | Código | Idle de respiración | La bomba se infla y desinfla en bucle. El ritmo se acelera de forma progresiva a medida que se acerca la explosión, marcando cuánto tiempo queda. Se resuelve por programación deformando el sprite, sin asset de Arte. | ✅ Hecho (sep 2026) — `BombItem.TickBreathing`, de 1.5 a 9 respiraciones/s |
 | 2 | Sprite | Sprite de la bomba | Redibujo del sprite base bajo la nueva dirección artística. | ⬜ Pendiente |
 | 3 | Animación | Explosión | Estallido de pocos frames: expansión brusca y disipación inmediata. Debe leerse violento y contundente sin quedarse en pantalla. | ⬜ Pendiente |
-| 4 | Código | Mecha y chispa | La chispa recorre la mecha mientras esta se acorta y se consume. Ambas avanzan al mismo ritmo que la respiración y llegan a cero justo al estallar. | ⬜ Pendiente |
+| 4 | Código | Mecha y chispa | La chispa recorre la mecha mientras esta se acorta y se consume. Ambas avanzan al mismo ritmo que la respiración y llegan a cero justo al estallar. | ✅ Hecho (sep 2026) — **placeholder por LineRenderer** (`BombItem.TickFuse`). Al llegar el sprite de mecha, desmarcar `Use Procedural Fuse` |
 | 5 | Animación | Quema de bloques | Cada bloque alcanzado por la explosión se prende, se consume y desaparece por separado, en vez de esfumarse de golpe. | ⬜ Pendiente |
 | 6 | Audio | Mecha encendida | Chisporroteo continuo de mecha, en bucle desde que se enciende hasta el estallido. | ✅ Hecho |
 | 7 | Audio | Explosión | Estallido grave y seco, de ataque inmediato y cola corta. | ✅ Hecho |
 | 8 | Audio | Quemazón de bloques | Crepitar de fuego de duración muy corta y volumen bajo: suenan varios a la vez cuando la explosión alcanza a muchos bloques. | ⬜ Pendiente |
+| 9 | Código | Sacudón de pantalla | Golpe de cámara corto y fuerte al estallar. | ✅ Hecho (sep 2026) — `ScreenShake.Punch`, 0.25 s / 0.55 u |
+| 10 | Código | Explosión paneada | El estallido sale por el altavoz del lado en el que ocurre. | ✅ Hecho (sep 2026) — `AudioManager.PlaySoundAt`, paneo por posición en pantalla |
 
 ---
 
@@ -49,8 +51,8 @@ El sonido de lanzarlo no se repite acá: está en *Audio compartido entre items*
 | 3 | Sprite | Splat | Mancha de moco aplastada y pegada, tal como aparece al impactar contra pared o bloque. | ⬜ Pendiente |
 | 4 | Animación | Idle del splat | Burbujas que suben y revientan en la mancha mientras sigue pegada, para que se lea viscosa y sucia. | ⬜ Pendiente |
 | 5 | Animación | Jugador atrapado | El pollo queda adherido al moco y mueve el cuerpo intentando despegarse, sin lograrlo. | ⬜ Pendiente |
-| 6 | Código | Forcejeo por movimiento | Sacudida corta del pollo hacia el lado al que empuja el jugador. Se resuelve por programación moviendo el sprite, sin asset de Arte. | ⬜ Pendiente |
-| 7 | Código | Forcejeo por patada | Misma sacudida pero más amplia y marcada que la de movimiento. También por programación. | ⬜ Pendiente |
+| 6 | Código | Forcejeo por movimiento | Sacudida corta del pollo hacia el lado al que empuja el jugador. Se resuelve por programación moviendo el sprite, sin asset de Arte. | ✅ Hecho (sep 2026) — 0.08 u, `MocoStuckState` |
+| 7 | Código | Forcejeo por patada | Misma sacudida pero más amplia y marcada que la de movimiento. También por programación. | ✅ Hecho (sep 2026) — 0.18 u |
 | 8 | Animación | Escape | El moco se agrieta, se desprende del pollo y desaparece, liberándolo. | ⬜ Pendiente |
 | 9 | Audio | Impacto contra superficie | Splat húmedo al reventar contra pared o bloque. | ⬜ Pendiente |
 | 10 | Audio | Impacto contra jugador | El mismo splat combinado con un chillido de gallina, en un solo golpe. | ⬜ Pendiente |
@@ -87,10 +89,12 @@ El sonido de lanzarlo no se repite acá: está en *Audio compartido entre items*
 | # | Tipo | Asset | Descripción | Estado |
 |---|---|---|---|---|
 | 1 | Sprite | Proyectil POW | El POW tal como se ve en la mano del jugador y durante el vuelo. | ⬜ Pendiente |
-| 2 | Animación | Impacto y activación | El POW choca contra la superficie con un golpe fuerte y queda activado, arrancando la cuenta atrás. | ⬜ Pendiente |
-| 3 | Sprite | Cuenta atrás y cartel | Arte de los números 3-2-1 y del cartel final que aparecen en pantalla para todos. | ⬜ Pendiente |
-| 4 | Código | Detonación | Sacudida de cámara en el momento en que la cuenta llega a cero. | ⬜ Pendiente |
-| 5 | Animación | Jugador aturdido | Pollo mareado y sin control mientras dura el aturdimiento. | ⬜ Pendiente |
+| 2 | Animación | Impacto y activación | El POW choca contra la superficie con un golpe fuerte y queda activado, arrancando la cuenta atrás. | ⬜ Pendiente (la lógica ya está: se clava al impactar) |
+| 3 | Sprite | Cuenta atrás y cartel | Arte de los números 3-2-1 y del cartel final. **Van encima del POW clavado**, no centrados en pantalla, y el cartel final dice `JUMP!`. | ⬜ Pendiente (placeholder de texto ya funcionando) |
+| 4 | Código | Detonación | Sacudida de cámara en el momento en que la cuenta llega a cero. | ✅ Hecho (sep 2026) — corta y fuerte, 0.22 s / 0.9 u |
+| 5 | Animación | Jugador aturdido | Pollo mareado y sin control mientras dura el aturdimiento (2.5 s, quieto en el sitio). | ⬜ Pendiente |
+| 9 | Código | Plumas al recibir el POW | Estallido de plumas en los aturdidos, como al recibir una patada. | ✅ Hecho (sep 2026) |
+| 10 | Código | Vibración de mando | Leve al esquivarlo saltando, fuerte al recibirlo. Sin efecto en teclado. | ✅ Hecho (sep 2026) — `PlayerController.Rumble` |
 | 6 | Audio | Cuenta atrás | Pitido corto por cada número, ganando intensidad y profundidad a medida que la cuenta baja. | ⬜ Pendiente |
 | 7 | Audio | Detonación | Golpe grave al llegar a cero. | ⬜ Pendiente |
 | 8 | Audio | Aturdimiento | Zumbido mareado mientras el jugador está aturdido. | ⬜ Pendiente |
@@ -166,6 +170,18 @@ Falta definir qué es el elemento: una papa caliente, una nube que se va cargand
 | 7 | Audio | Pérdida del efecto | Sonido corto que marca el momento en que se acaba. | ⬜ Pendiente |
 
 La rotura de bloques está en *Compartido entre items*.
+
+---
+
+## Etiquetas de jugador ✅
+
+Referencia de diseño: las etiquetas de Smash (hilo de Liliana, 10-14 sep 2026). De momento el texto es `Player 1..4`; está preparado para nombres personalizados (`PlayerController.SetDisplayName`).
+
+| # | Tipo | Asset | Descripción | Estado |
+|---|---|---|---|---|
+| 1 | Código | Etiqueta flotante | Texto en el mundo sobre cada pollo, con el color de ese jugador, que se oculta al morir. | ✅ Hecho (sep 2026) — `PlayerNameTag` |
+| 2 | Sprite | Fondo / flechita | Cartelito y puntero bajo el nombre, al estilo de la referencia. Hoy es texto pelado. | ⬜ Pendiente |
+| 3 | — | Colores por jugador | Un color por pollo en `MaterialsSO.labelColor`. Con alfa 0 usa la paleta por defecto (rojo / azul / amarillo / verde). | ⬜ Pendiente — que Arte fije los cuatro |
 
 ---
 
