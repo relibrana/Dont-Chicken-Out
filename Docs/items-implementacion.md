@@ -21,12 +21,12 @@ Todo vive en `Assets/Prefabs/Items/`. `Assets/SOs/ItemsPool.asset` ya tiene las 
 
 | Prefab | Peso | Valores serializados (default / rango doc) |
 |---|---|---|
-| `BombItem` (existente) | 20 | **ahora lanzable** (sep 2026): vel 12, ángulo 25°, grav 2 · la mecha arranca al lanzarla (2 s) · conserva `KickResponse`, se puede patear en el suelo |
+| `BombItem` (existente) | 20 | **ahora lanzable** (sep 2026): vel 12, ángulo 25°, grav 2 · la mecha arranca al lanzarla (2 s) · respiración de 1.5 a 9 Hz + mecha procedural · sacudón 0.25 s / 0.55 u y explosión paneada · conserva `KickResponse`, se puede patear en el suelo |
 | `SpringDisc` (= **Llanta**, ítem 5) | 12 | ahora lanzable: vel 12, ángulo 25°, grav 2 · conserva su rebote (25,35) y squash/recoil · empuje al impactar en vuelo (8,6) |
 | `MocoProjectile` | 12 | lanzamiento: vel 12, ángulo 25°, grav 2 · barra de 8 puntos (patada 2, movimiento 1, descarga 3/s), tope 3 s, trampa un solo uso ✔ |
 | `DoubleJumpPickup` | 12 | duración 6 s, altura 2º salto ×0.85, repetible ✔ |
 | `TeleportPickup` | 10 | **en mano**, se activa con el botón de colocar · destino = jugador vivo más alto · altura 2.5, capas ocupadas = Ground+Block, +1 salto aéreo al llegar |
-| `PowPickup` | 8 | **lanzable**: vel 12, ángulo 25°, grav 2 · la cuenta atrás arranca al impactar · cuenta desde 3, stun 2 s |
+| `PowPickup` | 8 | **lanzable**: vel 12, ángulo 25°, grav 2 · la cuenta atrás arranca al impactar y sale centrada en pantalla · cuenta desde 3, stun 2.5 s, sacudón 0.22 s / 0.9 u |
 | `MetalChickenPickup` | 5 | duración 6 s, salto ×1 (**no se recorta**), gravedad general ×1, gravedad de caída ×1.8, patada ×3, sin planeo |
 | `HotPotatoPickup` | 4 | **ventana absoluta** 8 s (no se resetea al pasarla), vel ×1.3, radio 2.5, empuje 12, capas explosión = Player+Block · **se pasa pateando**, no por contacto |
 | `SuperKickPickup` | 4 | duración 4 s (3–5), daño a bloques 3, empuje ×1.5 |
@@ -46,8 +46,8 @@ POW crea su propio canvas en runtime (placeholder hasta integrarlo a UIManager).
 
 1. **Pool**: pesos 100/0 reparten como se espera; sin asset asignado la cápsula sigue funcionando como antes.
 2. **Súper patada**: tinte naranja; patada mata al rival (no a ti); rompe sub-bloques de una; parpadea el último segundo; expira limpio; morir con el estado activo no deja el tinte pegado.
-3. **POW**: se lleva en la mano y se lanza; **la cuenta atrás sólo arranca cuando el proyectil impacta** (contra lo que sea), no al romper la cápsula; countdown visible para todos; al llegar a 0, sólo se aturden los que tocan suelo (saltar lo esquiva); el que lo lanzó también cae si está en el suelo; los aturdidos no se mueven/patean/colocan ~2 s pero siguen cayendo por gravedad.
-4. **Moco**: impacto a jugador lo congela en el sitio (ni gravedad); se sale llenando la barra de forcejeo — **patada 2 puntos, izquierda/derecha 1 punto**, y la barra se descarga sola a 3 puntos/s, así que hay que machacar rápido (el tinte se aclara según se llena); a los 3 s se libera solo (accesibilidad); impacto en pared/bloque deja mancha verde que atrapa al que la toca; tras liberarse hay ~1 s de inmunidad a re-pegarse.
+3. **POW**: se lleva en la mano y se lanza; **la cuenta atrás sólo arranca cuando el proyectil impacta** (contra lo que sea), no al romper la cápsula; el POW se clava donde cae y la cuenta 3-2-1-`JUMP!` sale **centrada en pantalla** (es un efecto global); al llegar a 0 hay sacudón corto y fuerte de cámara, y sólo se aturden los que tocan suelo (saltar lo esquiva); el que lo lanzó también cae si está en el suelo; los aturdidos se quedan **quietos en el sitio 2.5 s** (se les corta la velocidad lateral) pero siguen cayendo por gravedad, sueltan plumas como al recibir una patada y el mando vibra fuerte; a quien lo esquivó saltando le llega sólo un toque de vibración.
+4. **Moco**: impacto a jugador lo congela en el sitio (ni gravedad); se sale llenando la barra de forcejeo — **patada 2 puntos, izquierda/derecha 1 punto**, y la barra se descarga sola a 3 puntos/s, así que hay que machacar rápido (el tinte se aclara según se llena); cada pulsación **tira del pollo hacia el lado que pulsaste** (0.08 u con movimiento, 0.18 u con patada) y el moco lo devuelve al centro; a los 3 s se libera solo (accesibilidad); impacto en pared/bloque deja mancha verde que atrapa al que la toca; tras liberarse hay ~1 s de inmunidad a re-pegarse.
 5. **Llanta**: vuela con arco; pega en pared/bloque y queda fija toda la ronda; rebota a CUALQUIER jugador (portador incluido); si golpea a un jugador en vuelo lo empuja y queda suspendida ahí.
 6. **Papa caliente**: portador más rápido y pulsando rojo. **El temporizador es una ventana absoluta**: arranca cuando aparece la papa y no se reinicia con los traspasos — pasa de mano en mano con el tiempo que queda y el parpadeo sigue acelerando desde donde iba. **Patear a otro** la transfiere (0.5 s de gracia anti ping-pong); chocar con él NO hace nada; al llegar a cero muere quien la tenga en ese instante, da igual hace cuánto se la pasaron, y los cercanos salen empujados + bloques dañados; morir por otra causa NO explota.
 7. **Teleporte**: se queda en la mano hasta que lo activas con el botón de colocar (desde el suelo o en el aire); apareces ~2.5 sobre el **rival vivo que va más alto**; si arriba hay bloques, busca hueco más arriba; al llegar recibes **1 salto aéreo de un solo uso** para poder reaccionar; sin rivales vivos se consume sin efecto.
@@ -68,6 +68,14 @@ POW crea su propio canvas en runtime (placeholder hasta integrarlo a UIManager).
 7. Metálico: "empuja bloques más rápido" no está implementado — el empuje de bloques es caminar contra ellos y escala con velocidad lateral; darle más velocidad contradice "más pesado". Definir qué significa exactamente.
 8. Teleporte con hueco ocupado: resuelto como "sube hasta encontrar hueco libre" (el caso abierto del doc).
 9. **Resuelto (ago 2026): la llanta sustituye al disco colocable.** `SpringDisc` ES la llanta (lanzable, fija toda la ronda) y `TireProjectile` se eliminó. Efecto secundario a vigilar en playtest: el disco viejo se podía patear para negar el atajo; la llanta fija es inamovible (según doc), así que ese counterplay desaparece.
+
+## Utilidades compartidas nacidas aquí
+
+- **`ScreenShake.Punch(duración, amplitud)`** (`Assets/Scripts/Camera/ScreenShake.cs`) — puerta estática al shake del rig, sin referencias ni null-checks en cada llamante. Lo usan la bomba y el POW. Si no hay rig en escena no hace nada, así que no rompe escenas de prueba.
+- **`AudioManager.PlaySoundAt(id, posición)`** — SFX paneado por dónde ocurre en pantalla. Nació para la explosión de la bomba pero sirve para cualquier one-shot posicional.
+- **`PlayerController.Rumble(low, high, duración)`** — vibración de mando; no hace nada en teclado, así que nadie tiene que comprobar el esquema antes de llamarla. Los motores siempre se apagan por temporizador.
+- **`PlayerMovement.StopHorizontal()`** — corta el momento lateral sin tocar la caída. La usa el stun.
+- **`PlayerController.VisualRoot`** — el rig visual del pollo. Lo que necesite sacudir o desplazar al pollo mueve esto y no el cuerpo (el cuerpo lo manda el Rigidbody2D).
 
 ## Pendientes técnicos
 

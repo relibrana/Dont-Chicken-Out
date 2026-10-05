@@ -90,7 +90,7 @@ El sonido de lanzarlo no se repite acá: está en *Audio compartido entre items*
 |---|---|---|---|---|
 | 1 | Sprite | Proyectil POW | El POW tal como se ve en la mano del jugador y durante el vuelo. | ⬜ Pendiente |
 | 2 | Animación | Impacto y activación | El POW choca contra la superficie con un golpe fuerte y queda activado, arrancando la cuenta atrás. | ⬜ Pendiente (la lógica ya está: se clava al impactar) |
-| 3 | Sprite | Cuenta atrás y cartel | Arte de los números 3-2-1 y del cartel final. **Van encima del POW clavado**, no centrados en pantalla, y el cartel final dice `JUMP!`. | ⬜ Pendiente (placeholder de texto ya funcionando) |
+| 3 | Sprite | Cuenta atrás y cartel | Arte de los números 3-2-1 y del cartel final, que dice `JUMP!`. **Van centrados en pantalla**: el POW es un efecto global, así que el aviso no cuelga del proyectil (decisión de sep 2026, se probó colgado y se descartó). | ⬜ Pendiente (placeholder de texto ya funcionando) |
 | 4 | Código | Detonación | Sacudida de cámara en el momento en que la cuenta llega a cero. | ✅ Hecho (sep 2026) — corta y fuerte, 0.22 s / 0.9 u |
 | 5 | Animación | Jugador aturdido | Pollo mareado y sin control mientras dura el aturdimiento (2.5 s, quieto en el sitio). | ⬜ Pendiente |
 | 9 | Código | Plumas al recibir el POW | Estallido de plumas en los aturdidos, como al recibir una patada. | ✅ Hecho (sep 2026) |
@@ -180,8 +180,8 @@ Referencia de diseño: las etiquetas de Smash (hilo de Liliana, 10-14 sep 2026).
 | # | Tipo | Asset | Descripción | Estado |
 |---|---|---|---|---|
 | 1 | Código | Etiqueta flotante | Texto en el mundo sobre cada pollo, con el color de ese jugador, que se oculta al morir. | ✅ Hecho (sep 2026) — `PlayerNameTag` |
-| 2 | Sprite | Fondo / flechita | Cartelito y puntero bajo el nombre, al estilo de la referencia. Hoy es texto pelado. | ⬜ Pendiente |
-| 3 | — | Colores por jugador | Un color por pollo en `MaterialsSO.labelColor`. Con alfa 0 usa la paleta por defecto (rojo / azul / amarillo / verde). | ⬜ Pendiente — que Arte fije los cuatro |
+| 2 | Sprite | Fondo / flechita | Cartelito y puntero bajo el nombre, al estilo de la referencia. Hoy hay un **recuadro negro al 55%** generado por código, que se ajusta solo al ancho del nombre. | ⬜ Pendiente |
+| 3 | — | Colores por jugador | **Resuelto sin trabajo de Arte:** la etiqueta lee `_ReplacementColor1` del material del propio pollo (el color de cuerpo del shader de color-swap), así que no se pueden desincronizar. Se puede forzar otro color por jugador en `MaterialsSO.labelColor` (alfa 0 = usar el del shader). | ✅ Hecho (sep 2026) |
 
 ---
 

@@ -36,12 +36,12 @@ Party game 2D (Unity 6, URP) para 2–4 jugadores: pollos trepan bloques tipo Te
 - `Manager/` — `GameManager` (state machine Menu/Prepare/Game/Win + rondas), `PlayersManager` (join local 2–4P teclado split + gamepad), `PoolingManager` (bloques por rank Winning/Neutral/Losing), `AudioManager`/`MusicManager`/`SoundManager`, `PauseManager`, `UIManager`
 - `Player/` — `PlayerMovement` (jump buffer, coyote, glide, fall multiplier; consume `InputPayload`→`StatePayload` por tick, patrón network-ready en `PlayerPayloads.cs`), `PlayerInputHandler`, `PlayerBlockHandler`, `CluckSystem`, `HeadCollider`
 - `Controllers/` — `PlayerController`, `PlayerAnimController`, `KickCollider`/`KickResponse`, `FeatherVFXController`, `CameraController`
-- `Camera/` — `CinemachineVerticalRig2D` (auto-rise con curva de aceleración)
+- `Camera/` — `CinemachineVerticalRig2D` (auto-rise con curva de aceleración + shake), `ScreenShake` (puerta estática: `ScreenShake.Punch(dur, amp)` desde cualquier sitio)
 - `Items/` — catálogo completo implementado (ver `Docs/items-implementacion.md`): `PlayerItemState` (base de estados con timer/tinte/cleanup), `Throwing/ThrowableItem` (lanzables), por carpeta: `SuperKick`, `Pow`, `Moco`, `HotPotato`, `Teleport`, `Anvil`, `MetalChicken`, `DoubleJump`, más `Bomb` y `SpringDisc` (= la llanta lanzable del catálogo); `Objects/ItemCapsule` (pool con pesos + `IInstantItem` vs `HoldableItem`)
 - `Objects/` — `BlockScript`, `BlockDamageable` (vida de bloques), `BlockOverlapCheck`, `PlayerKiller`, interfaces `IDamageable`/`IKickable`
 - `SOs/` — config en ScriptableObjects: `PlatformerValuesSO`, `BlocksPoolSO`, `BlocksValuesSO`, `FeatherVFXConfigSO`, `MelodySO`, `SoundData`
 - `SceneChange/` — transiciones, `MainMenuController`, `MenuInputRouter`, `SessionData`
-- `UI/` — `PlayerUI`, `UIButtonSFX`
+- `UI/` — `PlayerUI`, `UIButtonSFX`, `PlayerNameTag` (etiqueta "Player N" en el mundo, color leído del shader del pollo)
 
 ## Stack y convenciones
 

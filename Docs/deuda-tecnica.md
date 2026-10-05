@@ -165,3 +165,17 @@ cápsulas nuevas sin añadirlas a `capsuleList`, así que los huevos sobrevivía
   (= one-shot); de 3 en adelante da igual lo que pongas. **Pendiente de decisión de diseño**: subir
   la vida de los bloques para que la escala tenga recorrido, o que la súper patada rompa la pieza
   entera en vez del sub-bloque.
+
+---
+
+## Ya arreglado — no volver a investigarlo
+
+Apuntado para que nadie pierda una tarde re-diagnosticando algo que ya tiene dueño.
+
+| Qué parecía | Qué era | Arreglado |
+|---|---|---|
+| Los huevos de la ronda anterior se quedaban en pantalla | `PoolingManager.GetCapsule` miraba siempre `capsuleList[0]` y, si estaba ocupada, instanciaba una cápsula nueva **sin registrarla**. `ResetPool` recorre esa lista, así que las huérfanas no se apagaban nunca | sep 2026 |
+| La capa oscura del victory salía detrás de la torre | El sorting layer `UI` está por debajo de `Items` y `Characters` (ver §2). Parcheado en runtime desde `UIManager` | sep 2026 |
+| Piezas que no volvían al pool y consola llena de `Pool is full` | `BlockOverlapCheck.DisableBlock` escondía un sub-bloque solapado apagándole collider y sprite, pero seguía contando como vivo para el `BlockScript` padre. Sin collider nadie podía matarlo, así que la pieza nunca llegaba a cero hijos. Ahora pasa por `BlockDamageable.RemoveFromPlay()` | sep 2026 |
+| Un sacudón de cámara corto se sentía flojo | `UpdateShake` normalizaba la caída de amplitud contra la duración **por defecto**, no contra la del sacudón en curso: cualquier shake más corto que el default arrancaba a una fracción de su amplitud | sep 2026 |
+| `Block Damage` de la súper patada "no hacía nada" | Sí llegaba al bloque. El valor que se probó (1) es exactamente el daño de una patada normal, así que no había diferencia que ver. Lo que sigue abierto es el rango útil, arriba en §10 | sep 2026 (diagnóstico) |

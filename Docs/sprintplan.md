@@ -49,16 +49,22 @@ Plan biweekly desde el cierre de **Vertical Slice** (hoy) hasta **Launch en July
 | M5 — Launch | ⬜ Pendiente | Custom Settings, Multiple Maps, 3 Game Modes, certs |
 | M6 — Live Ops | ⬜ Pendiente | Post-Launch (Aug 2027+) |
 
-### Sistemas ya en código (verificado a 2026-05-16)
+### Sistemas ya en código (verificado a 2026-10-05)
 
 - ✅ `GameManager` con state machine (Menu / Prepare / Game / Win) y round flow
 - ✅ `PlayersManager` con join por teclado split + gamepad (2–4P local)
-- ✅ `PlayerMovement` pulido (jump buffer, coyote, glide, head-stomp, fall multiplier)
-- ✅ `CinemachineVerticalRig2D` con auto-rise + acceleration curve
+- ✅ `PlayerMovement` pulido (jump buffer, coyote, glide, head-stomp, fall multiplier, gravedad de caída separada de la de subida)
+- ✅ `CinemachineVerticalRig2D` con auto-rise + acceleration curve + shake (`ScreenShake.Punch` como puerta estática)
 - ✅ Block pooling escalado por rank (Winning/Neutral/Losing)
-- ✅ Items: Bomb (radio explosión), Spring Disc, Item Capsules, Horizontal Spawner
-- ✅ VFX feather particle system, Cluck system, audio manager
+- ✅ **Catálogo de items completo (10/10)** con pool por pesos — ver `Docs/items-implementacion.md`
+- ✅ **Sistema de progresión (listón)** con fases, escalares y cadencia — ver `Docs/progression-system.md`
+- ✅ VFX feather particle system, Cluck system, audio manager (+ SFX paneados por posición)
+- ✅ Etiquetas "Player N" por jugador, con color leído del shader del pollo
+- ✅ Vibración de mando (`PlayerController.Rumble`), sin efecto en teclado
+- ✅ FMOD integrado
 - ✅ Main menu, scene transitions, pause flow
+
+> Lo que está **mal o frágil** en estos sistemas vive en `Docs/deuda-tecnica.md`, no aquí.
 
 ---
 
