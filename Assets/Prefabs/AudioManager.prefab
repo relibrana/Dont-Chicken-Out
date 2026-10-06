@@ -45,10 +45,13 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   initialPoolSize: 10
-  sfxMixer: {fileID: -2344371087245105957, guid: b0272a82eba65984993bb74802f13433, type: 2}
-  musicMixer: {fileID: 2036556988607103594, guid: b0272a82eba65984993bb74802f13433, type: 2}
+  sfxMixer: {fileID: -2344371087245105957, guid: b0272a82eba65984993bb74802f13433,
+    type: 2}
+  musicMixer: {fileID: 2036556988607103594, guid: b0272a82eba65984993bb74802f13433,
+    type: 2}
   musicVolume: 1
   soundEffectsVolume: 1
+  maxStereoPan: 0.8
   bgmSounds:
   - clip: {fileID: 8300000, guid: 65161e1309cae4eefae84c9c9c3d12ee, type: 3}
     id: Game
@@ -57,7 +60,7 @@ MonoBehaviour:
   - clip: {fileID: 8300000, guid: 519987becc9eb400fbc3cfccf719e7fa, type: 3}
     id: BGM_Menu_A1
     volume: 0.15
-    loop: 0
+    loop: 1
   - clip: {fileID: 8300000, guid: cb3294179089144668609a6213ab5f12, type: 3}
     id: BGM_Menu_A2
     volume: 0.15
@@ -161,7 +164,7 @@ MonoBehaviour:
     volume: 0.3
     loop: 0
   uiSfxs:
-  - clip: {fileID: 8300000, guid: e18f36faa57ac014a8cfaa5459e96daf, type: 3}
+  - clip: {fileID: 8300000, guid: a3a345d8ac07347258af0858f8b3202b, type: 3}
     id: Title
     volume: 0.3
     loop: 0
@@ -199,3 +202,4 @@ MonoBehaviour:
   - {fileID: 11400000, guid: ab956d32869b84a4fa7e149b63edf106, type: 2}
   - {fileID: 11400000, guid: 34e587045d3c98f46a107ed6795bf71b, type: 2}
   - {fileID: 11400000, guid: cd9b3cbf6f9eb8841b720c474234eeb7, type: 2}
+  melodiesVolume: 0.3
