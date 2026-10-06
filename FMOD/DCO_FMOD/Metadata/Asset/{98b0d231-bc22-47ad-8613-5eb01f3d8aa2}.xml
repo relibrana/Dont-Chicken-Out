@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<objects serializationModel="Studio.02.03.00">
+	<object class="EncodableAsset" id="{98b0d231-bc22-47ad-8613-5eb01f3d8aa2}">
+		<property name="assetPath">
+			<value>Player/Gliding/</value>
+		</property>
+		<relationship name="masterAssetFolder">
+			<destination>{314f77b0-b70e-432e-a6b1-5d226fa946ae}</destination>
+		</relationship>
+	</object>
+</objects>

@@ -15,7 +15,11 @@ MonoBehaviour:
   Path: FMOD/Desktop/Items.bank
   Name: Items
   StudioPath: bank:/New Folder/Items
+<<<<<<< Updated upstream
   lastModified: 639256149668620150
+=======
+  lastModified: 639199955366315085
+>>>>>>> Stashed changes
   FileSizes: []
   Exists: 1
 --- !u!114 &-1026441089196131494
@@ -33,7 +37,11 @@ MonoBehaviour:
   Path: FMOD/Desktop/Master.bank
   Name: Master
   StudioPath: bank:/Master
+<<<<<<< Updated upstream
   lastModified: 639256149668620150
+=======
+  lastModified: 639199955366315593
+>>>>>>> Stashed changes
   FileSizes: []
   Exists: 1
 --- !u!114 &11400000
@@ -62,7 +70,11 @@ MonoBehaviour:
   StringsBanks:
   - {fileID: 3629482631584508902}
   cacheVersion: 131860
+<<<<<<< Updated upstream
   cacheTime: 639256149668630153
+=======
+  cacheTime: 639199955366316459
+>>>>>>> Stashed changes
   SerializableEventsDict:
   - key: event:/New Event
     index: 0
@@ -110,7 +122,11 @@ MonoBehaviour:
   Path: FMOD/Desktop/Master.strings.bank
   Name: Master.strings
   StudioPath: bank:/Master.strings
+<<<<<<< Updated upstream
   lastModified: 639256149668630153
+=======
+  lastModified: 639199955366316046
+>>>>>>> Stashed changes
   FileSizes:
   - Name: 
     Value: 906
@@ -130,7 +146,11 @@ MonoBehaviour:
   Path: FMOD/Desktop/UI.bank
   Name: UI
   StudioPath: bank:/UI
+<<<<<<< Updated upstream
   lastModified: 639256149668630153
+=======
+  lastModified: 639199955366316459
+>>>>>>> Stashed changes
   FileSizes: []
   Exists: 1
 --- !u!114 &6803804550098020333
