@@ -20,7 +20,7 @@ public class StartGame : MonoBehaviour
     private void Update()
     {
         if (Input.GetKeyDown(KeyCode.F) && player1text==false){
-            SoundManager.instance.PlaySound("select");
+            AudioManager.Instance.PlaySound("select");
             player1Text.SetText("Ready");
             player1text=true;
             player1.SetActive(true);
@@ -30,7 +30,7 @@ public class StartGame : MonoBehaviour
         
 
         if (Input.GetKeyDown(KeyCode.RightShift) && player2text==false){
-            SoundManager.instance.PlaySound("select");
+            AudioManager.Instance.PlaySound("select");
             player2Text.SetText("Ready");
             player2text=true;
             player2.SetActive(true);

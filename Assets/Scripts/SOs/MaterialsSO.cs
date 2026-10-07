@@ -12,7 +12,10 @@ public class MaterialsSO : ScriptableObject
 public class PlayerMaterial
 {
     public Material playerMat;
-    public Material hayMat;
+
+    [Tooltip("Sprite de los bloques de este jugador (paja con plumas de su color). "
+             + "Reemplaza al antiguo material de tinte: los bloques ya no se pintan.")]
+    public Sprite blockSprite;
 
     [Tooltip("Color de la etiqueta 'Player N' de este jugador. Alfa 0 = sin definir: "
              + "se usa la paleta por defecto (rojo / azul / amarillo / verde).")]

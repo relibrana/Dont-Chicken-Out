@@ -24,6 +24,7 @@ Party game 2D (Unity 6, URP) para 2–4 jugadores: pollos trepan bloques tipo Te
 | `Docs/progression-system.md` | Sistema del listón: variables, montaje en escena, cómo tunear y dónde vive cada valor |
 | `Docs/assets-arte-audio-items-progresion.md` | Lista de assets de Arte y Audio pendientes por ítem (fuente: sesión con Mateo) |
 | `Docs/deuda-tecnica.md` | Cosas ya rotas o frágiles en el código, ordenadas por cuánto duelen. Leer antes de tocar muerte de jugadores, pooling o sorting layers |
+| `Docs/audio-fmod.md` | Migración del audio a FMOD: arquitectura, mapa id→evento, encargos pendientes para Audio y notas de netcode |
 
 ## Estado actual (actualizar al cambiar de fase)
 

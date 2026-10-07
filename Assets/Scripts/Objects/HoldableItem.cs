@@ -91,13 +91,6 @@ public class HoldableItem : MonoBehaviour
 	}
 
 
-    public void SetMaterial(Material material)
-    {
-        foreach (SpriteRenderer sr in spriteRenderers)
-        {
-            sr.material = material;
-        }
-    }
     public void SetColor(Color color)
     {
         foreach (SpriteRenderer sr in spriteRenderers)

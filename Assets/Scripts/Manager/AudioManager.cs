@@ -19,6 +19,20 @@ public class Sound
     public bool loop;
 }
 
+/// <summary>
+/// Puerta única de audio del juego. Desde oct 2026 el backend es **FMOD**: cada
+/// id se resuelve contra <see cref="AudioEventTableSO"/> y se dispara el evento
+/// correspondiente.
+///
+/// Los ids que todavía no tienen evento siguen sonando por el backend viejo de
+/// AudioSource, que se conserva a propósito: así la migración va evento a
+/// evento sin que nada se quede mudo, y el día que Audio entregue el que falta
+/// basta con asignarlo en la tabla — cero cambios de código.
+///
+/// Netcode (Fusion 2): esta clase es la frontera. Las guardas de rollback y el
+/// filtrado de "esto solo lo oye quien lo ve" van aquí dentro, no repartidas
+/// por los 18 scripts que piden sonido.
+/// </summary>
 public class AudioManager : MonoBehaviour
 {
     public static AudioManager Instance { get; private set; }
@@ -29,6 +43,13 @@ public class AudioManager : MonoBehaviour
     [Header("Mixer Groups")]
     [SerializeField] private AudioMixerGroup sfxMixer;
     [SerializeField] private AudioMixerGroup musicMixer;
+
+    [Header("FMOD")]
+    [SerializeField, Tooltip("Mapa id -> evento de FMOD. Sin asignar, todo suena por el sistema viejo.")]
+    private AudioEventTableSO eventTable;
+
+    [SerializeField, Tooltip("Avisa por consola de los ids que todavía no tienen evento de FMOD.")]
+    private bool logUnmappedIdsOnStart = true;
 
     [Header("Audio Settings")]
     [SerializeField, Range(0f, 1f)] private float musicVolume = 0.5f;
@@ -63,12 +84,44 @@ public class AudioManager : MonoBehaviour
     private Coroutine introToLoopCoroutine;
 
     /// <summary>True while any BGM clip is actively playing on the music source.</summary>
-    public bool IsMusicPlaying => musicSource != null && musicSource.isPlaying;
+    public bool IsMusicPlaying
+    {
+        get
+        {
+            if (_musicInstanceValid)
+            {
+                _musicInstance.getPlaybackState(out FMOD.Studio.PLAYBACK_STATE state);
+                return state != FMOD.Studio.PLAYBACK_STATE.STOPPED;
+            }
+
+            return musicSource != null && musicSource.isPlaying;
+        }
+    }
 
     // Sound trackers
     private int currentStep = 0;
     private int currentJoin = 0;
     private int currentDeath = 0;
+
+    // FMOD state. Sólo se guardan instancias de los sonidos que hay que poder
+    // parar; el resto son one-shots y FMOD los libera solo.
+    private readonly Dictionary<string, FMOD.Studio.EventInstance> _sustained = new();
+    private FMOD.Studio.EventInstance _musicInstance;
+    private bool _musicInstanceValid;
+
+    // Identidad del evento que suena ahora. Se guarda el GUID y no su ToString():
+    // FMOD.GUID no sobreescribe ToString(), así que comparar por string daría
+    // "igual" para TODOS los eventos y la música no cambiaría nunca.
+    private FMOD.GUID _musicEventGuid;
+
+    private FMOD.Studio.VCA _musicVca;
+    private FMOD.Studio.VCA _sfxVca;
+    private bool _musicVcaValid;
+    private bool _sfxVcaValid;
+    private bool _musicVcaWarned;
+    private bool _sfxVcaWarned;
+
+    private bool UsingFmod => eventTable != null;
 
     // ââ Unity lifecycle âââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 
@@ -96,6 +149,16 @@ public class AudioManager : MonoBehaviour
         musicSource = CreateMusicSource();
         musicSource.outputAudioMixerGroup = musicMixer;
         musicSource.volume = musicVolume;
+
+        InitializeFmod();
+    }
+
+    private void OnDestroy()
+    {
+        if (Instance != this) return;
+
+        ReleaseAllSustained();
+        ReleaseMusicInstance();
     }
 
     // ââ Initialization ââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
@@ -112,6 +175,64 @@ public class AudioManager : MonoBehaviour
         foreach (var item in uiSfxs)          sfxMap.Add(item.id, item);
         foreach (var item in miscsSfxs)       sfxMap.Add(item.id, item);
     }
+
+    private void InitializeFmod()
+    {
+        if (!UsingFmod)
+        {
+            Debug.LogWarning("AudioManager => sin AudioEventTable asignada: todo el audio sigue por AudioSource.");
+            return;
+        }
+
+        ApplyVcaVolumes();
+
+        if (!logUnmappedIdsOnStart) return;
+
+        List<string> pending = eventTable.ListUnmappedIds();
+        if (pending.Count > 0)
+        {
+            Debug.Log($"AudioManager => {pending.Count} ids todavía sin evento de FMOD "
+                      + $"(suenan por AudioSource): {string.Join(", ", pending)}");
+        }
+    }
+
+    /// <summary>
+    /// Resuelve un VCA de forma perezosa y lo cachea cuando lo consigue.
+    /// Perezosa a propósito: en Awake los bancos pueden no estar cargados
+    /// todavía, y resolverlos ahí dejaría los sliders muertos para siempre.
+    /// Si el VCA no existe en el proyecto de FMOD se avisa UNA vez y el volumen
+    /// sigue aplicándose al sistema viejo, en vez de petar.
+    /// </summary>
+    private bool TryResolveVca(string path, ref FMOD.Studio.VCA vca, ref bool valid, ref bool warned)
+    {
+        if (valid) return true;
+        if (string.IsNullOrEmpty(path)) return false;
+
+        try
+        {
+            vca   = FMODUnity.RuntimeManager.GetVCA(path);
+            valid = vca.isValid();
+        }
+        catch (FMODUnity.VCANotFoundException)
+        {
+            if (!warned)
+            {
+                warned = true;
+                Debug.LogWarning($"AudioManager => el VCA '{path}' no existe en el proyecto de FMOD. "
+                                 + "El slider de volumen seguirá moviendo el audio viejo.");
+            }
+
+            valid = false;
+        }
+
+        return valid;
+    }
+
+    private bool MusicVcaReady => TryResolveVca(eventTable != null ? eventTable.musicVca : null,
+                                                ref _musicVca, ref _musicVcaValid, ref _musicVcaWarned);
+
+    private bool SfxVcaReady   => TryResolveVca(eventTable != null ? eventTable.sfxVca : null,
+                                                ref _sfxVca, ref _sfxVcaValid, ref _sfxVcaWarned);
 
     private void InitializeMelodyMap()
     {
@@ -184,6 +305,8 @@ public class AudioManager : MonoBehaviour
     /// </summary>
     public AudioSource PlayMusic(string bgmId)
     {
+        if (TryPlayFmodMusic(bgmId)) return null;
+
         Sound bgm = FindBgm(bgmId);
         if (bgm == null) return null;
 
@@ -207,6 +330,11 @@ public class AudioManager : MonoBehaviour
     /// </summary>
     public void PlayMusicWithIntro(string introId, string loopId)
     {
+        // En FMOD el intro y el loop viven dentro del MISMO evento, con
+        // transition markers. Así que aquí sólo hace falta pedir el evento: el
+        // id del loop y el del intro apuntan al mismo sitio en la tabla.
+        if (TryPlayFmodMusic(loopId) || TryPlayFmodMusic(introId)) return;
+
         Sound intro = FindBgm(introId);
         Sound loop  = FindBgm(loopId);
 
@@ -229,8 +357,40 @@ public class AudioManager : MonoBehaviour
 
     public void StopMusic()
     {
+        ReleaseMusicInstance();
+
         CancelIntroToLoop();
         musicSource.Stop();
+    }
+
+    /// <summary>
+    /// Arranca la música por FMOD. Si el evento pedido ya está sonando no se
+    /// reinicia: es lo que permite que BGM_Menu_A1 / A2 / B apunten todos a
+    /// event:/BGM/Menu sin cortarse unos a otros al cambiar de pantalla.
+    /// </summary>
+    private bool TryPlayFmodMusic(string bgmId)
+    {
+        if (!UsingFmod) return false;
+        if (!eventTable.TryGetMusic(bgmId, out AudioEventTableSO.Binding binding)) return false;
+
+        FMOD.GUID eventGuid = binding.eventRef.Guid;
+
+        if (_musicInstanceValid && _musicEventGuid == eventGuid)
+            return true;
+
+        ReleaseMusicInstance();
+
+        // Si quedaba música del sistema viejo sonando, se corta: sólo puede
+        // haber una fuente de BGM a la vez.
+        CancelIntroToLoop();
+        if (musicSource != null) musicSource.Stop();
+
+        _musicInstance      = FMODUnity.RuntimeManager.CreateInstance(binding.eventRef);
+        _musicInstanceValid = true;
+        _musicEventGuid     = eventGuid;
+
+        _musicInstance.start();
+        return true;
     }
 
     /// <summary>
@@ -243,8 +403,22 @@ public class AudioManager : MonoBehaviour
     /// </summary>
     public void SetMusicPitch(float pitch)
     {
+        float safePitch = Mathf.Max(0.01f, pitch);
+
+        if (_musicInstanceValid)
+        {
+            // Con parámetro de tempo el tono NO sube: es lo que pedía el doc de
+            // progresión. Sin parámetro se cae al pitch, que sí lo sube.
+            if (!string.IsNullOrEmpty(eventTable.musicTempoParameter))
+                _musicInstance.setParameterByName(eventTable.musicTempoParameter, safePitch);
+            else
+                _musicInstance.setPitch(safePitch);
+
+            return;
+        }
+
         if (musicSource == null) return;
-        musicSource.pitch = Mathf.Max(0.01f, pitch);
+        musicSource.pitch = safePitch;
     }
 
     private IEnumerator TransitionToLoop(Sound loop)
@@ -279,7 +453,20 @@ public class AudioManager : MonoBehaviour
 
     // ââ SFX ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 
+    /// <summary>
+    /// Dispara un efecto. Intenta FMOD primero y cae al AudioSource viejo si ese
+    /// id todavía no tiene evento. Nadie usa el AudioSource que devuelve — se
+    /// mantiene el tipo para no tocar las llamadas existentes.
+    /// </summary>
     public AudioSource PlaySound(string id)
+    {
+        if (TryPlayFmodSfx(id, null, null)) return null;
+
+        return PlayLegacySound(id);
+    }
+
+    /// <summary>Camino viejo: pool de AudioSource. Se usa como red de seguridad.</summary>
+    private AudioSource PlayLegacySound(string id)
     {
         sfxMap.TryGetValue(id, out Sound sfx);
         if (sfx == null)
@@ -310,7 +497,9 @@ public class AudioManager : MonoBehaviour
     /// <summary>Plays a sound with a custom pitch. Useful for staggered sub-block placement scales.</summary>
     public AudioSource PlaySound(string id, float pitch)
     {
-        var src = PlaySound(id);
+        if (TryPlayFmodSfx(id, pitch, null)) return null;
+
+        var src = PlayLegacySound(id);
         if (src != null) src.pitch = pitch;
         return src;
     }
@@ -324,13 +513,116 @@ public class AudioManager : MonoBehaviour
     /// </summary>
     public AudioSource PlaySoundAt(string id, Vector3 worldPosition, float pitch = 1f)
     {
-        var src = PlaySound(id);
+        if (TryPlayFmodSfx(id, pitch, worldPosition)) return null;
+
+        var src = PlayLegacySound(id);
         if (src == null) return null;
 
         src.pitch     = pitch;
         src.panStereo = PanForWorldPosition(worldPosition);
 
         return src;
+    }
+
+    // ---- Backend de FMOD ----------------------------------------------------
+
+    /// <summary>
+    /// Intenta sonar por FMOD. Devuelve false si no hay tabla o si ese id
+    /// todavía no tiene evento, que es la señal para caer al backend viejo.
+    /// </summary>
+    private bool TryPlayFmodSfx(string id, float? pitch, Vector3? worldPosition)
+    {
+        if (!UsingFmod) return false;
+        if (!eventTable.TryGetSfx(id, out AudioEventTableSO.Binding binding)) return false;
+
+        // Sostenidos (la mecha de la bomba, loops de estado): se guarda la
+        // instancia porque hay que poder pararlos por id.
+        if (binding.sustained)
+        {
+            StopSustained(id); // nunca dos copias del mismo loop sonando
+
+            FMOD.Studio.EventInstance loop = FMODUnity.RuntimeManager.CreateInstance(binding.eventRef);
+            ApplyPitch(loop, binding, pitch);
+            ApplyPan(loop, binding, worldPosition);
+            loop.start();
+
+            _sustained[id] = loop;
+            return true;
+        }
+
+        // One-shot sin ajustes: el camino barato, FMOD lo gestiona entero.
+        if (!pitch.HasValue && !worldPosition.HasValue)
+        {
+            FMODUnity.RuntimeManager.PlayOneShot(binding.eventRef);
+            return true;
+        }
+
+        FMOD.Studio.EventInstance instance = FMODUnity.RuntimeManager.CreateInstance(binding.eventRef);
+        ApplyPitch(instance, binding, pitch);
+        ApplyPan(instance, binding, worldPosition);
+        instance.start();
+        instance.release(); // se libera sola al acabar
+        return true;
+    }
+
+    private static void ApplyPitch(FMOD.Studio.EventInstance instance, AudioEventTableSO.Binding binding, float? pitch)
+    {
+        if (!pitch.HasValue) return;
+
+        if (!string.IsNullOrEmpty(binding.pitchParameter))
+            instance.setParameterByName(binding.pitchParameter, pitch.Value);
+        else
+            instance.setPitch(pitch.Value);
+    }
+
+    /// <summary>
+    /// Los eventos del proyecto son 2D, así que el paneo sólo existe si Audio
+    /// expone un parámetro para ello. Sin parámetro el sonido suena centrado:
+    /// no es un fallo, es que ese evento todavía no sabe panearse.
+    /// </summary>
+    private void ApplyPan(FMOD.Studio.EventInstance instance, AudioEventTableSO.Binding binding, Vector3? worldPosition)
+    {
+        if (!worldPosition.HasValue) return;
+        if (string.IsNullOrEmpty(binding.panParameter)) return;
+
+        instance.setParameterByName(binding.panParameter, PanForWorldPosition(worldPosition.Value));
+    }
+
+    private void StopSustained(string id)
+    {
+        if (!_sustained.TryGetValue(id, out FMOD.Studio.EventInstance instance)) return;
+
+        instance.stop(FMOD.Studio.STOP_MODE.ALLOWFADEOUT);
+        instance.release();
+        _sustained.Remove(id);
+    }
+
+    private void ReleaseAllSustained()
+    {
+        foreach (FMOD.Studio.EventInstance instance in _sustained.Values)
+        {
+            instance.stop(FMOD.Studio.STOP_MODE.IMMEDIATE);
+            instance.release();
+        }
+
+        _sustained.Clear();
+    }
+
+    private void ReleaseMusicInstance()
+    {
+        if (!_musicInstanceValid) return;
+
+        _musicInstance.stop(FMOD.Studio.STOP_MODE.ALLOWFADEOUT);
+        _musicInstance.release();
+
+        _musicInstanceValid = false;
+        _musicEventGuid     = default;
+    }
+
+    private void ApplyVcaVolumes()
+    {
+        if (MusicVcaReady) _musicVca.setVolume(musicVolume);
+        if (SfxVcaReady)   _sfxVca.setVolume(soundEffectsVolume);
     }
 
     /// <summary>
@@ -364,6 +656,12 @@ public class AudioManager : MonoBehaviour
 
     public void StopSound(string id)
     {
+        if (_sustained.ContainsKey(id))
+        {
+            StopSustained(id);
+            return;
+        }
+
         sfxMap.TryGetValue(id, out Sound sfx);
         if (sfx == null)
         {
@@ -385,6 +683,8 @@ public class AudioManager : MonoBehaviour
 
     public void StopAllSfxs()
     {
+        ReleaseAllSustained();
+
         allSources.RemoveAll(src => src == null);
 
         List<AudioSource> sourcesToRelease = new List<AudioSource>();
@@ -441,14 +741,19 @@ public class AudioManager : MonoBehaviour
 
         switch (type)
         {
+            // Se aplica a los dos backends a la vez: el VCA manda sobre lo que
+            // ya suena por FMOD, y el volumen viejo sobre lo que todavía no ha
+            // migrado. Mientras la migración esté a medias hacen falta ambos.
             case SoundsType.Music:
                 musicVolume = clampedValue;
+                if (MusicVcaReady) _musicVca.setVolume(musicVolume);
                 if (musicSource != null)
                     musicSource.volume = musicVolume;
                 break;
 
             case SoundsType.Sfxs:
                 soundEffectsVolume = clampedValue;
+                if (SfxVcaReady) _sfxVca.setVolume(soundEffectsVolume);
                 foreach (var src in allSources)
                 {
                     if (src.isPlaying && src.outputAudioMixerGroup == sfxMixer)
@@ -460,8 +765,16 @@ public class AudioManager : MonoBehaviour
 
     // ââ Simple sound accessors ââââââââââââââââââââââââââââââââââââââââââââââââ
 
+    // Estos tres elegían a mano un clip al azar sin repetir el anterior. En FMOD
+    // eso lo hace el propio evento (multi-instrument), así que basta con
+    // dispararlo: el código deja de decidir CÓMO suena y Audio puede iterarlo
+    // sin pedir builds. Si el evento todavía no existe, se cae a la rotación
+    // vieja y no se nota nada.
+
     public void MakeStepSound()
     {
+        if (TryPlayFmodSfx("player_steps", null, null)) return;
+
         int newStep = GetNonRepeatedRandomNumber(currentStep, playerStepSfxs.Count);
         StopSound($"step{currentStep}");
         PlaySound($"step{newStep}");
@@ -470,6 +783,8 @@ public class AudioManager : MonoBehaviour
 
     public void MakeDeathSound()
     {
+        if (TryPlayFmodSfx("player_death", null, null)) return;
+
         int newDeath = GetNonRepeatedRandomNumber(currentDeath, playerDeathSfxs.Count);
         StopSound($"death{currentDeath}");
         PlaySound($"death{newDeath}");
@@ -478,6 +793,8 @@ public class AudioManager : MonoBehaviour
 
     public void MakeJoinSound()
     {
+        if (TryPlayFmodSfx("player_spawn", null, null)) return;
+
         int newJoin = GetNonRepeatedRandomNumber(currentJoin, playerJoinSfxs.Count);
         StopSound($"join{currentJoin}");
         PlaySound($"join{newJoin}");

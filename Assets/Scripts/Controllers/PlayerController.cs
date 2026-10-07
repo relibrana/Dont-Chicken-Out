@@ -40,7 +40,9 @@ public sealed class PlayerController : MonoBehaviour, IKickable
     [NonSerialized] public Vector2 startPosition;
 
     public GameStatus GameRank    { get; private set; } = GameStatus.Neutral;
-    public Material   HayMaterial { get; private set; }
+
+    /// <summary>Sprite for this player's blocks (feathers in their colour). Comes from MaterialsSO.</summary>
+    public Sprite     BlockSprite { get; private set; }
 
     /// <summary>This player's colour for the name tag. Comes from MaterialsSO.</summary>
     public Color LabelColor { get; private set; } = new Color(1f, 1f, 1f, 0f);
@@ -357,12 +359,13 @@ public sealed class PlayerController : MonoBehaviour, IKickable
             animController.PlayHitFront();
     }
 
-    /// <summary>Sets player and hay materials on all sprite renderers.</summary>
+    /// <summary>Sets the player material on all sprite renderers and this player's block sprite.</summary>
     public void SetMaterials(PlayerMaterial mats)
     {
-        HayMaterial = mats.hayMat;
+        BlockSprite = mats.blockSprite;
         LabelColor  = ResolveLabelColor(mats);
-        _blockHandler.CurrentBlock?.SetMaterial(HayMaterial);
+        if (_blockHandler.CurrentBlock is BlockScript block)
+            block.SetBlockSprite(BlockSprite);
 
         var renderers = GetComponentsInChildren<SpriteRenderer>();
         foreach (var sr in renderers)

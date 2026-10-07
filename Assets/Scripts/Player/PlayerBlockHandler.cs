@@ -170,7 +170,8 @@ public sealed class PlayerBlockHandler : MonoBehaviour
 
         CurrentBlock = randomBlock.GetComponent<HoldableItem>();
         CurrentBlock.SetOwner(_controller);
-        CurrentBlock.SetMaterial(_controller.HayMaterial);
+        if (CurrentBlock is BlockScript block)
+            block.SetBlockSprite(_controller.BlockSprite);
         CurrentBlock.StartHold();
 
         CanPlaceBlock = false;

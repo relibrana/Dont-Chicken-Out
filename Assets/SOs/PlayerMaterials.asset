@@ -14,10 +14,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   playerMaterials:
   - playerMat: {fileID: 2100000, guid: b3815292ae75c3343b9655d26361701d, type: 2}
-    hayMat: {fileID: 2100000, guid: f3aeb9eed9abd9647a1c3e707a030560, type: 2}
+    blockSprite: {fileID: 21300000, guid: 1237b165fc6e464b87d7e270a04e0840, type: 3}
   - playerMat: {fileID: 2100000, guid: f3e47e08dc9142e449f51a96a336b1af, type: 2}
-    hayMat: {fileID: 2100000, guid: d8367e28acf6a9e46be9b54044c8a16f, type: 2}
+    blockSprite: {fileID: 21300000, guid: d224e65756cb4620a79068d6ebc947bf, type: 3}
   - playerMat: {fileID: 2100000, guid: 02350043c8af27c489a6f54c51413997, type: 2}
-    hayMat: {fileID: 2100000, guid: 129e8bef9012d044c89a147bdab215b3, type: 2}
+    blockSprite: {fileID: 21300000, guid: a10b577f35be4091b93db69526344f3f, type: 3}
   - playerMat: {fileID: 2100000, guid: 48aff304d3926e34badf022242c6441b, type: 2}
-    hayMat: {fileID: 2100000, guid: 53ac99d53be7ad646b426200101ddacb, type: 2}
+    blockSprite: {fileID: 21300000, guid: ee82f6337a294179a6fc8e64ae1568f7, type: 3}

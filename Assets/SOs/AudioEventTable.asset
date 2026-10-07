@@ -1,0 +1,306 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 98ae0bca5ce7f2d4bb7a3eb9d9aa09e1, type: 3}
+  m_Name: AudioEventTable
+  m_EditorClassIdentifier: 
+  sfx:
+  - id: player_jump
+    eventRef:
+      Guid:
+        Data1: 1016336392
+        Data2: 1179873175
+        Data3: -1609551477
+        Data4: 776760049
+      Path: event:/SFX/Player/Jump
+    sustained: 0
+    pitchParameter: 
+    panParameter: 
+  - id: player_kick
+    eventRef:
+      Guid:
+        Data1: 1702051758
+        Data2: 1170343959
+        Data3: -382775388
+        Data4: -1381577015
+      Path: event:/SFX/Player/Kick
+    sustained: 0
+    pitchParameter: 
+    panParameter: 
+  - id: player_land
+    eventRef:
+      Guid:
+        Data1: 1290067470
+        Data2: 1178847489
+        Data3: 1717066424
+        Data4: -334945559
+      Path: event:/SFX/Player/Land
+    sustained: 0
+    pitchParameter: 
+    panParameter: 
+  - id: player_steps
+    eventRef:
+      Guid:
+        Data1: -1485953621
+        Data2: 1220822115
+        Data3: -1613958514
+        Data4: 2006886536
+      Path: event:/SFX/Player/Steps
+    sustained: 0
+    pitchParameter: 
+    panParameter: 
+  - id: player_death
+    eventRef:
+      Guid:
+        Data1: 533392255
+        Data2: 1152362089
+        Data3: -109704793
+        Data4: -181793145
+      Path: event:/SFX/Player/Death
+    sustained: 0
+    pitchParameter: 
+    panParameter: 
+  - id: player_spawn
+    eventRef:
+      Guid:
+        Data1: -1310524387
+        Data2: 1191311058
+        Data3: -1174554973
+        Data4: 147838373
+      Path: event:/SFX/Player/Spawn
+    sustained: 0
+    pitchParameter: 
+    panParameter: 
+  - id: player_gliding
+    eventRef:
+      Guid:
+        Data1: 2050825056
+        Data2: 1204958301
+        Data3: 846742715
+        Data4: 1298040261
+      Path: event:/SFX/Player/Gliding
+    sustained: 1
+    pitchParameter: 
+    panParameter: 
+  - id: block_placement
+    eventRef:
+      Guid:
+        Data1: 833936850
+        Data2: 1294412850
+        Data3: 1031157141
+        Data4: -1380791719
+      Path: event:/SFX/Blocks/Placement
+    sustained: 0
+    pitchParameter: 
+    panParameter: 
+  - id: block_invalid
+    eventRef:
+      Guid:
+        Data1: -698217673
+        Data2: 1256383433
+        Data3: -212748885
+        Data4: 925942647
+      Path: event:/SFX/Blocks/Invalid
+    sustained: 0
+    pitchParameter: 
+    panParameter: 
+  - id: block_pushing
+    eventRef:
+      Guid:
+        Data1: 1942566973
+        Data2: 1243183263
+        Data3: 2038005948
+        Data4: 2070314303
+      Path: event:/SFX/Blocks/Pushing
+    sustained: 1
+    pitchParameter: 
+    panParameter: 
+  - id: egg_break
+    eventRef:
+      Guid:
+        Data1: -573824313
+        Data2: 1196919357
+        Data3: -412136549
+        Data4: -1293921594
+      Path: event:/SFX/Items/Easter Egg
+    sustained: 0
+    pitchParameter: 
+    panParameter: 
+  - id: tire_bounce
+    eventRef:
+      Guid:
+        Data1: 810762071
+        Data2: 1271258362
+        Data3: -589471081
+        Data4: 1167385948
+      Path: event:/SFX/Items/Tire
+    sustained: 0
+    pitchParameter: 
+    panParameter: 
+  - id: bomb_explosion
+    eventRef:
+      Guid:
+        Data1: 1644962679
+        Data2: 1158529146
+        Data3: 2111539630
+        Data4: 2016927511
+      Path: event:/SFX/Items/Bomb
+    sustained: 0
+    pitchParameter: 
+    panParameter: 
+  - id: game_countdown
+    eventRef:
+      Guid:
+        Data1: -1052059849
+        Data2: 1096164476
+        Data3: -381320287
+        Data4: 1469982203
+      Path: event:/SFX/UI/Countdown
+    sustained: 0
+    pitchParameter: 
+    panParameter: 
+  - id: game_start
+    eventRef:
+      Guid:
+        Data1: 700978533
+        Data2: 1308073538
+        Data3: 1081932725
+        Data4: 1198024525
+      Path: event:/SFX/UI/Start Round
+    sustained: 0
+    pitchParameter: 
+    panParameter: 
+  - id: win_round
+    eventRef:
+      Guid:
+        Data1: 931755293
+        Data2: 1129840173
+        Data3: -1198384470
+        Data4: 1571861437
+      Path: event:/SFX/UI/Win Round
+    sustained: 0
+    pitchParameter: 
+    panParameter: 
+  - id: button_selected
+    eventRef:
+      Guid:
+        Data1: 1694192274
+        Data2: 1246949801
+        Data3: -803562309
+        Data4: 88409689
+      Path: event:/SFX/UI/Button
+    sustained: 0
+    pitchParameter: 
+    panParameter: 
+  - id: select
+    eventRef:
+      Guid:
+        Data1: 1694192274
+        Data2: 1246949801
+        Data3: -803562309
+        Data4: 88409689
+      Path: event:/SFX/UI/Button
+    sustained: 0
+    pitchParameter: 
+    panParameter: 
+  - id: bomb_lighter
+    eventRef:
+      Guid:
+        Data1: 0
+        Data2: 0
+        Data3: 0
+        Data4: 0
+      Path: 
+    sustained: 1
+    pitchParameter: 
+    panParameter: 
+  - id: button_hover
+    eventRef:
+      Guid:
+        Data1: 0
+        Data2: 0
+        Data3: 0
+        Data4: 0
+      Path: 
+    sustained: 0
+    pitchParameter: 
+    panParameter: 
+  - id: scene_transitionIn
+    eventRef:
+      Guid:
+        Data1: 0
+        Data2: 0
+        Data3: 0
+        Data4: 0
+      Path: 
+    sustained: 0
+    pitchParameter: 
+    panParameter: 
+  - id: scene_transitionOut
+    eventRef:
+      Guid:
+        Data1: 0
+        Data2: 0
+        Data3: 0
+        Data4: 0
+      Path: 
+    sustained: 0
+    pitchParameter: 
+    panParameter: 
+  music:
+  - id: Game
+    eventRef:
+      Guid:
+        Data1: 93603995
+        Data2: 1122550904
+        Data3: -1646909776
+        Data4: 2093986886
+      Path: event:/BGM/Gameplay
+    sustained: 0
+    pitchParameter: 
+    panParameter: 
+  - id: BGM_Menu_A1
+    eventRef:
+      Guid:
+        Data1: 248385864
+        Data2: 1235809688
+        Data3: -670552141
+        Data4: -1038299578
+      Path: event:/BGM/Menu
+    sustained: 0
+    pitchParameter: 
+    panParameter: 
+  - id: BGM_Menu_A2
+    eventRef:
+      Guid:
+        Data1: 248385864
+        Data2: 1235809688
+        Data3: -670552141
+        Data4: -1038299578
+      Path: event:/BGM/Menu
+    sustained: 0
+    pitchParameter: 
+    panParameter: 
+  - id: BGM_Menu_B
+    eventRef:
+      Guid:
+        Data1: 248385864
+        Data2: 1235809688
+        Data3: -670552141
+        Data4: -1038299578
+      Path: event:/BGM/Menu
+    sustained: 0
+    pitchParameter: 
+    panParameter: 
+  musicVca: vca:/Music
+  sfxVca: vca:/SFX
+  musicTempoParameter: 
+  gameStateParameter: GameState

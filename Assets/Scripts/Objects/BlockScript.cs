@@ -56,6 +56,21 @@ public class BlockScript : HoldableItem
 			gameObject.SetActive(false);
 	}
 
+	/// <summary>
+	/// Swaps every sub-block to the owner's block sprite (paja con plumas de su color).
+	/// Null keeps the prefab's sprite. Pooled blocks are shared between players,
+	/// so this runs every time a player takes one from the pool.
+	/// </summary>
+	public void SetBlockSprite(Sprite sprite)
+	{
+		if (sprite == null) return;
+
+		foreach (SpriteRenderer rend in spriteRenderers)
+		{
+			rend.sprite = sprite;
+		}
+	}
+
 	// Placement sound is handled per sub-block inside AnimateAppearRoutine.
 	protected override void OnPlaceSfx() { }
 
