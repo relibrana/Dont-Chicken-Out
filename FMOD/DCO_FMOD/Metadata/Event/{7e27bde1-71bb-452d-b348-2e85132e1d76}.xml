@@ -1,6 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <objects serializationModel="Studio.02.03.00">
 	<object class="Event" id="{7e27bde1-71bb-452d-b348-2e85132e1d76}">
+		<property name="color">
+			<value>Yellow Light 1</value>
+		</property>
 		<property name="name">
 			<value>Title</value>
 		</property>
@@ -9,6 +12,10 @@
 		</property>
 		<relationship name="folder">
 			<destination>{6b1c568c-7eb0-4ec7-8c20-5c5d359f5861}</destination>
+		</relationship>
+		<relationship name="tags">
+			<destination>{b2fb178f-f10e-4565-b4c9-77c664f5e54a}</destination>
+			<destination>{76dd208e-1ab0-4505-b637-f10800c40688}</destination>
 		</relationship>
 		<relationship name="mixer">
 			<destination>{23fc9ed9-baea-45b6-aa14-2e3f22e30368}</destination>

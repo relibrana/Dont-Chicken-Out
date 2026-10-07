@@ -1,6 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <objects serializationModel="Studio.02.03.00">
 	<object class="Event" id="{73c9383d-789f-4a19-bc80-79793f7d667b}">
+		<property name="color">
+			<value>Purple Light 1</value>
+		</property>
 		<property name="name">
 			<value>Pushing</value>
 		</property>
@@ -9,6 +12,10 @@
 		</property>
 		<relationship name="folder">
 			<destination>{9d98a1ff-4780-47ac-ae0c-4bad5524146c}</destination>
+		</relationship>
+		<relationship name="tags">
+			<destination>{2097d5e0-84e9-4d59-a35e-8d9e0d5f4df7}</destination>
+			<destination>{76dd208e-1ab0-4505-b637-f10800c40688}</destination>
 		</relationship>
 		<relationship name="mixer">
 			<destination>{36b4cfb5-8f44-4207-ba5d-bfae0370759c}</destination>
