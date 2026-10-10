@@ -196,10 +196,8 @@ public sealed class ProgressionManager : MonoBehaviour
 
         _ribbon?.Despawn();
 
-        // ApplyMusicTempo already resolves to pitch 1 at phase 1, so this also
-        // keeps the tempo right when the round starts at a later phase.
-        if (values != null) ApplyMusicTempo();
-        else                AudioManager.Instance?.SetMusicPitch(1f);
+        // Also keeps the music right when the round starts at a later phase.
+        ReportPhaseToAudio();
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
         WarnIfDebugOverridesActive();
@@ -245,7 +243,7 @@ public sealed class ProgressionManager : MonoBehaviour
         _timer        = values.IntervalForPhase(CurrentPhase);
         _timerRunning = true;
 
-        ApplyMusicTempo();
+        ReportPhaseToAudio();
         PlaySfx(values.phaseChangeSfxId);
 
         OnPhaseChanged?.Invoke(CurrentPhase);
@@ -349,13 +347,8 @@ public sealed class ProgressionManager : MonoBehaviour
         AudioManager.Instance?.PlaySound(id);
     }
 
-    private void ApplyMusicTempo()
-    {
-        if (values == null || AudioManager.Instance == null) return;
-
-        float pitch = 1f + values.musicPitchPerPhase * (CurrentPhase - 1);
-        AudioManager.Instance.SetMusicPitch(Mathf.Min(pitch, values.musicPitchMax));
-    }
+    // Only reports the phase; what the music does with it is authored in FMOD.
+    private void ReportPhaseToAudio() => AudioManager.Instance?.SetProgressionPhase(CurrentPhase);
 
     // ── View helpers ──────────────────────────────────────────────────────────
 

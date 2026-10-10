@@ -51,13 +51,12 @@ public class AudioManager : MonoBehaviour
     [SerializeField, Tooltip("Avisa por consola de los ids que todavía no tienen evento de FMOD.")]
     private bool logUnmappedIdsOnStart = true;
 
-    [Header("Audio Settings")]
-    [SerializeField, Range(0f, 1f)] private float musicVolume = 0.5f;
-    [SerializeField, Range(0f, 1f)] private float soundEffectsVolume = 0.8f;
-
-    [SerializeField, Range(0f, 1f), Tooltip("Paneo máximo de los SFX posicionales. 1 = un lado del todo; "
-             + "por debajo de 1 un sonido al borde de la pantalla sigue oyéndose por los dos altavoces.")]
-    private float maxStereoPan = 0.8f;
+    // Elección del jugador en ajustes (0..1), no una decisión de mezcla: la
+    // mezcla la hace Audio en FMOD y esto sólo la escala a través de los VCAs.
+    // A 1 se oye exactamente lo que Audio mezcló. A propósito no se expone en
+    // el inspector: el código no decide cómo suena nada.
+    private float musicVolume        = 1f;
+    private float soundEffectsVolume = 1f;
 
     private Camera _pannningCamera;
 
@@ -426,31 +425,18 @@ public class AudioManager : MonoBehaviour
     }
 
     /// <summary>
-    /// Scales the tempo of the current BGM. Used by the progression system to
-    /// accompany each phase change.
-    ///
-    /// Interim implementation: AudioSource.pitch shifts speed and key together.
-    /// Replace with an FMOD tempo parameter once audio delivers one â only the
-    /// body of this method needs to change.
+    /// Le dice a FMOD en qué fase de progresión está la partida (1, 2, 3…) por
+    /// el parámetro global <c>progressionPhaseParameter</c>. Qué cambia con la
+    /// fase (tempo, capas, intensidad) lo decide Audio; el código no toca el
+    /// pitch de la música. Al ser global, sobrevive a los cambios de pista y lo
+    /// puede leer cualquier evento.
     /// </summary>
-    public void SetMusicPitch(float pitch)
+    public void SetProgressionPhase(int phase)
     {
-        float safePitch = Mathf.Max(0.01f, pitch);
+        if (!UsingFmod) return;
+        if (string.IsNullOrEmpty(eventTable.progressionPhaseParameter)) return;
 
-        if (_musicInstanceValid)
-        {
-            // Con parámetro de tempo el tono NO sube: es lo que pedía el doc de
-            // progresión. Sin parámetro se cae al pitch, que sí lo sube.
-            if (!string.IsNullOrEmpty(eventTable.musicTempoParameter))
-                _musicInstance.setParameterByName(eventTable.musicTempoParameter, safePitch);
-            else
-                _musicInstance.setPitch(safePitch);
-
-            return;
-        }
-
-        if (musicSource == null) return;
-        musicSource.pitch = safePitch;
+        FMODUnity.RuntimeManager.StudioSystem.setParameterByName(eventTable.progressionPhaseParameter, phase);
     }
 
     private IEnumerator TransitionToLoop(Sound loop)
@@ -526,34 +512,30 @@ public class AudioManager : MonoBehaviour
         return src;
     }
 
-    /// <summary>Plays a sound with a custom pitch. Useful for staggered sub-block placement scales.</summary>
-    public AudioSource PlaySound(string id, float pitch)
+    /// <summary>
+    /// Dispara un efecto acompañado de un dato del juego (p. ej. qué celda de
+    /// la pieza se coloca: 0, 1, 2…). El dato va al parámetro <c>valueParameter</c>
+    /// del evento y Audio decide en FMOD qué hace con él. El código nunca lo
+    /// convierte en pitch ni volumen.
+    /// </summary>
+    public AudioSource PlaySound(string id, float value)
     {
-        if (TryPlayFmodSfx(id, pitch, null)) return null;
+        if (TryPlayFmodSfx(id, value, null)) return null;
 
-        var src = PlayLegacySound(id);
-        if (src != null) src.pitch = pitch;
-        return src;
+        return PlayLegacySound(id);
     }
 
     /// <summary>
-    /// Plays a SFX panned by where it happens on screen: something that goes
-    /// off on the left comes out of the left speaker. Used by the bomb and any
-    /// other positional one-shot.
-    /// The SFX stay 2D on purpose — full 3D audio would also attenuate them by
-    /// distance and drop the ones near the edge of a 4-player screen.
+    /// Dispara un efecto diciéndole a FMOD en qué lado de la pantalla pasó
+    /// (parámetro <c>panParameter</c>, −1 … 1). Cuánto panea lo decide Audio.
+    /// Los SFX son 2D a propósito: el audio 3D también atenuaría por distancia
+    /// y se perderían los de los bordes de una pantalla de 4 jugadores.
     /// </summary>
-    public AudioSource PlaySoundAt(string id, Vector3 worldPosition, float pitch = 1f)
+    public AudioSource PlaySoundAt(string id, Vector3 worldPosition)
     {
-        if (TryPlayFmodSfx(id, pitch, worldPosition)) return null;
+        if (TryPlayFmodSfx(id, null, worldPosition)) return null;
 
-        var src = PlayLegacySound(id);
-        if (src == null) return null;
-
-        src.pitch     = pitch;
-        src.panStereo = PanForWorldPosition(worldPosition);
-
-        return src;
+        return PlayLegacySound(id);
     }
 
     /// <summary>
@@ -601,7 +583,7 @@ public class AudioManager : MonoBehaviour
     /// Intenta sonar por FMOD. Devuelve false si no hay tabla o si ese id
     /// todavía no tiene evento, que es la señal para caer al backend viejo.
     /// </summary>
-    private bool TryPlayFmodSfx(string id, float? pitch, Vector3? worldPosition, int owner = 0)
+    private bool TryPlayFmodSfx(string id, float? value, Vector3? worldPosition, int owner = 0)
     {
         if (!UsingFmod) return false;
         if (!eventTable.TryGetSfx(id, out AudioEventTableSO.Binding binding)) return false;
@@ -614,7 +596,7 @@ public class AudioManager : MonoBehaviour
             StopSustained(key); // nunca dos copias del mismo loop para el mismo dueño
 
             FMOD.Studio.EventInstance loop = FMODUnity.RuntimeManager.CreateInstance(binding.eventRef);
-            ApplyPitch(loop, binding, pitch);
+            ApplyValue(loop, binding, value);
             ApplyPan(loop, binding, worldPosition);
             loop.start();
 
@@ -622,42 +604,38 @@ public class AudioManager : MonoBehaviour
             return true;
         }
 
-        // One-shot sin ajustes: el camino barato, FMOD lo gestiona entero.
-        if (!pitch.HasValue && !worldPosition.HasValue)
+        // One-shot sin datos: el camino barato, FMOD lo gestiona entero.
+        if (!value.HasValue && !worldPosition.HasValue)
         {
             FMODUnity.RuntimeManager.PlayOneShot(binding.eventRef);
             return true;
         }
 
         FMOD.Studio.EventInstance instance = FMODUnity.RuntimeManager.CreateInstance(binding.eventRef);
-        ApplyPitch(instance, binding, pitch);
+        ApplyValue(instance, binding, value);
         ApplyPan(instance, binding, worldPosition);
         instance.start();
         instance.release(); // se libera sola al acabar
         return true;
     }
 
-    private static void ApplyPitch(FMOD.Studio.EventInstance instance, AudioEventTableSO.Binding binding, float? pitch)
+    // El código sólo entrega datos del juego a parámetros que Audio expone.
+    // Nunca toca pitch, volumen ni paneo de la instancia: sin parámetro, el
+    // dato se ignora y el evento suena tal cual se autoró.
+    private static void ApplyValue(FMOD.Studio.EventInstance instance, AudioEventTableSO.Binding binding, float? value)
     {
-        if (!pitch.HasValue) return;
+        if (!value.HasValue) return;
+        if (string.IsNullOrEmpty(binding.valueParameter)) return;
 
-        if (!string.IsNullOrEmpty(binding.pitchParameter))
-            instance.setParameterByName(binding.pitchParameter, pitch.Value);
-        else
-            instance.setPitch(pitch.Value);
+        instance.setParameterByName(binding.valueParameter, value.Value);
     }
 
-    /// <summary>
-    /// Los eventos del proyecto son 2D, así que el paneo sólo existe si Audio
-    /// expone un parámetro para ello. Sin parámetro el sonido suena centrado:
-    /// no es un fallo, es que ese evento todavía no sabe panearse.
-    /// </summary>
     private void ApplyPan(FMOD.Studio.EventInstance instance, AudioEventTableSO.Binding binding, Vector3? worldPosition)
     {
         if (!worldPosition.HasValue) return;
         if (string.IsNullOrEmpty(binding.panParameter)) return;
 
-        instance.setParameterByName(binding.panParameter, PanForWorldPosition(worldPosition.Value));
+        instance.setParameterByName(binding.panParameter, ScreenSideOf(worldPosition.Value));
     }
 
     private void StopSustained((string id, int owner) key)
@@ -700,11 +678,11 @@ public class AudioManager : MonoBehaviour
     }
 
     /// <summary>
-    /// -1 (hard left) .. 1 (hard right) from a world position, using the
-    /// visible width of the play camera. Clamped below full pan so a sound at
-    /// the very edge is still audible on both speakers.
+    /// En qué lado de la pantalla está una posición: −1 borde izquierdo, 0
+    /// centro, 1 borde derecho. Es un dato del juego, no un paneo: la curva de
+    /// paneo (cuánto, con qué forma) la pone Audio en el parámetro de FMOD.
     /// </summary>
-    public float PanForWorldPosition(Vector3 worldPosition)
+    public float ScreenSideOf(Vector3 worldPosition)
     {
         Camera cam = ResolveCamera();
         if (cam == null) return 0f;
@@ -712,9 +690,8 @@ public class AudioManager : MonoBehaviour
         // Camera.main is null in this project (the play camera is inside
         // CameraRig.prefab and is Untagged), hence ResolveCamera.
         float viewportX = cam.WorldToViewportPoint(worldPosition).x;
-        float centred   = (viewportX - 0.5f) * 2f;
 
-        return Mathf.Clamp(centred, -1f, 1f) * maxStereoPan;
+        return Mathf.Clamp((viewportX - 0.5f) * 2f, -1f, 1f);
     }
 
     private Camera ResolveCamera()

@@ -58,6 +58,28 @@ Los tres ids de menú apuntan al **mismo** evento a propósito: en FMOD el intro
 de un único evento con transition markers, así que `PlayMusicWithIntro` ya no necesita encadenar dos
 clips. Si el evento pedido ya está sonando, no se reinicia.
 
+### Regla: el código no decide cómo suena nada (10 oct 2026)
+
+Todo lo que tiene que ver con el sonido (volumen, pitch, paneo, fades, variación, tempo) lo controla
+**Audio en FMOD Studio**. El código solo hace dos cosas:
+
+1. **Dispara el evento** cuando algo pasa.
+2. **Pasa datos del juego en crudo** a parámetros que Audio expone, nunca valores de audio ya
+   calculados.
+
+| Dato que manda el código | Campo en `AudioEventTable.asset` | Qué hace Audio con él |
+|---|---|---|
+| Celda de la pieza que se coloca (0, 1, 2…) | `valueParameter` de la fila `block_placement` | La escala ascendente, o lo que quiera |
+| Lado de la pantalla (−1 … 1) | `panParameter` de la fila | La curva de paneo (cuánto, con qué forma) |
+| Fase de progresión (1, 2, 3…) | `progressionPhaseParameter` (**global**) | Tempo, capas, intensidad |
+
+Sin parámetro configurado, el dato se ignora y el evento suena tal cual se autoró: el código **nunca**
+cae a `setPitch` ni `setVolume`.
+
+La única excepción es el volumen que **elige el jugador** en ajustes: entra por los VCAs `MUSIC` y
+`SFX` como un multiplicador encima de la mezcla de Audio. Arranca en 1, o sea, la mezcla tal cual.
+Hoy no hay ninguna UI que lo cambie.
+
 ### Lo que el código decidía y ahora decide FMOD
 
 - **Pasos, muertes y joins**: antes el C# elegía un clip al azar sin repetir el anterior. Ahora es un
@@ -65,9 +87,13 @@ clips. Si el evento pedido ya está sonando, no se reinicia.
   pedir builds.
 - **Intro → loop de música**: era una corrutina esperando a que acabara el clip. Ahora es cosa del
   evento.
-- **Tempo por fase de progresión**: `SetMusicPitch` manda a un parámetro del evento si está
-  configurado en `musicTempoParameter`. Mientras no lo esté usa el pitch de la instancia, que sube
-  también el tono — justo lo que `Docs/progression-system.md` §5.9 quería evitar.
+- **Tempo por fase de progresión**: antes el código subía el pitch de la música (+3% por fase, tope
+  1.25). Ahora `SetProgressionPhase` solo manda el número de fase al parámetro global; el tempo lo
+  hace Audio.
+- **Escala de colocación de bloques**: antes `BlockScript` calculaba un pitch por celda
+  (`basePitch`/`pitchStep`/`maxPitch`). Ahora manda el índice de la celda.
+- **Paneo**: antes el código lo recortaba al 80% (`maxStereoPan`). Ahora manda el lado de pantalla
+  sin recortar.
 
 ---
 
@@ -96,12 +122,19 @@ Si se renombran, basta con corregir los dos campos del `AudioEventTable.asset`.
 | `button_hover` | Pasar por encima de un botón. Hoy `event:/SFX/UI/Button` está mapeado al click. | ¿Mismo evento con parámetro, o uno propio? |
 | `scene_transitionIn` / `scene_transitionOut` | Entrada y salida de transición de escena. Existe `event:/SFX/UI/Transitions`, uno solo para los dos. | ¿Un parámetro que distinga in/out, o dos eventos? Si los mapeo los dos al mismo, sonarán idénticos. |
 
-### 3.3 Paneo de la explosión
+### 3.3 Parámetros que el código ya manda y faltan en FMOD 🟠
 
-Los eventos son 2D, así que FMOD no panea solo. La explosión de la bomba ya calcula de qué lado de
-la pantalla ocurre y lo manda a un parámetro del evento — pero hay que **crear ese parámetro**
-(rango −1 izquierda … 1 derecha) y apuntarlo en el campo `panParameter` de la fila. Mientras no
-exista, la explosión suena centrada: no es un fallo, es que el evento no sabe panearse.
+El código ya entrega estos datos; falta que Audio cree el parámetro y lo ponga en la tabla. Mientras
+no exista, el evento suena tal cual, sin variación.
+
+| Parámetro | Rango | Dónde | Qué era antes en código |
+|---|---|---|---|
+| Lado de pantalla de la explosión | −1 izq … 1 der | Local en `event:/SFX/Items/Bomb` → `panParameter` de `bomb_explosion` | Paneo recortado al 80% |
+| Celda de la pieza colocada | 0, 1, 2… (una por celda de la pieza) | Local en `event:/SFX/Blocks/Placement` → `valueParameter` de `block_placement` | Escala de pitch: +0.08 por celda, tope 1.5 |
+| Fase de progresión | 1, 2, 3… | **Global** → `progressionPhaseParameter` | Pitch de la música: +3% por fase, tope 1.25 |
+
+> Mientras no existan, **la escala de colocación y la aceleración de la música no suenan**: el código
+> ya no las fabrica. Es el cambio de comportamiento que se nota.
 
 ### 3.4 Eventos que existen y nadie usa
 
@@ -132,8 +165,8 @@ simulación  →  SimEvents.Raise(SimEvent.PlayerJumped, pos, this)  →  Gamepl
                       ↑ guarda de resimulación (Suppressed)
 ```
 
-- **`SimEvents`**: enum `SimEvent` + `SimEventData` (tipo, posición, origen, valor extra como el
-  pitch). La simulación solo llama a `Raise`. Con Fusion, el driver del tick pone
+- **`SimEvents`**: enum `SimEvent` + `SimEventData` (tipo, posición, origen y un dato del juego,
+  como el índice de celda). La simulación solo llama a `Raise`. Con Fusion, el driver del tick pone
   `SimEvents.Suppressed = Runner.IsResimulation` y los repetidos se descartan aquí, en un solo sitio.
   Los eventos que **cierran** un loop (`BombFuseOut`) pasan siempre, para que nunca se quede uno
   sonando.

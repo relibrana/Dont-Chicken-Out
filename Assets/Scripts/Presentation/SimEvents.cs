@@ -25,7 +25,10 @@ public readonly struct SimEventData
     public readonly Vector3 Position;
     /// <summary>Quién lo originó (pollo, bloque, ítem). Sirve para filtrar por cámara o por dueño.</summary>
     public readonly UnityEngine.Object Source;
-    /// <summary>Dato extra según el evento (p. ej. pitch de la nota de colocación). 1 si no aplica.</summary>
+    /// <summary>
+    /// Dato del juego según el evento (p. ej. qué celda de la pieza se coloca: 0, 1, 2…). Nunca un
+    /// valor de audio ya cocinado (pitch, volumen): eso lo decide Audio en FMOD. 1 si no aplica.
+    /// </summary>
     public readonly float Value;
 
     public SimEventData(SimEvent type, Vector3 position, UnityEngine.Object source, float value)

@@ -42,7 +42,7 @@ un punto disputado, y es la parte del diseño que el código respeta literalment
 | `PlayerController.cs` | Deja de pisar el cooldown de colocación cada frame |
 | `PoolingManager.cs` | Gravedad del bloque escalada al salir del pool |
 | `PlatformerValuesSO.cs` | Campo nuevo `blockGenerationDelay`, y `blockPlacementCD` con valor real |
-| `AudioManager.cs` | `SetMusicPitch()` para el escalado de tempo |
+| `AudioManager.cs` | `SetProgressionPhase()`: manda la fase a un parámetro global de FMOD |
 | `Assets/SOs/BasePlatformerValues.asset` | Valores base de la cadencia |
 
 ---
@@ -221,8 +221,8 @@ usa como condición de transición, no como multiplicador. Conclusión y propues
   solo. El doc no contempla ese caso y sin esto el cronómetro se congelaría el resto de la ronda.
 - **Reset por ronda:** el match es first-to-N, así que la progresión vuelve a fase 1 en cada ronda.
 - **Pooling por rank:** las fases no tocan la dificultad de las piezas (Winning/Neutral/Losing).
-- **Tempo de música:** pitch del AudioSource (+3% por fase, tope 1.25). El pitch sube también el
-  tono; lo correcto es un parámetro de tempo en FMOD — solo cambia el cuerpo de `SetMusicPitch`.
+- **Tempo de música:** lo autora Audio en FMOD. El código solo manda la fase al parámetro global
+  `progressionPhaseParameter` (ver `Docs/audio-fmod.md` §3.3). Mientras no exista, la música no acelera.
 
 ---
 
@@ -279,7 +279,7 @@ El prefab solo necesita: raíz con `BoxCollider2D` + `ProgressionRibbon`, y un h
 asignado a `visualRoot`. El código lo escala al ancho configurado. Si hay Animator, se le manda el
 trigger `Break`. Conviene ponerlo en una layer propia, fuera de las máscaras de suelo y bloques.
 
-**Audio** — SFX `ribbon_break` y `phase_change`, y decidir cómo se escala el tempo (pitch vs FMOD).
+**Audio** — SFX `ribbon_break` y `phase_change`, y el parámetro global de fase para el tempo de la música (ver `Docs/audio-fmod.md` §3.3).
 
 ---
 

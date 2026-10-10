@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using FMODUnity;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 /// <summary>
 /// Puente entre los ids de sonido que usa el gameplay (`"player_jump"`) y los
@@ -33,12 +34,14 @@ public sealed class AudioEventTableSO : ScriptableObject
                  + "loops de estado). Se guarda la instancia para poder llamar a StopSound.")]
         public bool sustained;
 
-        [Tooltip("Opcional: parámetro del evento al que mandar el pitch cuando se llama a "
-                 + "PlaySound(id, pitch). Vacío = se usa el pitch directo de la instancia.")]
-        public string pitchParameter;
+        [Tooltip("Opcional: parámetro del evento que recibe el dato del juego que acompaña al sonido "
+                 + "(p. ej. block_placement manda 0, 1, 2… por cada celda de la pieza). Qué hace con él "
+                 + "lo decide Audio en FMOD. Vacío = el dato se ignora.")]
+        [FormerlySerializedAs("pitchParameter")]
+        public string valueParameter;
 
-        [Tooltip("Opcional: parámetro del evento al que mandar el paneo (-1 izquierda, 1 derecha) "
-                 + "cuando se llama a PlaySoundAt. Vacío = el evento no se panea.")]
+        [Tooltip("Opcional: parámetro del evento que recibe en qué lado de la pantalla pasó "
+                 + "(-1 borde izquierdo … 1 borde derecho). Cuánto panea lo decide Audio. Vacío = no se manda.")]
         public string panParameter;
     }
 
@@ -52,18 +55,19 @@ public sealed class AudioEventTableSO : ScriptableObject
              + "BGM_Menu_A1 / A2 / B apuntan todos a event:/BGM/Menu.")]
     public List<Binding> music = new();
 
-    [Header("Mezcla")]
-    [Tooltip("VCA o bus que controla el slider de música. Acepta vca:/Music o bus:/Music indistintamente. "
-             + "Si no existe en el proyecto de FMOD, el volumen cae al sistema viejo en vez de fallar.")]
-    public string musicVca = "vca:/Music";
+    [Header("Ajustes del jugador")]
+    [Tooltip("VCA o bus del slider de música de los ajustes. Acepta vca:/... o bus:/... indistintamente. "
+             + "Sólo transmite la elección del jugador; la mezcla la hace Audio en FMOD.")]
+    public string musicVca = "vca:/MUSIC";
 
-    [Tooltip("VCA o bus que controla el slider de efectos.")]
+    [Tooltip("VCA o bus del slider de efectos de los ajustes.")]
     public string sfxVca = "vca:/SFX";
 
     [Header("Parámetros globales")]
-    [Tooltip("Parámetro global que acompaña el tempo de la música en cada fase de progresión. "
-             + "Vacío = se usa el pitch de la instancia (sube también el tono).")]
-    public string musicTempoParameter = "";
+    [Tooltip("Parámetro global que recibe la fase de progresión actual (1, 2, 3…). Qué hace con ella "
+             + "(tempo, capas, intensidad) lo decide Audio. Vacío = no se manda.")]
+    [FormerlySerializedAs("musicTempoParameter")]
+    public string progressionPhaseParameter = "";
 
     [Tooltip("Parámetro global de estado de juego, si Audio lo usa para la música (Menu / Gameplay).")]
     public string gameStateParameter = "GameState";

@@ -8,10 +8,6 @@ public class BlockScript : HoldableItem
 	[SerializeField] protected List<Animator> animators = new();
 	protected List<BlockOverlapCheck> _overlapChecks = new();
 
-	[Header("Placement SFX")]
-	[SerializeField, Range(0.5f, 2f)] private float basePitch  = 1f;
-	[SerializeField, Range(0f,  0.5f)] private float pitchStep = 0.08f;
-	[SerializeField, Range(0.5f, 2f)] private float maxPitch   = 1.5f;
 
 	private List<BlockDamageable> _damageables = new();
 	private int _aliveChildCount;
@@ -96,8 +92,9 @@ public class BlockScript : HoldableItem
 			animator.enabled = true;
 			animator.SetTrigger("appear");
 
-			float pitch = Mathf.Min(basePitch + noteIndex * pitchStep, maxPitch);
-			SimEvents.Raise(SimEvent.BlockPlaced, animator.transform.position, this, pitch);
+			// Sólo dice qué celda de la pieza es (0, 1, 2…); la escala que suena
+			// la decide Audio en FMOD con ese dato.
+			SimEvents.Raise(SimEvent.BlockPlaced, animator.transform.position, this, noteIndex);
 			noteIndex++;
 
 			yield return new WaitForSeconds(waitTime);

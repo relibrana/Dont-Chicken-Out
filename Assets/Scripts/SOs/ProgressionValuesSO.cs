@@ -144,13 +144,8 @@ public class ProgressionValuesSO : ScriptableObject
     [Tooltip("SFX played when the new phase is applied. Leave empty to play nothing.")]
     public string phaseChangeSfxId = "phase_change";
 
-    [Header("Music tempo")]
-    [Tooltip("Interim tempo scaling: raises the music AudioSource pitch per phase. "
-             + "Pitch shifts the key as well — replace with an FMOD tempo parameter when audio provides one.")]
-    public float musicPitchPerPhase = 0.03f;
-
-    [Tooltip("Hard cap for the music pitch so high phases do not turn the track into chipmunks.")]
-    public float musicPitchMax = 1.25f;
+    // Music tempo per phase is authored in FMOD: ProgressionManager only reports
+    // CurrentPhase through AudioManager.SetProgressionPhase.
 
     // ── Testing ───────────────────────────────────────────────────────────────
 
