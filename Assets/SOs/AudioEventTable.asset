@@ -300,7 +300,7 @@ MonoBehaviour:
     sustained: 0
     pitchParameter: 
     panParameter: 
-  musicVca: vca:/Music
+  musicVca: vca:/MUSIC
   sfxVca: vca:/SFX
   musicTempoParameter: 
   gameStateParameter: GameState

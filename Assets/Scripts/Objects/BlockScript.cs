@@ -97,7 +97,7 @@ public class BlockScript : HoldableItem
 			animator.SetTrigger("appear");
 
 			float pitch = Mathf.Min(basePitch + noteIndex * pitchStep, maxPitch);
-			AudioManager.Instance.PlaySound("block_placement", pitch);
+			SimEvents.Raise(SimEvent.BlockPlaced, animator.transform.position, this, pitch);
 			noteIndex++;
 
 			yield return new WaitForSeconds(waitTime);

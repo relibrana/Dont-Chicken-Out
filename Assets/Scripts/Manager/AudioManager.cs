@@ -105,7 +105,12 @@ public class AudioManager : MonoBehaviour
 
     // FMOD state. Sólo se guardan instancias de los sonidos que hay que poder
     // parar; el resto son one-shots y FMOD los libera solo.
-    private readonly Dictionary<string, FMOD.Studio.EventInstance> _sustained = new();
+    // Clave = (id, dueño): cada bomba controla su propia mecha. Dueño 0 = sin
+    // dueño, un único loop global por id.
+    private readonly Dictionary<(string id, int owner), FMOD.Studio.EventInstance> _sustained = new();
+
+    // Lo mismo para los loops que aún caen al backend viejo de AudioSource.
+    private readonly Dictionary<(string id, int owner), AudioSource> _legacyLoops = new();
     private FMOD.Studio.EventInstance _musicInstance;
     private bool _musicInstanceValid;
 
@@ -114,12 +119,8 @@ public class AudioManager : MonoBehaviour
     // "igual" para TODOS los eventos y la música no cambiaría nunca.
     private FMOD.GUID _musicEventGuid;
 
-    private FMOD.Studio.VCA _musicVca;
-    private FMOD.Studio.VCA _sfxVca;
-    private bool _musicVcaValid;
-    private bool _sfxVcaValid;
-    private bool _musicVcaWarned;
-    private bool _sfxVcaWarned;
+    private readonly MixerHandle _musicMixerHandle = new();
+    private readonly MixerHandle _sfxMixerHandle   = new();
 
     private bool UsingFmod => eventTable != null;
 
@@ -197,42 +198,73 @@ public class AudioManager : MonoBehaviour
     }
 
     /// <summary>
-    /// Resuelve un VCA de forma perezosa y lo cachea cuando lo consigue.
-    /// Perezosa a propósito: en Awake los bancos pueden no estar cargados
-    /// todavía, y resolverlos ahí dejaría los sliders muertos para siempre.
-    /// Si el VCA no existe en el proyecto de FMOD se avisa UNA vez y el volumen
-    /// sigue aplicándose al sistema viejo, en vez de petar.
+    /// Mando de volumen de FMOD para un slider de ajustes. Acepta **VCA o bus**:
+    /// el proyecto de Studio puede agrupar de cualquiera de las dos formas y el
+    /// código no debería obligar a una. Se decide por el prefijo de la ruta
+    /// ("vca:/..." o "bus:/...").
+    ///
+    /// Resuelve en perezoso a propósito: en Awake los bancos pueden no estar
+    /// cargados todavía, y resolver ahí dejaría el slider muerto para siempre.
+    /// Si la ruta no existe se avisa UNA vez y el volumen sigue aplicándose al
+    /// sistema viejo, en vez de petar.
     /// </summary>
-    private bool TryResolveVca(string path, ref FMOD.Studio.VCA vca, ref bool valid, ref bool warned)
+    private sealed class MixerHandle
     {
-        if (valid) return true;
-        if (string.IsNullOrEmpty(path)) return false;
+        private FMOD.Studio.VCA _vca;
+        private FMOD.Studio.Bus _bus;
 
-        try
+        private bool _isBus;
+        private bool _resolved;
+        private bool _warned;
+
+        public void SetVolume(string path, float volume)
         {
-            vca   = FMODUnity.RuntimeManager.GetVCA(path);
-            valid = vca.isValid();
+            if (!TryResolve(path)) return;
+
+            if (_isBus) _bus.setVolume(volume);
+            else        _vca.setVolume(volume);
         }
-        catch (FMODUnity.VCANotFoundException)
+
+        private bool TryResolve(string path)
         {
-            if (!warned)
+            if (_resolved) return true;
+            if (string.IsNullOrEmpty(path)) return false;
+
+            _isBus = path.StartsWith("bus:", StringComparison.OrdinalIgnoreCase);
+
+            try
             {
-                warned = true;
-                Debug.LogWarning($"AudioManager => el VCA '{path}' no existe en el proyecto de FMOD. "
-                                 + "El slider de volumen seguirá moviendo el audio viejo.");
+                if (_isBus)
+                {
+                    _bus      = FMODUnity.RuntimeManager.GetBus(path);
+                    _resolved = _bus.isValid();
+                }
+                else
+                {
+                    _vca      = FMODUnity.RuntimeManager.GetVCA(path);
+                    _resolved = _vca.isValid();
+                }
+            }
+            catch (Exception)
+            {
+                // VCANotFoundException / BusNotFoundException: todavía no existe
+                // en el proyecto de FMOD, o los bancos no han cargado aún.
+                Warn(path);
+                _resolved = false;
             }
 
-            valid = false;
+            return _resolved;
         }
 
-        return valid;
+        private void Warn(string path)
+        {
+            if (_warned) return;
+
+            _warned = true;
+            Debug.LogWarning($"AudioManager => '{path}' no existe en el proyecto de FMOD. "
+                             + "Ese slider de volumen seguirá moviendo solo el audio viejo.");
+        }
     }
-
-    private bool MusicVcaReady => TryResolveVca(eventTable != null ? eventTable.musicVca : null,
-                                                ref _musicVca, ref _musicVcaValid, ref _musicVcaWarned);
-
-    private bool SfxVcaReady   => TryResolveVca(eventTable != null ? eventTable.sfxVca : null,
-                                                ref _sfxVca, ref _sfxVcaValid, ref _sfxVcaWarned);
 
     private void InitializeMelodyMap()
     {
@@ -524,29 +556,69 @@ public class AudioManager : MonoBehaviour
         return src;
     }
 
+    /// <summary>
+    /// Loop con dueño: varios pueden sonar a la vez (una mecha por bomba) y cada
+    /// dueño para sólo el suyo con <see cref="StopSoundFor"/>. Para un one-shot
+    /// el dueño no cambia nada.
+    /// </summary>
+    public void PlaySoundFor(string id, UnityEngine.Object owner)
+    {
+        var key = (id, OwnerKey(owner));
+
+        if (TryPlayFmodSfx(id, null, null, key.Item2)) return;
+
+        StopLegacyLoop(key); // nunca dos copias del mismo loop para el mismo dueño
+
+        AudioSource src = PlayLegacySound(id);
+        if (src != null && src.loop)
+            _legacyLoops[key] = src;
+    }
+
+    /// <summary>Para el loop de ese dueño, sin tocar los de los demás.</summary>
+    public void StopSoundFor(string id, UnityEngine.Object owner)
+    {
+        var key = (id, OwnerKey(owner));
+
+        StopSustained(key);
+        StopLegacyLoop(key);
+    }
+
+    private static int OwnerKey(UnityEngine.Object owner) => owner != null ? owner.GetInstanceID() : 0;
+
+    private void StopLegacyLoop((string id, int owner) key)
+    {
+        if (!_legacyLoops.TryGetValue(key, out AudioSource src)) return;
+        _legacyLoops.Remove(key);
+        if (src == null) return;
+
+        src.Stop();
+        ReleaseSource(src);
+    }
+
     // ---- Backend de FMOD ----------------------------------------------------
 
     /// <summary>
     /// Intenta sonar por FMOD. Devuelve false si no hay tabla o si ese id
     /// todavía no tiene evento, que es la señal para caer al backend viejo.
     /// </summary>
-    private bool TryPlayFmodSfx(string id, float? pitch, Vector3? worldPosition)
+    private bool TryPlayFmodSfx(string id, float? pitch, Vector3? worldPosition, int owner = 0)
     {
         if (!UsingFmod) return false;
         if (!eventTable.TryGetSfx(id, out AudioEventTableSO.Binding binding)) return false;
 
         // Sostenidos (la mecha de la bomba, loops de estado): se guarda la
-        // instancia porque hay que poder pararlos por id.
+        // instancia porque hay que poder pararlos por id y dueño.
         if (binding.sustained)
         {
-            StopSustained(id); // nunca dos copias del mismo loop sonando
+            var key = (id, owner);
+            StopSustained(key); // nunca dos copias del mismo loop para el mismo dueño
 
             FMOD.Studio.EventInstance loop = FMODUnity.RuntimeManager.CreateInstance(binding.eventRef);
             ApplyPitch(loop, binding, pitch);
             ApplyPan(loop, binding, worldPosition);
             loop.start();
 
-            _sustained[id] = loop;
+            _sustained[key] = loop;
             return true;
         }
 
@@ -588,13 +660,13 @@ public class AudioManager : MonoBehaviour
         instance.setParameterByName(binding.panParameter, PanForWorldPosition(worldPosition.Value));
     }
 
-    private void StopSustained(string id)
+    private void StopSustained((string id, int owner) key)
     {
-        if (!_sustained.TryGetValue(id, out FMOD.Studio.EventInstance instance)) return;
+        if (!_sustained.TryGetValue(key, out FMOD.Studio.EventInstance instance)) return;
+        _sustained.Remove(key);
 
         instance.stop(FMOD.Studio.STOP_MODE.ALLOWFADEOUT);
         instance.release();
-        _sustained.Remove(id);
     }
 
     private void ReleaseAllSustained()
@@ -621,8 +693,10 @@ public class AudioManager : MonoBehaviour
 
     private void ApplyVcaVolumes()
     {
-        if (MusicVcaReady) _musicVca.setVolume(musicVolume);
-        if (SfxVcaReady)   _sfxVca.setVolume(soundEffectsVolume);
+        if (!UsingFmod) return;
+
+        _musicMixerHandle.SetVolume(eventTable.musicVca, musicVolume);
+        _sfxMixerHandle.SetVolume(eventTable.sfxVca,     soundEffectsVolume);
     }
 
     /// <summary>
@@ -654,13 +728,20 @@ public class AudioManager : MonoBehaviour
         return _pannningCamera;
     }
 
+    /// <summary>Para todas las copias de ese sonido, tengan dueño o no.</summary>
     public void StopSound(string id)
     {
-        if (_sustained.ContainsKey(id))
+        bool hadSustained = false;
+        foreach (var key in new List<(string id, int owner)>(_sustained.Keys))
         {
-            StopSustained(id);
-            return;
+            if (key.id != id) continue;
+            StopSustained(key);
+            hadSustained = true;
         }
+        if (hadSustained) return;
+
+        foreach (var key in new List<(string id, int owner)>(_legacyLoops.Keys))
+            if (key.id == id) _legacyLoops.Remove(key); // el barrido de abajo las para
 
         sfxMap.TryGetValue(id, out Sound sfx);
         if (sfx == null)
@@ -684,6 +765,7 @@ public class AudioManager : MonoBehaviour
     public void StopAllSfxs()
     {
         ReleaseAllSustained();
+        _legacyLoops.Clear(); // el barrido de abajo las para
 
         allSources.RemoveAll(src => src == null);
 
@@ -746,14 +828,14 @@ public class AudioManager : MonoBehaviour
             // migrado. Mientras la migración esté a medias hacen falta ambos.
             case SoundsType.Music:
                 musicVolume = clampedValue;
-                if (MusicVcaReady) _musicVca.setVolume(musicVolume);
+                if (UsingFmod) _musicMixerHandle.SetVolume(eventTable.musicVca, musicVolume);
                 if (musicSource != null)
                     musicSource.volume = musicVolume;
                 break;
 
             case SoundsType.Sfxs:
                 soundEffectsVolume = clampedValue;
-                if (SfxVcaReady) _sfxVca.setVolume(soundEffectsVolume);
+                if (UsingFmod) _sfxMixerHandle.SetVolume(eventTable.sfxVca, soundEffectsVolume);
                 foreach (var src in allSources)
                 {
                     if (src.isPlaying && src.outputAudioMixerGroup == sfxMixer)

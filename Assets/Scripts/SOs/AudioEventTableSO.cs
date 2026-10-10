@@ -53,11 +53,11 @@ public sealed class AudioEventTableSO : ScriptableObject
     public List<Binding> music = new();
 
     [Header("Mezcla")]
-    [Tooltip("VCA que controla el slider de música. Si no existe en el proyecto de FMOD, el volumen "
-             + "cae al sistema viejo en vez de fallar.")]
+    [Tooltip("VCA o bus que controla el slider de música. Acepta vca:/Music o bus:/Music indistintamente. "
+             + "Si no existe en el proyecto de FMOD, el volumen cae al sistema viejo en vez de fallar.")]
     public string musicVca = "vca:/Music";
 
-    [Tooltip("VCA que controla el slider de efectos.")]
+    [Tooltip("VCA o bus que controla el slider de efectos.")]
     public string sfxVca = "vca:/SFX";
 
     [Header("Parámetros globales")]

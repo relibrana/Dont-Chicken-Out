@@ -221,7 +221,7 @@ public sealed class PlayerController : MonoBehaviour, IKickable
         if (IsMovementLocked) return;
 
         animController.PlayKick();
-        AudioManager.Instance.PlaySound("player_kick");
+        SimEvents.Raise(SimEvent.PlayerKicked, transform.position, this);
 
         FeatherVFXController.Instance?.EmitKickDealt(
             transform.position,

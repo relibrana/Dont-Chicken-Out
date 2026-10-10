@@ -265,7 +265,7 @@ public class GameManager : MonoBehaviour
         player.SetMaterials(playerMat);
         AddInGamePlayer(player);
 
-        AudioManager.Instance.MakeJoinSound();
+        SimEvents.Raise(SimEvent.PlayerJoined, startPos, player);
 
         uiManager.UpdateJoinedPlayers(inGamePlayers);
 
@@ -304,7 +304,7 @@ public class GameManager : MonoBehaviour
 
         playersAlive[player.playerIndex] = null;
 
-        AudioManager.Instance.MakeDeathSound();
+        SimEvents.Raise(SimEvent.PlayerDied, deathPosition, player);
         uiManager.UpdateDeadPlayer(player.playerIndex);
         cameraRig.DoDeathShake();
 

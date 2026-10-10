@@ -75,13 +75,18 @@ clips. Si el evento pedido ya está sonando, no se reinicia.
 
 Sin esto la migración no puede cerrarse. Ninguno bloquea al resto del equipo: el juego suena.
 
-### 3.1 VCAs — bloquea los sliders de ajustes 🔴
+### 3.1 VCAs — ✅ hecho (10 oct 2026)
 
-El proyecto de Studio **no tiene ningún VCA ni bus** más allá del master. Los sliders de Música y
-Efectos del menú no tienen a qué engancharse, así que hoy siguen moviendo el audio viejo.
+Juan creó **`vca:/MUSIC`** (Gameplay, Menu) y **`vca:/SFX`** (los otros 19 eventos), guardó y
+reconstruyó bancos. El `AudioEventTable.asset` ya apunta a esas dos rutas. `UI.bank` desapareció: sus
+eventos viven ahora en `SFX.bank`, y como Unity carga todos los bancos (`BankLoadType: All`), no hay
+que tocar nada.
 
-Hacen falta dos: **`vca:/Music`** y **`vca:/SFX`**. Si se llaman de otra forma, basta con corregir
-los dos campos del `AudioEventTable.asset`, no hay que tocar código.
+El código acepta indistintamente un VCA (`vca:/...`) o un bus (`bus:/...`) por el prefijo de la ruta.
+Si se renombran, basta con corregir los dos campos del `AudioEventTable.asset`.
+
+> Ojo con la confusión habitual: un bank (`BGM.bank`, `SFX.bank`) es una unidad de carga, no un punto
+> del mixer. No sirve para atenuar grupos.
 
 ### 3.2 Cuatro ids sin evento
 
@@ -115,36 +120,51 @@ La lista detallada, con la descripción de cada sonido, está en
 
 ## 4. Lo que falta por código
 
-### 4.1 Bus de eventos de presentación — es lo que prepara Fusion 2 🟠
+### 4.1 Bus de eventos de presentación — ✅ hecho (10 oct 2026)
 
-Hoy el gameplay llama al audio directamente. Para el netcode eso no vale: `PlayerMovement` se
-re-simula en el rollback de Fusion, y cada re-simulación volvería a disparar el sonido de salto.
+Para el netcode, el gameplay no puede llamar al audio directamente: `PlayerMovement` se re-simula en
+el rollback de Fusion, y cada re-simulación volvería a disparar el sonido de salto.
 
-El plan acordado es que la **simulación levante eventos** (`OnJumped`, `OnKickLanded`,
-`OnBlockPlaced`) y una capa de presentación los traduzca a audio. Beneficios:
+Ahora la frontera es `Assets/Scripts/Presentation/`:
 
-- La guarda anti-rollback vive en un sitio.
-- Sale gratis el "solo suena lo que ve mi cámara".
-- El audio deja de ser una dependencia del código de simulación, que es la parte que hay que
-  networkear.
+```
+simulación  →  SimEvents.Raise(SimEvent.PlayerJumped, pos, this)  →  GameplayAudio  →  AudioManager
+                      ↑ guarda de resimulación (Suppressed)
+```
 
-Sólo hay que mover las llamadas que están **dentro de la simulación** (jugador, bloques, ítems:
-unas 15). Las de UI y menús pueden seguir llamando directo — ahí no hay rollback que valga.
+- **`SimEvents`**: enum `SimEvent` + `SimEventData` (tipo, posición, origen, valor extra como el
+  pitch). La simulación solo llama a `Raise`. Con Fusion, el driver del tick pone
+  `SimEvents.Suppressed = Runner.IsResimulation` y los repetidos se descartan aquí, en un solo sitio.
+  Los eventos que **cierran** un loop (`BombFuseOut`) pasan siempre, para que nunca se quede uno
+  sonando.
+- **`GameplayAudio`**: traduce cada `SimEvent` a su id del `AudioManager`. Se suscribe solo al
+  arrancar (`RuntimeInitializeOnLoadMethod`), no hay que montarlo en escena. Aquí iría el filtro
+  "solo suena lo que ve mi cámara": el evento ya lleva posición y origen.
 
-No se hizo en la misma pasada a propósito: primero conviene confirmar que el audio sale por FMOD, y
-después mover la frontera. Mover las dos cosas a la vez deja sin saber cuál de los dos cambios rompió
-qué.
+Movidas (14 llamadas): salto, aterrizaje, patada, colocación inválida, join, muerte, colocación de
+bloque y de holdable, golpe a la cápsula, rebote de llanta, mecha (encender/apagar ×2) y explosión.
+
+Siguen directas a propósito: UI y menús (no se re-simulan), los pasos y `PlayerAnimController`
+(los disparan eventos de animación, ya son presentación), `ProgressionManager` (reglas: listón y
+tempo) y `CluckSystem` (pendiente de §4.3). Cuando se rehaga el core para Fusion, `ProgressionManager`
+y la música de `GameManager` deberían pasar también por aquí.
+
+Para añadir un sonido de gameplay nuevo: un valor en `SimEvent`, un `Raise` en la simulación y un
+`case` en `GameplayAudio`. VFX o screen shake pueden suscribirse a `SimEvents.Raised` igual.
+
+> ⚠️ `SimEvents` es estático: con `PeerMode = Multiple` (varios runners en un editor) mezclaría los
+> eventos de todos. Si llega a usarse, hacerlo por runner.
 
 ### 4.2 Sistemas de audio zombis
 
-`MusicManager` no lo referencia **nadie** y se puede borrar. `SoundManager` ya no lo usa nadie desde
-que `StartGame.cs` pasó al AudioManager (oct 2026), pero sigue vivo en alguna escena — hay que
-comprobarlo antes de borrarlo.
+`MusicManager` y `SoundManager` no los referencia **ningún** script, escena ni prefab (verificado por
+GUID, 10 oct 2026). Se pueden borrar sin más.
 
-### 4.3 Melodías del cluck
+### 4.3 Melodías del cluck — ⏸️ desactivadas (10 oct 2026)
 
-`CluckSystem` reproduce notas sueltas desde `MelodySO` (arrays de `AudioClip`). No tiene equivalente
-en FMOD todavía y sigue entero en el sistema viejo. Decidir si se migra o se queda así.
+Decisión: **no pasan a FMOD** de momento. `CluckSystem` tiene `melodiesEnabled = false`, así que el
+botón de cluck no suena. El código de melodías (`MelodySO`, `PlayMelodyNote`) sigue ahí; para
+reactivarlas basta con marcar la casilla en el componente del pollo.
 
 ---
 
@@ -152,10 +172,11 @@ en FMOD todavía y sigue entero en el sistema viejo. Decidir si se migra o se qu
 
 - **El audio es presentación, nunca se replica.** No mandar RPCs de sonido: cada cliente dispara el
   suyo a partir del estado replicado. Un RPC por sonido es ancho de banda tirado y llega tarde.
-- **Guarda de rollback.** Un evento one-shot disparado desde código que se re-simula necesita
-  recordar en qué tick sonó. El sitio para eso es el `AudioManager`, no cada llamante.
-- **Instancias sostenidas y reconciliación.** Los loops (`sustained` en la tabla) se paran por id.
-  Si el estado que los mantenía se deshace en una reconciliación, hay que pararlos explícitamente o
+- **Guarda de rollback.** Un evento one-shot disparado desde código que se re-simula no debe volver
+  a sonar. El sitio para eso es `SimEvents` (§4.1), no cada llamante.
+- **Instancias sostenidas y reconciliación.** Los loops (`sustained` en la tabla) van por
+  `(id, dueño)`: `PlaySoundFor` / `StopSoundFor` en el `AudioManager`, así cada bomba enciende y apaga
+  sólo su mecha. `StopSound(id)` sigue parando todas las copias. Si el estado que los mantenía se deshace en una reconciliación, hay que pararlos explícitamente o
   quedan sonando para siempre.
 - **La ventana de la papa caliente** ya es un reloj absoluto que viaja con el ítem; su audio de
   urgencia debería leer ese valor, no un contador local de cada cliente.

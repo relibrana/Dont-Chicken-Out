@@ -112,7 +112,7 @@ public sealed class PlayerBlockHandler : MonoBehaviour
             if (!_movement.IsGrounded || !CanPlaceBlock)
                 return;
 
-            AudioManager.Instance.PlaySound("block_invalid");
+            SimEvents.Raise(SimEvent.BlockPlaceRejected, transform.position, this);
             return;
         }
 

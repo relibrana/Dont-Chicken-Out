@@ -14,6 +14,9 @@ public sealed class CluckSystem : MonoBehaviour
 
     // ── Inspector ─────────────────────────────────────────────────────────────
 
+    [Tooltip("Apagado (oct 2026): las melodías no pasan a FMOD por ahora. El botón no suena.")]
+    [SerializeField] private bool melodiesEnabled = false;
+
     [Header("Reset")]
     [Tooltip("Seconds without a press before the melody resets to the first note.")]
     [SerializeField] private float resetDelay = 0.75f;
@@ -42,6 +45,8 @@ public sealed class CluckSystem : MonoBehaviour
     /// </summary>
     public void OnCluckPressed()
     {
+        if (!melodiesEnabled) return;
+
         _timeSinceLastPress = 0f;
 
         AudioManager.Instance.PlayMelodyNote(_assignedMelodyId, _currentNoteIndex);

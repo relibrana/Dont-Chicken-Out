@@ -92,7 +92,7 @@ public class SpringDisc : ThrowableItem
         Vector2 direction = ((Vector2)(collision.gameObject.transform.position - spriteRenderer.transform.position)).normalized;
         player.AddImpulse(direction * bounceForce, resetSpeed: true);
 
-        AudioManager.Instance.PlaySound("tire_bounce");
+        SimEvents.Raise(SimEvent.TireBounced, transform.position, this);
 
         TriggerAnimation();
         RecoilAnimation(-direction);

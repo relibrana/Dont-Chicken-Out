@@ -167,7 +167,7 @@ public sealed class BombItem : ThrowableItem
         if (animator != null)
             animator.SetTrigger(PrepareHash);
         
-        AudioManager.Instance.PlaySound("bomb_lighter");
+        SimEvents.Raise(SimEvent.BombFuseLit, transform.position, this);
 
         SetSpriteColor(startColor);
     }
@@ -213,11 +213,8 @@ public sealed class BombItem : ThrowableItem
         ResetBreathing();
         HideFuse();
 
-        AudioManager.Instance.StopSound("bomb_lighter");
-
-        // Paneado por su posición en pantalla: una bomba que estalla a la
-        // izquierda suena por el altavoz izquierdo.
-        AudioManager.Instance.PlaySoundAt("bomb_explosion", explosionPoint.position);
+        SimEvents.Raise(SimEvent.BombFuseOut, transform.position, this);
+        SimEvents.Raise(SimEvent.BombExploded, explosionPoint.position, this);
 
         ScreenShake.Punch(shakeDuration, shakeAmplitude);
 
@@ -315,7 +312,7 @@ public sealed class BombItem : ThrowableItem
 
     protected override void OnDisable() {
         base.OnDisable();
-        AudioManager.Instance.StopSound("bomb_lighter");
+        SimEvents.Raise(SimEvent.BombFuseOut, transform.position, this);
 
         ResetBreathing();
         HideFuse();

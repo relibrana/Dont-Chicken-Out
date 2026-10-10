@@ -68,7 +68,7 @@ public class HoldableItem : MonoBehaviour
 	/// </summary>
 	protected virtual void OnPlaceSfx()
 	{
-		AudioManager.Instance.PlaySound("block_placement");
+		SimEvents.Raise(SimEvent.HoldablePlaced, transform.position, this);
 	}
 
 

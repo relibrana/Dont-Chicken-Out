@@ -271,7 +271,7 @@ public sealed class PlayerMovement : MonoBehaviour
             DOVirtual.DelayedCall(0.5f, () => _jumpLocked = false, false);
         }
 
-        AudioManager.Instance.PlaySound("player_jump");
+        SimEvents.Raise(SimEvent.PlayerJumped, transform.position, this);
         _animController?.SetGrounded(false);
         OnJumped?.Invoke();
     }
@@ -387,7 +387,7 @@ public sealed class PlayerMovement : MonoBehaviour
 
         if (_isGrounded)
         {
-            AudioManager.Instance.PlaySound("player_land");
+            SimEvents.Raise(SimEvent.PlayerLanded, transform.position, this);
 
             if (_isGliding)
             {
