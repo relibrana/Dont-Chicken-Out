@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<objects serializationModel="Studio.02.03.00">
+	<object class="ParameterPreset" id="{322aa02c-fecd-47f7-aa05-a7c1a835dbf8}">
+		<property name="name">
+			<value>ScreenPan</value>
+		</property>
+		<relationship name="folder">
+			<destination>{748ec2c7-c6f6-4a8c-8dcb-0e7d0a37fe3c}</destination>
+		</relationship>
+		<relationship name="parameter">
+			<destination>{9113f653-931e-4f07-8cc8-6db3c70ac3cb}</destination>
+		</relationship>
+	</object>
+	<object class="GameParameter" id="{9113f653-931e-4f07-8cc8-6db3c70ac3cb}">
+		<property name="minimum">
+			<value>-1</value>
+		</property>
+		<property name="isGlobal">
+			<value>true</value>
+		</property>
+		<property name="initialValue">
+			<value>0</value>
+		</property>
+		<property name="isExposedRecursively">
+			<value>false</value>
+		</property>
+	</object>
+</objects>
