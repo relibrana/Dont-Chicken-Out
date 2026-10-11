@@ -1,7 +1,7 @@
 # Audio — migración a FMOD
 
-> Estado: **fase 1 hecha** (oct 2026). El backend de audio ya es FMOD; lo que no tiene evento
-> todavía sigue sonando por el sistema viejo sin que se note.
+> Estado (10 oct 2026): **solo FMOD**. El sistema viejo de AudioSource se eliminó: lo que no tiene
+> evento **no suena**.
 > Proyecto de Studio: `FMOD/DCO_FMOD/` · Bancos construidos: `FMOD/Desktop/` · Dueño: Juan (Cuaac).
 
 ---
@@ -11,19 +11,23 @@
 ```
 gameplay  →  AudioManager.PlaySound("player_jump")  →  AudioEventTable  →  FMOD
                                                             ↓ (sin evento)
-                                                       AudioSource viejo
+                                                     no suena + aviso en consola
 ```
 
-**`AudioManager` sigue siendo la única puerta.** Las ~45 llamadas de audio del juego no cambiaron
-ni una línea. Lo que cambió es lo que hay detrás.
+**`AudioManager` sigue siendo la única puerta.** Las llamadas de audio de UI y menús no cambiaron;
+las de gameplay pasan por `SimEvents` (§4.1).
 
 **`Assets/SOs/AudioEventTable.asset`** traduce cada id a su evento de FMOD. Es un ScriptableObject:
 se edita en el inspector, sin tocar código.
 
-**Un id sin evento asignado no es un error.** Cae al backend viejo de AudioSource, que se conserva a
-propósito. Eso es lo que permite migrar evento a evento según Audio los vaya entregando sin que nada
-se quede mudo por el camino. Al arrancar, el AudioManager lista por consola los ids que siguen en el
-sistema viejo.
+**Un id sin evento no suena.** No hay backend de respaldo: era la última parte del código que
+decidía volumen, loop y variación por clip, y eso lo controla Audio en FMOD (ver la regla de abajo).
+Al arrancar, el AudioManager lista por consola los ids sin evento, y avisa una vez por id la primera
+vez que alguien lo pide.
+
+Con el sistema viejo se fueron los mixers de Unity, las listas de clips del prefab `AudioManager`,
+el volumen por clip, la rotación aleatoria de pasos, muertes y joins, el `explosionSfx` suelto de
+`BombItem` y la reproducción de melodías.
 
 ### Por qué un mapa y no un `EventReference` en cada script
 
@@ -99,7 +103,8 @@ Hoy no hay ninguna UI que lo cambie.
 
 ## 3. Encargos para Audio (Juan)
 
-Sin esto la migración no puede cerrarse. Ninguno bloquea al resto del equipo: el juego suena.
+Sin esto la migración no puede cerrarse. Ojo: desde que se quitó el sistema viejo, **lo que falta aquí no
+suena** (no hay respaldo).
 
 ### 3.1 VCAs — ✅ hecho (10 oct 2026)
 
@@ -114,7 +119,7 @@ Si se renombran, basta con corregir los dos campos del `AudioEventTable.asset`.
 > Ojo con la confusión habitual: un bank (`BGM.bank`, `SFX.bank`) es una unidad de carga, no un punto
 > del mixer. No sirve para atenuar grupos.
 
-### 3.2 Cuatro ids sin evento
+### 3.2 Cuatro ids sin evento — hoy mudos 🔴
 
 | id | qué es | qué hace falta |
 |---|---|---|
@@ -195,9 +200,10 @@ GUID, 10 oct 2026). Se pueden borrar sin más.
 
 ### 4.3 Melodías del cluck — ⏸️ desactivadas (10 oct 2026)
 
-Decisión: **no pasan a FMOD** de momento. `CluckSystem` tiene `melodiesEnabled = false`, así que el
-botón de cluck no suena. El código de melodías (`MelodySO`, `PlayMelodyNote`) sigue ahí; para
-reactivarlas basta con marcar la casilla en el componente del pollo.
+Decisión: **no pasan a FMOD** de momento, así que el botón de cluck no suena. La reproducción de
+melodías se fue con el sistema viejo; `CluckSystem` solo lleva la cuenta de pulsaciones (índice de
+nota por jugador). Para traerlas de vuelta: un `SimEvent` con ese índice y un evento de FMOD que lo
+lea, sin clips en código. `MelodySO` y sus assets quedan sin uso.
 
 ---
 

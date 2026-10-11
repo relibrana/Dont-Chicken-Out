@@ -14,9 +14,9 @@ using UnityEngine.Serialization;
 /// Fusion 2 y el filtrado de audio por jugador: se tocan aquí, no en 18
 /// archivos.
 ///
-/// Un id sin evento asignado NO es un error: el AudioManager cae al backend
-/// viejo de AudioSource. Así se puede migrar evento a evento según Audio los
-/// vaya entregando, sin que nada se quede mudo por el camino.
+/// Un id sin evento asignado no suena (el AudioManager lo avisa por consola).
+/// No hay backend de respaldo: todo lo que tiene que ver con cómo suena algo lo
+/// autora Audio en FMOD, nada se decide en código.
 /// </summary>
 [CreateAssetMenu(fileName = "AudioEventTable", menuName = "Audio/Audio Event Table")]
 public sealed class AudioEventTableSO : ScriptableObject
@@ -27,7 +27,7 @@ public sealed class AudioEventTableSO : ScriptableObject
         [Tooltip("El id que usa el código hoy. Tiene que coincidir exacto.")]
         public string id;
 
-        [Tooltip("Evento de FMOD. Vacío = ese id sigue sonando por el sistema viejo.")]
+        [Tooltip("Evento de FMOD. Vacío = ese id no suena hasta que Audio lo cree.")]
         public EventReference eventRef;
 
         [Tooltip("Marcar en sonidos que se mantienen y hay que poder parar (la mecha de la bomba, "

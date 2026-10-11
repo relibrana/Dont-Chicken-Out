@@ -1,8 +1,6 @@
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.Audio;
 
 public enum SoundsType
 {
@@ -10,42 +8,25 @@ public enum SoundsType
     Sfxs,
 }
 
-[Serializable]
-public class Sound
-{
-    public AudioClip clip;
-    public string id;
-    [Range(0f, 1f)] public float volume = 0.8f;
-    public bool loop;
-}
-
 /// <summary>
-/// Puerta única de audio del juego. Desde oct 2026 el backend es **FMOD**: cada
-/// id se resuelve contra <see cref="AudioEventTableSO"/> y se dispara el evento
-/// correspondiente.
+/// Puerta única de audio del juego. Sólo habla con **FMOD**: cada id se
+/// resuelve contra <see cref="AudioEventTableSO"/> y se dispara su evento.
 ///
-/// Los ids que todavía no tienen evento siguen sonando por el backend viejo de
-/// AudioSource, que se conserva a propósito: así la migración va evento a
-/// evento sin que nada se quede mudo, y el día que Audio entregue el que falta
-/// basta con asignarlo en la tabla — cero cambios de código.
+/// Regla (oct 2026): el código no decide cómo suena nada. Volumen, pitch,
+/// paneo, variación, fades y tempo los autora Audio en FMOD Studio. Aquí sólo
+/// se (1) dispara el evento cuando algo pasa y (2) se pasan datos del juego en
+/// crudo a parámetros que Audio expone (celda colocada, lado de pantalla, fase
+/// de progresión). Un id sin evento en la tabla no suena: se avisa por consola.
 ///
-/// Netcode (Fusion 2): esta clase es la frontera. Las guardas de rollback y el
-/// filtrado de "esto solo lo oye quien lo ve" van aquí dentro, no repartidas
-/// por los 18 scripts que piden sonido.
+/// La única excepción es el volumen que elige el jugador en ajustes, que entra
+/// por los VCAs como multiplicador encima de la mezcla de Audio.
 /// </summary>
 public class AudioManager : MonoBehaviour
 {
     public static AudioManager Instance { get; private set; }
 
-    [Header("Pool Settings (SFX Sources)")]
-    [SerializeField] private int initialPoolSize = 10;
-
-    [Header("Mixer Groups")]
-    [SerializeField] private AudioMixerGroup sfxMixer;
-    [SerializeField] private AudioMixerGroup musicMixer;
-
     [Header("FMOD")]
-    [SerializeField, Tooltip("Mapa id -> evento de FMOD. Sin asignar, todo suena por el sistema viejo.")]
+    [SerializeField, Tooltip("Mapa id -> evento de FMOD. Sin asignar, no suena nada.")]
     private AudioEventTableSO eventTable;
 
     [SerializeField, Tooltip("Avisa por consola de los ids que todavía no tienen evento de FMOD.")]
@@ -60,56 +41,12 @@ public class AudioManager : MonoBehaviour
 
     private Camera _pannningCamera;
 
-    [Header("SFX Lists")]
-    [SerializeField] private List<Sound> bgmSounds = new List<Sound>();
-    [SerializeField] private List<Sound> playerSfxs;
-    [SerializeField] private List<Sound> playerDeathSfxs;
-    [SerializeField] private List<Sound> playerJoinSfxs;
-    [SerializeField] private List<Sound> playerStepSfxs;
-    [SerializeField] private List<Sound> blocksSfxs;
-    [SerializeField] private List<Sound> itemSfxs;
-    [SerializeField] private List<Sound> uiSfxs;
-    [SerializeField] private List<Sound> miscsSfxs;
-    private Dictionary<string, Sound> sfxMap = new();
-
-    [Header("Melodies")]
-    [SerializeField] private List<MelodySO> melodies = new();
-    [Range(0f, 1f)] public float melodiesVolume = 0.3f;
-    private Dictionary<string, MelodySO> melodyMap = new();
-
-    private Stack<AudioSource> freeSources = new();
-    private List<AudioSource> allSources = new();
-    private AudioSource musicSource;
-    private Coroutine introToLoopCoroutine;
-
-    /// <summary>True while any BGM clip is actively playing on the music source.</summary>
-    public bool IsMusicPlaying
-    {
-        get
-        {
-            if (_musicInstanceValid)
-            {
-                _musicInstance.getPlaybackState(out FMOD.Studio.PLAYBACK_STATE state);
-                return state != FMOD.Studio.PLAYBACK_STATE.STOPPED;
-            }
-
-            return musicSource != null && musicSource.isPlaying;
-        }
-    }
-
-    // Sound trackers
-    private int currentStep = 0;
-    private int currentJoin = 0;
-    private int currentDeath = 0;
-
-    // FMOD state. Sólo se guardan instancias de los sonidos que hay que poder
-    // parar; el resto son one-shots y FMOD los libera solo.
+    // Sólo se guardan instancias de los sonidos que hay que poder parar; el
+    // resto son one-shots y FMOD los libera solo.
     // Clave = (id, dueño): cada bomba controla su propia mecha. Dueño 0 = sin
     // dueño, un único loop global por id.
     private readonly Dictionary<(string id, int owner), FMOD.Studio.EventInstance> _sustained = new();
 
-    // Lo mismo para los loops que aún caen al backend viejo de AudioSource.
-    private readonly Dictionary<(string id, int owner), AudioSource> _legacyLoops = new();
     private FMOD.Studio.EventInstance _musicInstance;
     private bool _musicInstanceValid;
 
@@ -121,9 +58,22 @@ public class AudioManager : MonoBehaviour
     private readonly MixerHandle _musicMixerHandle = new();
     private readonly MixerHandle _sfxMixerHandle   = new();
 
-    private bool UsingFmod => eventTable != null;
+    // Ids sin evento ya avisados, para no llenar la consola en cada disparo.
+    private readonly HashSet<string> _warnedIds = new();
 
-    // ââ Unity lifecycle âââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+    /// <summary>True while the current BGM event is playing.</summary>
+    public bool IsMusicPlaying
+    {
+        get
+        {
+            if (!_musicInstanceValid) return false;
+
+            _musicInstance.getPlaybackState(out FMOD.Studio.PLAYBACK_STATE state);
+            return state != FMOD.Studio.PLAYBACK_STATE.STOPPED;
+        }
+    }
+
+    // ── Unity lifecycle ───────────────────────────────────────────────────────
 
     protected void Awake()
     {
@@ -138,18 +88,6 @@ public class AudioManager : MonoBehaviour
             return;
         }
 
-        StopAllSfxs();
-
-        InitializeSoundMap();
-        InitializeMelodyMap();
-
-        for (int i = 0; i < initialPoolSize; i++)
-            freeSources.Push(CreateSource());
-
-        musicSource = CreateMusicSource();
-        musicSource.outputAudioMixerGroup = musicMixer;
-        musicSource.volume = musicVolume;
-
         InitializeFmod();
     }
 
@@ -161,26 +99,13 @@ public class AudioManager : MonoBehaviour
         ReleaseMusicInstance();
     }
 
-    // ââ Initialization ââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
-
-    private void InitializeSoundMap()
-    {
-        sfxMap = new();
-        foreach (var item in playerSfxs)      sfxMap.Add(item.id, item);
-        foreach (var item in playerDeathSfxs) sfxMap.Add(item.id, item);
-        foreach (var item in playerJoinSfxs)  sfxMap.Add(item.id, item);
-        foreach (var item in playerStepSfxs)  sfxMap.Add(item.id, item);
-        foreach (var item in blocksSfxs)      sfxMap.Add(item.id, item);
-        foreach (var item in itemSfxs)        sfxMap.Add(item.id, item);
-        foreach (var item in uiSfxs)          sfxMap.Add(item.id, item);
-        foreach (var item in miscsSfxs)       sfxMap.Add(item.id, item);
-    }
+    // ── Initialization ────────────────────────────────────────────────────────
 
     private void InitializeFmod()
     {
-        if (!UsingFmod)
+        if (eventTable == null)
         {
-            Debug.LogWarning("AudioManager => sin AudioEventTable asignada: todo el audio sigue por AudioSource.");
+            Debug.LogError("AudioManager => sin AudioEventTable asignada: no va a sonar nada.");
             return;
         }
 
@@ -192,7 +117,7 @@ public class AudioManager : MonoBehaviour
         if (pending.Count > 0)
         {
             Debug.Log($"AudioManager => {pending.Count} ids todavía sin evento de FMOD "
-                      + $"(suenan por AudioSource): {string.Join(", ", pending)}");
+                      + $"(no suenan hasta que Audio los cree): {string.Join(", ", pending)}");
         }
     }
 
@@ -204,8 +129,7 @@ public class AudioManager : MonoBehaviour
     ///
     /// Resuelve en perezoso a propósito: en Awake los bancos pueden no estar
     /// cargados todavía, y resolver ahí dejaría el slider muerto para siempre.
-    /// Si la ruta no existe se avisa UNA vez y el volumen sigue aplicándose al
-    /// sistema viejo, en vez de petar.
+    /// Si la ruta no existe se avisa UNA vez en vez de petar.
     /// </summary>
     private sealed class MixerHandle
     {
@@ -261,168 +185,54 @@ public class AudioManager : MonoBehaviour
 
             _warned = true;
             Debug.LogWarning($"AudioManager => '{path}' no existe en el proyecto de FMOD. "
-                             + "Ese slider de volumen seguirá moviendo solo el audio viejo.");
+                             + "Ese slider de volumen no va a hacer nada.");
         }
     }
 
-    private void InitializeMelodyMap()
-    {
-        melodyMap = new();
-        foreach (var melody in melodies)
-        {
-            if (melody == null) continue;
-            if (melodyMap.ContainsKey(melody.MelodyId))
-            {
-                Debug.LogWarning($"AudioManager => Duplicate melodyId: '{melody.MelodyId}'. Skipping.");
-                continue;
-            }
-            melodyMap.Add(melody.MelodyId, melody);
-        }
-    }
-
-    // ââ Source pool âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
-
-    private AudioSource CreateSource()
-    {
-        var go = new GameObject("PooledAudio");
-        DontDestroyOnLoad(go);
-        go.transform.SetParent(transform);
-        var src = go.AddComponent<AudioSource>();
-        src.playOnAwake = false;
-        src.outputAudioMixerGroup = sfxMixer;
-        allSources.Add(src);
-        return src;
-    }
-
-    private AudioSource CreateMusicSource()
-    {
-        var go = new GameObject("Music Source");
-        DontDestroyOnLoad(go);
-        go.transform.SetParent(transform);
-        var src = go.AddComponent<AudioSource>();
-        src.playOnAwake = false;
-        src.loop = true;
-        return src;
-    }
-
-    private AudioSource GetSource()
-    {
-        return freeSources.Count > 0 ? freeSources.Pop() : CreateSource();
-    }
-
-    private void ReleaseSource(AudioSource src)
-    {
-        src.clip = null;
-        src.loop = false;
-        src.spatialBlend = 0f;
-        src.transform.SetParent(transform);
-        src.transform.position = transform.position;
-        freeSources.Push(src);
-    }
-
-    private IEnumerator RecycleWhenDone(AudioSource src)
-    {
-        yield return new WaitWhile(() => src.isPlaying);
-        if (!src.loop)
-            ReleaseSource(src);
-    }
-
-    // ââ Music âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+    // ── Music ─────────────────────────────────────────────────────────────────
 
     /// <summary>
-    /// Plays a BGM track directly. Respects the loop flag set on the Sound asset.
-    /// If the requested clip is already playing, does nothing.
-    /// Cancels any pending introâloop transition before switching.
+    /// Arranca la música. Si el evento pedido ya está sonando no se reinicia: es
+    /// lo que permite que BGM_Menu_A1 / A2 / B apunten todos a event:/BGM/Menu
+    /// sin cortarse unos a otros al cambiar de pantalla.
     /// </summary>
-    public AudioSource PlayMusic(string bgmId)
+    public void PlayMusic(string bgmId)
     {
-        if (TryPlayFmodMusic(bgmId)) return null;
-
-        Sound bgm = FindBgm(bgmId);
-        if (bgm == null) return null;
-
-        if (musicSource.isPlaying && musicSource.clip == bgm.clip)
-            return musicSource;
-
-        CancelIntroToLoop();
-
-        musicSource.clip = bgm.clip;
-        musicSource.volume = musicVolume * bgm.volume;
-        musicSource.loop = bgm.loop;
-        musicSource.spatialBlend = 0f;
-        musicSource.Play();
-        return musicSource;
-    }
-
-    /// <summary>
-    /// Plays an intro clip (non-looping) and automatically transitions to a
-    /// looping track when the intro finishes. If called while a previous
-    /// intro is still playing, the previous transition is cancelled cleanly.
-    /// </summary>
-    public void PlayMusicWithIntro(string introId, string loopId)
-    {
-        // En FMOD el intro y el loop viven dentro del MISMO evento, con
-        // transition markers. Así que aquí sólo hace falta pedir el evento: el
-        // id del loop y el del intro apuntan al mismo sitio en la tabla.
-        if (TryPlayFmodMusic(loopId) || TryPlayFmodMusic(introId)) return;
-
-        Sound intro = FindBgm(introId);
-        Sound loop  = FindBgm(loopId);
-
-        if (intro == null || loop == null)
+        if (eventTable == null) return;
+        if (!eventTable.TryGetMusic(bgmId, out AudioEventTableSO.Binding binding))
         {
-            Debug.LogWarning($"AudioManager => PlayMusicWithIntro: '{introId}' or '{loopId}' not found.");
+            WarnUnmapped(bgmId);
             return;
         }
-
-        CancelIntroToLoop();
-
-        musicSource.clip = intro.clip;
-        musicSource.volume = musicVolume * intro.volume;
-        musicSource.loop = false;
-        musicSource.spatialBlend = 0f;
-        musicSource.Play();
-
-        introToLoopCoroutine = StartCoroutine(TransitionToLoop(loop));
-    }
-
-    public void StopMusic()
-    {
-        ReleaseMusicInstance();
-
-        CancelIntroToLoop();
-        musicSource.Stop();
-    }
-
-    /// <summary>
-    /// Arranca la música por FMOD. Si el evento pedido ya está sonando no se
-    /// reinicia: es lo que permite que BGM_Menu_A1 / A2 / B apunten todos a
-    /// event:/BGM/Menu sin cortarse unos a otros al cambiar de pantalla.
-    /// </summary>
-    private bool TryPlayFmodMusic(string bgmId)
-    {
-        if (!UsingFmod) return false;
-        if (!eventTable.TryGetMusic(bgmId, out AudioEventTableSO.Binding binding)) return false;
 
         FMOD.GUID eventGuid = binding.eventRef.Guid;
 
         if (_musicInstanceValid && _musicEventGuid == eventGuid)
-            return true;
+            return;
 
         ReleaseMusicInstance();
-
-        // Si quedaba música del sistema viejo sonando, se corta: sólo puede
-        // haber una fuente de BGM a la vez.
-        CancelIntroToLoop();
-        if (musicSource != null) musicSource.Stop();
 
         _musicInstance      = FMODUnity.RuntimeManager.CreateInstance(binding.eventRef);
         _musicInstanceValid = true;
         _musicEventGuid     = eventGuid;
 
         _musicInstance.start();
-        return true;
     }
+
+    /// <summary>
+    /// En FMOD el intro y el loop viven dentro del MISMO evento, con transition
+    /// markers: el id del intro y el del loop apuntan al mismo sitio en la tabla
+    /// y basta con pedir el evento.
+    /// </summary>
+    public void PlayMusicWithIntro(string introId, string loopId)
+    {
+        if (eventTable != null && eventTable.TryGetMusic(loopId, out _))
+            PlayMusic(loopId);
+        else
+            PlayMusic(introId);
+    }
+
+    public void StopMusic() => ReleaseMusicInstance();
 
     /// <summary>
     /// Le dice a FMOD en qué fase de progresión está la partida (1, 2, 3…) por
@@ -433,84 +243,27 @@ public class AudioManager : MonoBehaviour
     /// </summary>
     public void SetProgressionPhase(int phase)
     {
-        if (!UsingFmod) return;
+        if (eventTable == null) return;
         if (string.IsNullOrEmpty(eventTable.progressionPhaseParameter)) return;
 
         FMODUnity.RuntimeManager.StudioSystem.setParameterByName(eventTable.progressionPhaseParameter, phase);
     }
 
-    private IEnumerator TransitionToLoop(Sound loop)
+    private void ReleaseMusicInstance()
     {
-        yield return new WaitWhile(() => musicSource.isPlaying);
+        if (!_musicInstanceValid) return;
 
-        musicSource.clip = loop.clip;
-        musicSource.volume = musicVolume * loop.volume;
-        musicSource.loop = true;
-        musicSource.spatialBlend = 0f;
-        musicSource.Play();
+        _musicInstance.stop(FMOD.Studio.STOP_MODE.ALLOWFADEOUT);
+        _musicInstance.release();
 
-        introToLoopCoroutine = null;
+        _musicInstanceValid = false;
+        _musicEventGuid     = default;
     }
 
-    private void CancelIntroToLoop()
-    {
-        if (introToLoopCoroutine == null) return;
-        StopCoroutine(introToLoopCoroutine);
-        introToLoopCoroutine = null;
-    }
+    // ── SFX ───────────────────────────────────────────────────────────────────
 
-    private Sound FindBgm(string bgmId)
-    {
-        foreach (var sound in bgmSounds)
-        {
-            if (sound.id == bgmId) return sound;
-        }
-        Debug.LogWarning($"AudioManager => BGM '{bgmId}' not found.");
-        return null;
-    }
-
-    // ââ SFX ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
-
-    /// <summary>
-    /// Dispara un efecto. Intenta FMOD primero y cae al AudioSource viejo si ese
-    /// id todavía no tiene evento. Nadie usa el AudioSource que devuelve — se
-    /// mantiene el tipo para no tocar las llamadas existentes.
-    /// </summary>
-    public AudioSource PlaySound(string id)
-    {
-        if (TryPlayFmodSfx(id, null, null)) return null;
-
-        return PlayLegacySound(id);
-    }
-
-    /// <summary>Camino viejo: pool de AudioSource. Se usa como red de seguridad.</summary>
-    private AudioSource PlayLegacySound(string id)
-    {
-        sfxMap.TryGetValue(id, out Sound sfx);
-        if (sfx == null)
-        {
-            Debug.Log($"AudioManager => {id}: IsNull");
-            return null;
-        }
-
-        var src = GetSource();
-        src.clip = sfx.clip;
-        src.volume = soundEffectsVolume * sfx.volume;
-        src.loop = sfx.loop;
-        src.outputAudioMixerGroup = sfxMixer;
-        src.spatialBlend = 0;
-        src.spread = 180f;
-        src.minDistance = 1f;
-        src.maxDistance = 10f;
-        src.pitch = 1f;
-        src.transform.position = transform.position;
-        src.transform.SetParent(null);
-        src.Play();
-
-        if (!sfx.loop) StartCoroutine(RecycleWhenDone(src));
-
-        return src;
-    }
+    /// <summary>Dispara un efecto tal cual lo autoró Audio.</summary>
+    public void PlaySound(string id) => PlaySfx(id, null, null);
 
     /// <summary>
     /// Dispara un efecto acompañado de un dato del juego (p. ej. qué celda de
@@ -518,12 +271,7 @@ public class AudioManager : MonoBehaviour
     /// del evento y Audio decide en FMOD qué hace con él. El código nunca lo
     /// convierte en pitch ni volumen.
     /// </summary>
-    public AudioSource PlaySound(string id, float value)
-    {
-        if (TryPlayFmodSfx(id, value, null)) return null;
-
-        return PlayLegacySound(id);
-    }
+    public void PlaySound(string id, float value) => PlaySfx(id, value, null);
 
     /// <summary>
     /// Dispara un efecto diciéndole a FMOD en qué lado de la pantalla pasó
@@ -531,62 +279,39 @@ public class AudioManager : MonoBehaviour
     /// Los SFX son 2D a propósito: el audio 3D también atenuaría por distancia
     /// y se perderían los de los bordes de una pantalla de 4 jugadores.
     /// </summary>
-    public AudioSource PlaySoundAt(string id, Vector3 worldPosition)
-    {
-        if (TryPlayFmodSfx(id, null, worldPosition)) return null;
-
-        return PlayLegacySound(id);
-    }
+    public void PlaySoundAt(string id, Vector3 worldPosition) => PlaySfx(id, null, worldPosition);
 
     /// <summary>
     /// Loop con dueño: varios pueden sonar a la vez (una mecha por bomba) y cada
     /// dueño para sólo el suyo con <see cref="StopSoundFor"/>. Para un one-shot
     /// el dueño no cambia nada.
     /// </summary>
-    public void PlaySoundFor(string id, UnityEngine.Object owner)
-    {
-        var key = (id, OwnerKey(owner));
-
-        if (TryPlayFmodSfx(id, null, null, key.Item2)) return;
-
-        StopLegacyLoop(key); // nunca dos copias del mismo loop para el mismo dueño
-
-        AudioSource src = PlayLegacySound(id);
-        if (src != null && src.loop)
-            _legacyLoops[key] = src;
-    }
+    public void PlaySoundFor(string id, UnityEngine.Object owner) => PlaySfx(id, null, null, OwnerKey(owner));
 
     /// <summary>Para el loop de ese dueño, sin tocar los de los demás.</summary>
-    public void StopSoundFor(string id, UnityEngine.Object owner)
-    {
-        var key = (id, OwnerKey(owner));
+    public void StopSoundFor(string id, UnityEngine.Object owner) => StopSustained((id, OwnerKey(owner)));
 
-        StopSustained(key);
-        StopLegacyLoop(key);
+    /// <summary>Para todas las copias de ese sonido, tengan dueño o no.</summary>
+    public void StopSound(string id)
+    {
+        foreach (var key in new List<(string id, int owner)>(_sustained.Keys))
+        {
+            if (key.id == id) StopSustained(key);
+        }
     }
+
+    public void StopAllSfxs() => ReleaseAllSustained();
 
     private static int OwnerKey(UnityEngine.Object owner) => owner != null ? owner.GetInstanceID() : 0;
 
-    private void StopLegacyLoop((string id, int owner) key)
+    private void PlaySfx(string id, float? value, Vector3? worldPosition, int owner = 0)
     {
-        if (!_legacyLoops.TryGetValue(key, out AudioSource src)) return;
-        _legacyLoops.Remove(key);
-        if (src == null) return;
-
-        src.Stop();
-        ReleaseSource(src);
-    }
-
-    // ---- Backend de FMOD ----------------------------------------------------
-
-    /// <summary>
-    /// Intenta sonar por FMOD. Devuelve false si no hay tabla o si ese id
-    /// todavía no tiene evento, que es la señal para caer al backend viejo.
-    /// </summary>
-    private bool TryPlayFmodSfx(string id, float? value, Vector3? worldPosition, int owner = 0)
-    {
-        if (!UsingFmod) return false;
-        if (!eventTable.TryGetSfx(id, out AudioEventTableSO.Binding binding)) return false;
+        if (eventTable == null) return;
+        if (!eventTable.TryGetSfx(id, out AudioEventTableSO.Binding binding))
+        {
+            WarnUnmapped(id);
+            return;
+        }
 
         // Sostenidos (la mecha de la bomba, loops de estado): se guarda la
         // instancia porque hay que poder pararlos por id y dueño.
@@ -601,14 +326,14 @@ public class AudioManager : MonoBehaviour
             loop.start();
 
             _sustained[key] = loop;
-            return true;
+            return;
         }
 
         // One-shot sin datos: el camino barato, FMOD lo gestiona entero.
         if (!value.HasValue && !worldPosition.HasValue)
         {
             FMODUnity.RuntimeManager.PlayOneShot(binding.eventRef);
-            return true;
+            return;
         }
 
         FMOD.Studio.EventInstance instance = FMODUnity.RuntimeManager.CreateInstance(binding.eventRef);
@@ -616,7 +341,6 @@ public class AudioManager : MonoBehaviour
         ApplyPan(instance, binding, worldPosition);
         instance.start();
         instance.release(); // se libera sola al acabar
-        return true;
     }
 
     // El código sólo entrega datos del juego a parámetros que Audio expone.
@@ -658,23 +382,10 @@ public class AudioManager : MonoBehaviour
         _sustained.Clear();
     }
 
-    private void ReleaseMusicInstance()
+    private void WarnUnmapped(string id)
     {
-        if (!_musicInstanceValid) return;
-
-        _musicInstance.stop(FMOD.Studio.STOP_MODE.ALLOWFADEOUT);
-        _musicInstance.release();
-
-        _musicInstanceValid = false;
-        _musicEventGuid     = default;
-    }
-
-    private void ApplyVcaVolumes()
-    {
-        if (!UsingFmod) return;
-
-        _musicMixerHandle.SetVolume(eventTable.musicVca, musicVolume);
-        _sfxMixerHandle.SetVolume(eventTable.sfxVca,     soundEffectsVolume);
+        if (!_warnedIds.Add(id)) return;
+        Debug.LogWarning($"AudioManager => '{id}' no tiene evento de FMOD en la tabla: no suena.");
     }
 
     /// <summary>
@@ -705,198 +416,50 @@ public class AudioManager : MonoBehaviour
         return _pannningCamera;
     }
 
-    /// <summary>Para todas las copias de ese sonido, tengan dueño o no.</summary>
-    public void StopSound(string id)
-    {
-        bool hadSustained = false;
-        foreach (var key in new List<(string id, int owner)>(_sustained.Keys))
-        {
-            if (key.id != id) continue;
-            StopSustained(key);
-            hadSustained = true;
-        }
-        if (hadSustained) return;
-
-        foreach (var key in new List<(string id, int owner)>(_legacyLoops.Keys))
-            if (key.id == id) _legacyLoops.Remove(key); // el barrido de abajo las para
-
-        sfxMap.TryGetValue(id, out Sound sfx);
-        if (sfx == null)
-        {
-            Debug.Log($"AudioManager => {id}: IsNull");
-            return;
-        }
-
-        allSources.RemoveAll(src => src == null);
-
-        foreach (var src in allSources)
-        {
-            if (src.isPlaying && src.clip == sfx.clip && src.outputAudioMixerGroup == sfxMixer)
-            {
-                src.Stop();
-                ReleaseSource(src);
-            }
-        }
-    }
-
-    public void StopAllSfxs()
-    {
-        ReleaseAllSustained();
-        _legacyLoops.Clear(); // el barrido de abajo las para
-
-        allSources.RemoveAll(src => src == null);
-
-        List<AudioSource> sourcesToRelease = new List<AudioSource>();
-
-        foreach (var src in allSources)
-        {
-            if (src.isPlaying && src.outputAudioMixerGroup == sfxMixer)
-            {
-                src.Stop();
-                sourcesToRelease.Add(src);
-            }
-        }
-
-        foreach (var src in sourcesToRelease)
-            ReleaseSource(src);
-    }
-
-    // ââ Melodies ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+    // ── Player volume (settings) ──────────────────────────────────────────────
 
     /// <summary>
-    /// Plays a specific note from a melody by melodyId and note index.
-    /// Called by CluckSystem on each cluck press.
+    /// Volumen que elige el jugador en ajustes. Escala el VCA correspondiente
+    /// encima de la mezcla de Audio; a 1 se oye la mezcla tal cual.
     /// </summary>
-    public void PlayMelodyNote(string melodyId, int noteIndex)
-    {
-        if (!melodyMap.TryGetValue(melodyId, out MelodySO melody))
-        {
-            Debug.LogWarning($"AudioManager => Melody '{melodyId}' not found.");
-            return;
-        }
-
-        AudioClip clip = melody.GetNote(noteIndex);
-        if (clip == null)
-        {
-            Debug.LogWarning($"AudioManager => Note {noteIndex} not found in melody '{melodyId}'.");
-            return;
-        }
-
-        PlayClip(clip, melodiesVolume);
-    }
-
-    /// <summary>Returns the note count of a melody by id. Returns 0 if not found.</summary>
-    public int GetMelodyNoteCount(string melodyId)
-    {
-        if (!melodyMap.TryGetValue(melodyId, out MelodySO melody)) return 0;
-        return melody.NoteCount;
-    }
-
-    // ââ Volume ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
-
     public void ChangeVolume(SoundsType type, float value)
     {
         float clampedValue = Mathf.Clamp01(value);
 
         switch (type)
         {
-            // Se aplica a los dos backends a la vez: el VCA manda sobre lo que
-            // ya suena por FMOD, y el volumen viejo sobre lo que todavía no ha
-            // migrado. Mientras la migración esté a medias hacen falta ambos.
             case SoundsType.Music:
                 musicVolume = clampedValue;
-                if (UsingFmod) _musicMixerHandle.SetVolume(eventTable.musicVca, musicVolume);
-                if (musicSource != null)
-                    musicSource.volume = musicVolume;
                 break;
 
             case SoundsType.Sfxs:
                 soundEffectsVolume = clampedValue;
-                if (UsingFmod) _sfxMixerHandle.SetVolume(eventTable.sfxVca, soundEffectsVolume);
-                foreach (var src in allSources)
-                {
-                    if (src.isPlaying && src.outputAudioMixerGroup == sfxMixer)
-                        src.volume = soundEffectsVolume;
-                }
                 break;
         }
+
+        ApplyVcaVolumes();
     }
 
-    // ââ Simple sound accessors ââââââââââââââââââââââââââââââââââââââââââââââââ
-
-    // Estos tres elegían a mano un clip al azar sin repetir el anterior. En FMOD
-    // eso lo hace el propio evento (multi-instrument), así que basta con
-    // dispararlo: el código deja de decidir CÓMO suena y Audio puede iterarlo
-    // sin pedir builds. Si el evento todavía no existe, se cae a la rotación
-    // vieja y no se nota nada.
-
-    public void MakeStepSound()
+    private void ApplyVcaVolumes()
     {
-        if (TryPlayFmodSfx("player_steps", null, null)) return;
+        if (eventTable == null) return;
 
-        int newStep = GetNonRepeatedRandomNumber(currentStep, playerStepSfxs.Count);
-        StopSound($"step{currentStep}");
-        PlaySound($"step{newStep}");
-        currentStep = newStep;
-    }
-
-    public void MakeDeathSound()
-    {
-        if (TryPlayFmodSfx("player_death", null, null)) return;
-
-        int newDeath = GetNonRepeatedRandomNumber(currentDeath, playerDeathSfxs.Count);
-        StopSound($"death{currentDeath}");
-        PlaySound($"death{newDeath}");
-        currentDeath = newDeath;
-    }
-
-    public void MakeJoinSound()
-    {
-        if (TryPlayFmodSfx("player_spawn", null, null)) return;
-
-        int newJoin = GetNonRepeatedRandomNumber(currentJoin, playerJoinSfxs.Count);
-        StopSound($"join{currentJoin}");
-        PlaySound($"join{newJoin}");
-        currentJoin = newJoin;
-    }
-
-    public void MakeButtonSelectedSound() => PlaySound("button_selected");
-
-    public void MakeButtonHoverSound() => PlaySound("button_hover");
-
-    // ââ Helpers âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
-
-    /// <summary>Plays a raw AudioClip directly through the pool.</summary>
-    private void PlayClip(AudioClip clip, float? volume = null)
-    {
-        if (clip == null) return;
-
-        var src = GetSource();
-        src.clip = clip;
-        src.volume = volume ?? soundEffectsVolume;
-        src.loop = false;
-        src.outputAudioMixerGroup = sfxMixer;
-        src.spatialBlend = 0f;
-        src.transform.SetParent(null);
-        src.Play();
-
-        StartCoroutine(RecycleWhenDone(src));
-    }
-
-    public int GetNonRepeatedRandomNumber(int nonRepeat, int maxExclusive)
-    {
-        if (maxExclusive <= 1) return 0;
-
-        int randomNum;
-        do
-        {
-            randomNum = UnityEngine.Random.Range(0, maxExclusive);
-        }
-        while (randomNum == nonRepeat);
-
-        return randomNum;
+        _musicMixerHandle.SetVolume(eventTable.musicVca, musicVolume);
+        _sfxMixerHandle.SetVolume(eventTable.sfxVca,     soundEffectsVolume);
     }
 
     public float GetMusicVolume() => musicVolume;
     public float GetSFXsVolume() => soundEffectsVolume;
+
+    // ── Simple sound accessors ────────────────────────────────────────────────
+
+    // Antes estos tres elegían en C# un clip al azar sin repetir el anterior.
+    // Esa variación la hace ahora el propio evento (multi-instrument de FMOD).
+
+    public void MakeStepSound()  => PlaySound("player_steps");
+    public void MakeDeathSound() => PlaySound("player_death");
+    public void MakeJoinSound()  => PlaySound("player_spawn");
+
+    public void MakeButtonSelectedSound() => PlaySound("button_selected");
+    public void MakeButtonHoverSound()    => PlaySound("button_hover");
 }

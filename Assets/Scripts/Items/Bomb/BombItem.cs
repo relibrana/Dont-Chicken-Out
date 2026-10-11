@@ -75,7 +75,6 @@ public sealed class BombItem : ThrowableItem
 
     [Header("Optional FX")]
     [SerializeField] private ParticleSystem[] explosionParticles;
-    [SerializeField] private AudioClip explosionSfx;
 
     private SpriteRenderer[] cachedSpriteRenderers;
     private Coroutine fuseRoutine;
@@ -306,8 +305,7 @@ public sealed class BombItem : ThrowableItem
             }
         }
 
-        if (explosionSfx != null)
-            AudioSource.PlayClipAtPoint(explosionSfx, transform.position);
+        // The explosion sound is the FMOD event raised in Explode (SimEvent.BombExploded).
     }
 
     protected override void OnDisable() {
