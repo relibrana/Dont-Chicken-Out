@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<objects serializationModel="Studio.02.03.00">
+	<object class="EncodableAsset" id="{e97e7d0e-ccf0-4cc5-8282-cd681d1610fb}">
+		<property name="color">
+			<value>Yellow Light 1</value>
+		</property>
+		<property name="assetPath">
+			<value>SFX/UI/Win Round/</value>
+		</property>
+		<relationship name="masterAssetFolder">
+			<destination>{314f77b0-b70e-432e-a6b1-5d226fa946ae}</destination>
+		</relationship>
+	</object>
+</objects>

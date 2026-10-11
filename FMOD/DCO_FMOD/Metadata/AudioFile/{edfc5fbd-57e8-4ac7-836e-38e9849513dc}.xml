@@ -1,8 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <objects serializationModel="Studio.02.03.00">
 	<object class="AudioFile" id="{edfc5fbd-57e8-4ac7-836e-38e9849513dc}">
+		<property name="color">
+			<value>Purple Light 1</value>
+		</property>
 		<property name="assetPath">
-			<value>Blocks/sfx_dco_blocksfx_invalidblockplacement_au-bs2_v1.wav</value>
+			<value>SFX/Blocks/sfx_dco_blocksfx_invalidblockplacement_au-bs2_v1.wav</value>
 		</property>
 		<property name="frequencyInKHz">
 			<value>48</value>

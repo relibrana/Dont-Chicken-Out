@@ -1,8 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <objects serializationModel="Studio.02.03.00">
 	<object class="AudioFile" id="{ac985b6b-4b8a-478f-aa7e-f3712905deb3}">
+		<property name="color">
+			<value>Red Light 1</value>
+		</property>
 		<property name="assetPath">
-			<value>Player/Cuacs/Tequila/Tequila_2.wav</value>
+			<value>SFX/Player/Cuacs/Tequila/Tequila_2.wav</value>
 		</property>
 		<property name="frequencyInKHz">
 			<value>48</value>

@@ -1,6 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <objects serializationModel="Studio.02.03.00">
 	<object class="AudioFile" id="{58d20f74-8dab-4f52-9afc-c31157cb550f}">
+		<property name="color">
+			<value>Green Light 1</value>
+		</property>
 		<property name="assetPath">
 			<value>BGM/Gameplay/DCO Gameplay.mp3</value>
 		</property>

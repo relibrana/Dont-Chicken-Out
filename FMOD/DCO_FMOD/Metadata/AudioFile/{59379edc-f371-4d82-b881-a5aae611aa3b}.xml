@@ -1,8 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <objects serializationModel="Studio.02.03.00">
 	<object class="AudioFile" id="{59379edc-f371-4d82-b881-a5aae611aa3b}">
+		<property name="color">
+			<value>Red Light 1</value>
+		</property>
 		<property name="assetPath">
-			<value>Player/Death/sfx_dco_death3.wav</value>
+			<value>SFX/Player/Death/sfx_dco_death3.wav</value>
 		</property>
 		<property name="frequencyInKHz">
 			<value>48</value>

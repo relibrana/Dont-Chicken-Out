@@ -1,8 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <objects serializationModel="Studio.02.03.00">
 	<object class="AudioFile" id="{3fe9f612-c23d-41b2-bdf6-05e102146509}">
+		<property name="color">
+			<value>Yellow Light 1</value>
+		</property>
 		<property name="assetPath">
-			<value>UI/Button/sfx_dco_button.wav</value>
+			<value>SFX/UI/Button/sfx_dco_button.wav</value>
 		</property>
 		<property name="frequencyInKHz">
 			<value>48</value>

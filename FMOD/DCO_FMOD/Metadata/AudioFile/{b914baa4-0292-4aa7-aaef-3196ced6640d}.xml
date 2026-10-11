@@ -1,8 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <objects serializationModel="Studio.02.03.00">
 	<object class="AudioFile" id="{b914baa4-0292-4aa7-aaef-3196ced6640d}">
+		<property name="color">
+			<value>Red Light 1</value>
+		</property>
 		<property name="assetPath">
-			<value>Player/Cuacs/Mario/Mario_2.wav</value>
+			<value>SFX/Player/Cuacs/Mario/Mario_2.wav</value>
 		</property>
 		<property name="frequencyInKHz">
 			<value>48</value>

@@ -1,8 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <objects serializationModel="Studio.02.03.00">
 	<object class="AudioFile" id="{cdea749c-eff6-4bb9-9a02-dfd37aadec66}">
+		<property name="color">
+			<value>Purple Light 1</value>
+		</property>
 		<property name="assetPath">
-			<value>Blocks/sfx_dco_blocksfx_blockbeingdraggedbypushing_au-bs3_v1.wav</value>
+			<value>SFX/Blocks/sfx_dco_blocksfx_blockbeingdraggedbypushing_au-bs3_v1.wav</value>
 		</property>
 		<property name="frequencyInKHz">
 			<value>48</value>

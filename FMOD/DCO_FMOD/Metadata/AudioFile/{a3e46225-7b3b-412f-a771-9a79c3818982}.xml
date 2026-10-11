@@ -1,6 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <objects serializationModel="Studio.02.03.00">
 	<object class="AudioFile" id="{a3e46225-7b3b-412f-a771-9a79c3818982}">
+		<property name="color">
+			<value>Green Light 1</value>
+		</property>
 		<property name="assetPath">
 			<value>BGM/Menu/bgm_dco_a2.mp3</value>
 		</property>

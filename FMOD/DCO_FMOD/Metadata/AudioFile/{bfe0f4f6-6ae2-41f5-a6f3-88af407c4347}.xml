@@ -1,8 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <objects serializationModel="Studio.02.03.00">
 	<object class="AudioFile" id="{bfe0f4f6-6ae2-41f5-a6f3-88af407c4347}">
+		<property name="color">
+			<value>Red Light 1</value>
+		</property>
 		<property name="assetPath">
-			<value>Player/Cuacs/Sonic/Sonic_7.wav</value>
+			<value>SFX/Player/Cuacs/Sonic/Sonic_7.wav</value>
 		</property>
 		<property name="frequencyInKHz">
 			<value>48</value>

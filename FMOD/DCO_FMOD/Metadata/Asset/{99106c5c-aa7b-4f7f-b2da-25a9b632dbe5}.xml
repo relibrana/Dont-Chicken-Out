@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<objects serializationModel="Studio.02.03.00">
+	<object class="EncodableAsset" id="{99106c5c-aa7b-4f7f-b2da-25a9b632dbe5}">
+		<property name="color">
+			<value>Magenta Light 1</value>
+		</property>
+		<property name="assetPath">
+			<value>SFX/Items/Teleport/</value>
+		</property>
+		<relationship name="masterAssetFolder">
+			<destination>{314f77b0-b70e-432e-a6b1-5d226fa946ae}</destination>
+		</relationship>
+	</object>
+</objects>

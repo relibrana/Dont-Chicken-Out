@@ -1,8 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <objects serializationModel="Studio.02.03.00">
 	<object class="AudioFile" id="{baf979b1-b9df-4dc0-8c37-dcfaa29de01d}">
+		<property name="color">
+			<value>Red Light 1</value>
+		</property>
 		<property name="assetPath">
-			<value>Player/Gliding/sfx_dco_gliding.mp3</value>
+			<value>SFX/Player/Gliding/sfx_dco_gliding.mp3</value>
 		</property>
 		<property name="frequencyInKHz">
 			<value>48</value>

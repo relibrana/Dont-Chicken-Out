@@ -1,8 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <objects serializationModel="Studio.02.03.00">
 	<object class="AudioFile" id="{a9006fb9-4f02-48ea-a70d-abf8bebe9eca}">
+		<property name="color">
+			<value>Yellow Light 1</value>
+		</property>
 		<property name="assetPath">
-			<value>UI/Win Round/Win Round.mp3</value>
+			<value>SFX/UI/Win Round/Win Round.mp3</value>
 		</property>
 		<property name="frequencyInKHz">
 			<value>48</value>

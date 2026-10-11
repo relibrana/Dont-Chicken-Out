@@ -1,8 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <objects serializationModel="Studio.02.03.00">
 	<object class="AudioFile" id="{b1e2c3cc-5770-4473-bae0-810a3be5a7c8}">
+		<property name="color">
+			<value>Magenta Light 1</value>
+		</property>
 		<property name="assetPath">
-			<value>Items/Bomb/sfx_dco_bomb.mp3</value>
+			<value>SFX/Items/Bomb/sfx_dco_bomb.mp3</value>
 		</property>
 		<property name="frequencyInKHz">
 			<value>48</value>

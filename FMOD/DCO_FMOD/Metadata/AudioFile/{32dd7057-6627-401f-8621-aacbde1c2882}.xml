@@ -1,8 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <objects serializationModel="Studio.02.03.00">
 	<object class="AudioFile" id="{32dd7057-6627-401f-8621-aacbde1c2882}">
+		<property name="color">
+			<value>Magenta Light 1</value>
+		</property>
 		<property name="assetPath">
-			<value>Items/Bomb/Bomb_lighter.wav</value>
+			<value>SFX/Items/Bomb/Bomb_lighter.wav</value>
 		</property>
 		<property name="frequencyInKHz">
 			<value>48</value>

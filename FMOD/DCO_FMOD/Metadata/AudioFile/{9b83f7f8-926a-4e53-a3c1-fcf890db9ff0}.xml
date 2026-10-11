@@ -1,8 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <objects serializationModel="Studio.02.03.00">
 	<object class="AudioFile" id="{9b83f7f8-926a-4e53-a3c1-fcf890db9ff0}">
+		<property name="color">
+			<value>Red Light 1</value>
+		</property>
 		<property name="assetPath">
-			<value>Player/Steps/sfx_dco_steps3.mp3</value>
+			<value>SFX/Player/Steps/sfx_dco_steps3.mp3</value>
 		</property>
 		<property name="frequencyInKHz">
 			<value>48</value>

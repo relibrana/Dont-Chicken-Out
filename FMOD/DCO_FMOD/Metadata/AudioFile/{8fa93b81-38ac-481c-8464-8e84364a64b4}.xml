@@ -1,8 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <objects serializationModel="Studio.02.03.00">
 	<object class="AudioFile" id="{8fa93b81-38ac-481c-8464-8e84364a64b4}">
+		<property name="color">
+			<value>Red Light 1</value>
+		</property>
 		<property name="assetPath">
-			<value>Player/Cuacs/Megalovania/Megalovania_7.wav</value>
+			<value>SFX/Player/Cuacs/Megalovania/Megalovania_7.wav</value>
 		</property>
 		<property name="frequencyInKHz">
 			<value>48</value>
