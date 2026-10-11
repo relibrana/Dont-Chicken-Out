@@ -39,7 +39,7 @@ se toca **en un sitio**. Con `EventReference` repartido, en dieciocho.
 
 ## 2. Qué está mapeado
 
-27 eventos existen en el proyecto de Studio (10 oct 2026). 20 ya están conectados:
+29 eventos existen en el proyecto de Studio (10 oct 2026). 22 ya están conectados:
 
 > ⚠️ Hasta el 10 oct 2026 la tabla **no estaba asignada** en `Assets/Prefabs/AudioManager.prefab` (campo `eventTable`): todo sonaba por el sistema viejo y FMOD nunca llegó a sonar en el juego. Si el audio deja de sonar entero, mirar eso primero: sin tabla, el `AudioManager` lo avisa con un error al arrancar.
 
@@ -57,9 +57,12 @@ se toca **en un sitio**. Con `EventReference` repartido, en dieciocho.
 | `bomb_explosion` | `event:/SFX/Items/Bomb Explosion` |
 | `bomb_lighter` | `event:/SFX/Items/Bomb Fuse` — **sostenido**, uno por bomba |
 | `game_countdown` / `game_start` / `win_round` | `event:/SFX/UI/{Countdown,Start Round,Win Round}` |
-| `button_selected` / `select` | `event:/SFX/UI/Button` |
+| `button_selected` / `select` | `event:/SFX/UI/Button Press` |
+| `button_hover` | `event:/SFX/UI/Button Hover` |
+| `Title` | `event:/SFX/UI/Title Animation` — evento de animación `PlaySFX("Title")` en el primer cuadro de `Animation/Title/Appear.anim` |
 | `Game` | `event:/BGM/Gameplay` |
 | `BGM_Menu_A1` / `A2` / `B` | `event:/BGM/Menu` |
+| *(victoria)* | `event:/BGM/Menu` arrancado con `GameState = 1`: entra por "Victory C" en vez de desde el principio. Lo pide `GameManager.DoWin` al ganar la partida con `PlayMusic("BGM_Menu_B", gameState: 1)` |
 
 Los tres ids de menú apuntan al **mismo** evento a propósito: en FMOD el intro y el loop viven dentro
 de un único evento con transition markers, así que `PlayMusicWithIntro` ya no necesita encadenar dos
@@ -111,6 +114,8 @@ suena** (no hay respaldo).
 
 ### 3.1 VCAs — ✅ hecho (10 oct 2026)
 
+> ⚠️ **Pendiente (Juan):** los 11 eventos creados después de los VCAs no están asignados a `vca:/SFX`, así que el slider de efectos no les afectará: `Bomb Explosion`, `Bomb Fuse`, `Button Hover`, `Button Press`, `Obtain Item`, `Title Animation`, `AnvilFall`, `AnvilHit`, `Pow`, `Super Kick`, `Teleport`. Suenan bien; solo falta asignarlos al VCA y reconstruir.
+
 Juan creó **`vca:/MUSIC`** (Gameplay, Menu) y **`vca:/SFX`** (los otros 19 eventos), guardó y
 reconstruyó bancos. El `AudioEventTable.asset` ya apunta a esas dos rutas. `UI.bank` desapareció: sus
 eventos viven ahora en `SFX.bank`, y como Unity carga todos los bancos (`BankLoadType: All`), no hay
@@ -126,7 +131,6 @@ Si se renombran, basta con corregir los dos campos del `AudioEventTable.asset`.
 
 | id | qué es | qué hace falta |
 |---|---|---|
-| `button_hover` | Pasar por encima de un botón. Hoy `event:/SFX/UI/Button` está mapeado al click. | ¿Mismo evento con parámetro, o uno propio? |
 | `scene_transitionIn` / `scene_transitionOut` | Entrada y salida de transición de escena. Existe `event:/SFX/UI/Transitions`, uno solo para los dos. | ¿Un parámetro que distinga in/out, o dos eventos? Si los mapeo los dos al mismo, sonarán idénticos. |
 
 ### 3.3 Parámetros que el código ya manda y faltan en FMOD 🟠

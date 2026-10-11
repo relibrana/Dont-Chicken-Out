@@ -148,7 +148,7 @@ AnimatorState:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_Name: PrepareBomb
-  m_Speed: 0.09
+  m_Speed: 0.20833333
   m_CycleOffset: 0
   m_Transitions:
   - {fileID: 5814851818259744841}

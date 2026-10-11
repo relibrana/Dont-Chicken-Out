@@ -468,8 +468,10 @@ public class GameManager : MonoBehaviour
 
         uiManager.OnWinRound(inGamePlayers, wonGame =>
         {
+            // Match won: menu music entering at "Victory C" (GameState 1 in
+            // event:/BGM/Menu) instead of from the top of the track.
             if (wonGame)
-                AudioManager.Instance.PlayMusicWithIntro("BGM_Menu_A2", "BGM_Menu_B");
+                AudioManager.Instance.PlayMusic("BGM_Menu_B", gameState: 1);
             else
                 AudioManager.Instance.PlaySound("win_round");
 

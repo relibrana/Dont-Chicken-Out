@@ -195,8 +195,13 @@ public class AudioManager : MonoBehaviour
     /// Arranca la música. Si el evento pedido ya está sonando no se reinicia: es
     /// lo que permite que BGM_Menu_A1 / A2 / B apunten todos a event:/BGM/Menu
     /// sin cortarse unos a otros al cambiar de pantalla.
+    ///
+    /// <paramref name="gameState"/> es el estado de juego que se le pasa al
+    /// evento (parámetro <c>gameStateParameter</c>, "GameState"). Se pone ANTES
+    /// de start(): event:/BGM/Menu salta a "Victory C" si arranca con
+    /// GameState = 1. Qué hace cada valor lo decide Audio en FMOD.
     /// </summary>
-    public void PlayMusic(string bgmId)
+    public void PlayMusic(string bgmId, int? gameState = null)
     {
         if (eventTable == null) return;
         if (!eventTable.TryGetMusic(bgmId, out AudioEventTableSO.Binding binding))
@@ -208,7 +213,10 @@ public class AudioManager : MonoBehaviour
         FMOD.GUID eventGuid = binding.eventRef.Guid;
 
         if (_musicInstanceValid && _musicEventGuid == eventGuid)
+        {
+            ApplyGameState(_musicInstance, gameState);
             return;
+        }
 
         ReleaseMusicInstance();
 
@@ -216,7 +224,16 @@ public class AudioManager : MonoBehaviour
         _musicInstanceValid = true;
         _musicEventGuid     = eventGuid;
 
+        ApplyGameState(_musicInstance, gameState);
         _musicInstance.start();
+    }
+
+    private void ApplyGameState(FMOD.Studio.EventInstance instance, int? gameState)
+    {
+        if (!gameState.HasValue) return;
+        if (string.IsNullOrEmpty(eventTable.gameStateParameter)) return;
+
+        instance.setParameterByName(eventTable.gameStateParameter, gameState.Value);
     }
 
     /// <summary>

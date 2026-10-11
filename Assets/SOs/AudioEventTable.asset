@@ -192,22 +192,22 @@ MonoBehaviour:
   - id: button_selected
     eventRef:
       Guid:
-        Data1: 1694192274
-        Data2: 1246949801
-        Data3: -803562309
-        Data4: 88409689
-      Path: event:/SFX/UI/Button
+        Data1: -253562955
+        Data2: 1150744543
+        Data3: -571450730
+        Data4: 2056614617
+      Path: event:/SFX/UI/Button Press
     sustained: 0
     pitchParameter: 
     panParameter: 
   - id: select
     eventRef:
       Guid:
-        Data1: 1694192274
-        Data2: 1246949801
-        Data3: -803562309
-        Data4: 88409689
-      Path: event:/SFX/UI/Button
+        Data1: -253562955
+        Data2: 1150744543
+        Data3: -571450730
+        Data4: 2056614617
+      Path: event:/SFX/UI/Button Press
     sustained: 0
     pitchParameter: 
     panParameter: 
@@ -225,11 +225,11 @@ MonoBehaviour:
   - id: button_hover
     eventRef:
       Guid:
-        Data1: 0
-        Data2: 0
-        Data3: 0
-        Data4: 0
-      Path: 
+        Data1: 1884008674
+        Data2: 1238288817
+        Data3: 583084221
+        Data4: 1116643218
+      Path: event:/SFX/UI/Button Hover
     sustained: 0
     pitchParameter: 
     panParameter: 
@@ -252,6 +252,17 @@ MonoBehaviour:
         Data3: 0
         Data4: 0
       Path: 
+    sustained: 0
+    pitchParameter: 
+    panParameter: 
+  - id: Title
+    eventRef:
+      Guid:
+        Data1: -882171574
+        Data2: 1120922691
+        Data3: 771450275
+        Data4: 1827043703
+      Path: event:/SFX/UI/Title Animation
     sustained: 0
     pitchParameter: 
     panParameter: 
@@ -290,6 +301,17 @@ MonoBehaviour:
     pitchParameter: 
     panParameter: 
   - id: BGM_Menu_B
+    eventRef:
+      Guid:
+        Data1: 248385864
+        Data2: 1235809688
+        Data3: -670552141
+        Data4: -1038299578
+      Path: event:/BGM/Menu
+    sustained: 0
+    pitchParameter: 
+    panParameter: 
+  - id: Menu
     eventRef:
       Guid:
         Data1: 248385864

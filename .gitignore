@@ -76,3 +76,34 @@ crashlytics-build.properties
 
 # Ignore .vscode folder
 /.vscode/
+
+# ── Don't Chicken Out ─────────────────────────────────────────────────────────
+
+# Solution files Unity regenerates (the .csproj/.sln are already ignored above)
+*.slnx
+
+# Unity crash leftovers: recovery scenes and Mono crash dumps
+/[Aa]ssets/_[Rr]ecovery/
+/[Aa]ssets/_[Rr]ecovery.meta
+mono_crash.*.json
+
+# FMOD Studio: generated per machine (build cache, unsaved changes, user prefs).
+# The project itself (Metadata/, Assets/, .fspro) and the built banks in
+# FMOD/Desktop/ ARE committed: Unity plays the built banks directly.
+/FMOD/DCO_FMOD/.cache/
+/FMOD/DCO_FMOD/.unsaved/
+/FMOD/DCO_FMOD/.user/
+
+# FMOD for Unity: editor cache, rebuilt from the banks
+/[Aa]ssets/[Pp]lugins/FMOD/Cache/
+/[Aa]ssets/[Pp]lugins/FMOD/Cache.meta
+
+# FMOD copies the banks here at build time
+/[Aa]ssets/[Ss]treamingAssets/FMODBanks/
+/[Aa]ssets/[Ss]treamingAssets/FMODBanks.meta
+
+# OS junk
+.DS_Store
+._*
+Thumbs.db
+desktop.ini

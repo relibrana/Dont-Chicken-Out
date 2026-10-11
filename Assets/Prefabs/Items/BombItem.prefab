@@ -28,7 +28,7 @@ Transform:
   m_GameObject: {fileID: 6462312441191344372}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0.678, y: 0.626, z: 0}
+  m_LocalPosition: {x: 0.538, y: 0.536, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 1
   m_Children: []
@@ -83,7 +83,7 @@ SpriteRenderer:
   m_SortingLayer: 2
   m_SortingOrder: 0
   m_MaskInteraction: 0
-  m_Sprite: {fileID: -1407352606, guid: 0ffc5fab8be73d04497bd11583456948, type: 3}
+  m_Sprite: {fileID: 1740000100, guid: 45839f3b8f333664ba1a944b25ba2bd8, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
   m_FlipY: 0
@@ -127,8 +127,8 @@ CircleCollider2D:
   m_UsedByEffector: 0
   m_CompositeOperation: 0
   m_CompositeOrder: 0
-  m_Offset: {x: -0.14, y: -0.09}
-  m_Radius: 0.53
+  m_Offset: {x: 0, y: 0}
+  m_Radius: 0.4
 --- !u!95 &8064756802529601347
 Animator:
   serializedVersion: 7
@@ -218,9 +218,9 @@ MonoBehaviour:
   ownerGraceSeconds: 0.25
   explosionPoint: {fileID: 8006819928533086999}
   fuseSeconds: 2
-  explosionRadius: 1.7
+  explosionRadius: 2
   explosionImpulse: 60
-  destroyDelay: 0.3
+  destroyDelay: 0.6
   detectLayer:
     serializedVersion: 2
     m_Bits: 1152
@@ -233,7 +233,7 @@ MonoBehaviour:
   breathEndHz: 9
   breathStartAmplitude: 0.04
   breathEndAmplitude: 0.16
-  useProceduralFuse: 1
+  useProceduralFuse: 0
   fuseAnchor: {x: 0, y: 0.35}
   fuseLength: 0.5
   fuseWidth: 0.06

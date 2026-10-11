@@ -69,7 +69,8 @@ public sealed class AudioEventTableSO : ScriptableObject
     [FormerlySerializedAs("musicTempoParameter")]
     public string progressionPhaseParameter = "";
 
-    [Tooltip("Parámetro global de estado de juego, si Audio lo usa para la música (Menu / Gameplay).")]
+    [Tooltip("Parámetro LOCAL de los eventos de música con el estado de juego. Se pone al arrancar la "
+             + "pista: event:/BGM/Menu salta a \"Victory C\" si arranca con GameState = 1 (al ganar la partida).")]
     public string gameStateParameter = "GameState";
 
     private Dictionary<string, Binding> _sfxMap;
