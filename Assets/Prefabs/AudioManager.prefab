@@ -44,6 +44,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 91962f9987ba0fa48aebed8ea309b220, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  eventTable: {fileID: 11400000, guid: bd5eb652e62eef147bb00b5cfd7c2296, type: 2}
+  logUnmappedIdsOnStart: 1
   initialPoolSize: 10
   sfxMixer: {fileID: -2344371087245105957, guid: b0272a82eba65984993bb74802f13433,
     type: 2}

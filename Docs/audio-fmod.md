@@ -39,7 +39,9 @@ se toca **en un sitio**. Con `EventReference` repartido, en dieciocho.
 
 ## 2. Qué está mapeado
 
-21 eventos existen en el proyecto de Studio. 18 ya están conectados:
+27 eventos existen en el proyecto de Studio (10 oct 2026). 20 ya están conectados:
+
+> ⚠️ Hasta el 10 oct 2026 la tabla **no estaba asignada** en `Assets/Prefabs/AudioManager.prefab` (campo `eventTable`): todo sonaba por el sistema viejo y FMOD nunca llegó a sonar en el juego. Si el audio deja de sonar entero, mirar eso primero: sin tabla, el `AudioManager` lo avisa con un error al arrancar.
 
 | id del juego | evento de FMOD |
 |---|---|
@@ -50,9 +52,10 @@ se toca **en un sitio**. Con `EventReference` repartido, en dieciocho.
 | `player_gliding` | `event:/SFX/Player/Gliding` — **sostenido, sin usar todavía** |
 | `block_placement` / `block_invalid` | `event:/SFX/Blocks/{Placement,Invalid}` |
 | `block_pushing` | `event:/SFX/Blocks/Pushing` — **sostenido, sin usar todavía** |
-| `egg_break` | `event:/SFX/Items/Easter Egg` |
+| `egg_break` | `event:/SFX/Items/Obtain Item` (reemplaza a `Easter Egg`, oct 2026) |
 | `tire_bounce` | `event:/SFX/Items/Tire` |
-| `bomb_explosion` | `event:/SFX/Items/Bomb` |
+| `bomb_explosion` | `event:/SFX/Items/Bomb Explosion` |
+| `bomb_lighter` | `event:/SFX/Items/Bomb Fuse` — **sostenido**, uno por bomba |
 | `game_countdown` / `game_start` / `win_round` | `event:/SFX/UI/{Countdown,Start Round,Win Round}` |
 | `button_selected` / `select` | `event:/SFX/UI/Button` |
 | `Game` | `event:/BGM/Gameplay` |
@@ -119,11 +122,10 @@ Si se renombran, basta con corregir los dos campos del `AudioEventTable.asset`.
 > Ojo con la confusión habitual: un bank (`BGM.bank`, `SFX.bank`) es una unidad de carga, no un punto
 > del mixer. No sirve para atenuar grupos.
 
-### 3.2 Cuatro ids sin evento — hoy mudos 🔴
+### 3.2 Ids sin evento — hoy mudos 🔴
 
 | id | qué es | qué hace falta |
 |---|---|---|
-| `bomb_lighter` | La mecha encendida, en bucle desde que prende hasta que estalla. Se **para** por código al explotar. | ¿Es un evento aparte, o es el mismo `event:/SFX/Items/Bomb` con un parámetro? Si es el mismo, dime el nombre del parámetro. |
 | `button_hover` | Pasar por encima de un botón. Hoy `event:/SFX/UI/Button` está mapeado al click. | ¿Mismo evento con parámetro, o uno propio? |
 | `scene_transitionIn` / `scene_transitionOut` | Entrada y salida de transición de escena. Existe `event:/SFX/UI/Transitions`, uno solo para los dos. | ¿Un parámetro que distinga in/out, o dos eventos? Si los mapeo los dos al mismo, sonarán idénticos. |
 
@@ -134,7 +136,7 @@ no exista, el evento suena tal cual, sin variación.
 
 | Parámetro | Rango | Dónde | Qué era antes en código |
 |---|---|---|---|
-| Lado de pantalla de la explosión | −1 izq … 1 der | Local en `event:/SFX/Items/Bomb` → `panParameter` de `bomb_explosion` | Paneo recortado al 80% |
+| Lado de pantalla de la explosión | −1 izq … 1 der | Local en `event:/SFX/Items/Bomb Explosion` → `panParameter` de `bomb_explosion` | Paneo recortado al 80% |
 | Celda de la pieza colocada | 0, 1, 2… (una por celda de la pieza) | Local en `event:/SFX/Blocks/Placement` → `valueParameter` de `block_placement` | Escala de pitch: +0.08 por celda, tope 1.5 |
 | Fase de progresión | 1, 2, 3… | **Global** → `progressionPhaseParameter` | Pitch de la música: +3% por fase, tope 1.25 |
 

@@ -126,11 +126,11 @@ MonoBehaviour:
   - id: egg_break
     eventRef:
       Guid:
-        Data1: -573824313
-        Data2: 1196919357
-        Data3: -412136549
-        Data4: -1293921594
-      Path: event:/SFX/Items/Easter Egg
+        Data1: -761552026
+        Data2: 1207000998
+        Data3: -2059963244
+        Data4: 416921943
+      Path: event:/SFX/Items/Obtain Item
     sustained: 0
     pitchParameter: 
     panParameter: 
@@ -148,11 +148,11 @@ MonoBehaviour:
   - id: bomb_explosion
     eventRef:
       Guid:
-        Data1: 1644962679
-        Data2: 1158529146
-        Data3: 2111539630
-        Data4: 2016927511
-      Path: event:/SFX/Items/Bomb
+        Data1: -1888842151
+        Data2: 1077824143
+        Data3: -1685849176
+        Data4: 1298542120
+      Path: event:/SFX/Items/Bomb Explosion
     sustained: 0
     pitchParameter: 
     panParameter: 
@@ -214,11 +214,11 @@ MonoBehaviour:
   - id: bomb_lighter
     eventRef:
       Guid:
-        Data1: 0
-        Data2: 0
-        Data3: 0
-        Data4: 0
-      Path: 
+        Data1: 1725327831
+        Data2: 1130234933
+        Data3: 273244294
+        Data4: 749162575
+      Path: event:/SFX/Items/Bomb Fuse
     sustained: 1
     pitchParameter: 
     panParameter: 

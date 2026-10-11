@@ -4,8 +4,11 @@ using UnityEngine;
 /// <summary>
 /// Base for timed item states living on the player (súper patada, stun, papa
 /// caliente...). Owns the countdown, the placeholder tint, and cleanup: a state
-/// never survives the owner's death or the end of a round (isOnGame drops) nor
-/// the component being disabled. Subclasses hook OnStateStarted / OnTick /
+/// never survives the owner's death nor the round reset (GameManager calls
+/// EndAll in both), the owner leaving the game (isOnGame drops) nor the
+/// component being disabled. On death the hot potato detonates first.
+/// Several states may tint at once; the colour always returns to the real
+/// original once the last one ends. Subclasses hook OnStateStarted / OnTick /
 /// OnStateExpired / OnStateEnded and must undo in OnStateEnded everything they
 /// set in OnStateStarted.
 /// NOTE: no DisallowMultipleComponent here — Unity applies it to subtypes, and
@@ -84,6 +87,16 @@ public abstract class PlayerItemState : MonoBehaviour
 
     private void OnDisable() => EndState();
 
+    /// <summary>
+    /// Ends every item state on that player right now. Called by the round
+    /// reset so cleanup does not depend on Update noticing isOnGame dropped.
+    /// </summary>
+    public static void EndAll(GameObject owner)
+    {
+        foreach (PlayerItemState state in owner.GetComponents<PlayerItemState>())
+            state.EndState();
+    }
+
     /// <summary>Timer reached zero. Default just ends the state; override to add an on-expiry effect.</summary>
     protected virtual void OnStateExpired() => EndState();
 
@@ -102,6 +115,14 @@ public abstract class PlayerItemState : MonoBehaviour
             if (_renderers[i] != null)
                 _renderers[i].color = visible ? _tint : _originalColors[i];
         }
+
+        // Several states can tint the same chicken. When this one lets go, the
+        // colour goes back to whichever other state is still showing its tint.
+        if (!visible)
+        {
+            PlayerItemState stillTinting = FindOtherTintingState();
+            if (stillTinting != null) stillTinting.SetTintVisible(true);
+        }
     }
 
     /// <summary>Changes the tint color while active (pulses). Reapplies if visible.</summary>
@@ -113,13 +134,38 @@ public abstract class PlayerItemState : MonoBehaviour
 
     private void CacheRenderers()
     {
+        // If another state is already tinting the chicken, the renderers are
+        // showing ITS tint: the real originals are the ones it cached. Copying
+        // sr.color here would store a tint as "original" and leave the chicken
+        // coloured forever once both states end.
+        PlayerItemState other = FindOtherTintingState();
+
         _renderers.Clear();
         _originalColors.Clear();
 
         foreach (SpriteRenderer sr in GetComponentsInChildren<SpriteRenderer>())
         {
             _renderers.Add(sr);
-            _originalColors.Add(sr.color);
+            _originalColors.Add(other != null && other.TryGetOriginalColor(sr, out Color original)
+                ? original
+                : sr.color);
         }
+    }
+
+    private PlayerItemState FindOtherTintingState()
+    {
+        foreach (PlayerItemState state in GetComponents<PlayerItemState>())
+        {
+            if (state != this && state.IsActive && state._tintVisible)
+                return state;
+        }
+        return null;
+    }
+
+    private bool TryGetOriginalColor(SpriteRenderer sr, out Color original)
+    {
+        int index = _renderers.IndexOf(sr);
+        original = index >= 0 ? _originalColors[index] : default;
+        return index >= 0;
     }
 }

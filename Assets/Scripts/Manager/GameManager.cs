@@ -291,6 +291,10 @@ public class GameManager : MonoBehaviour
         player.DropBlock();
         player.isOnGame = false;
 
+        // Power-ups never carry over to the next round. Ended explicitly here
+        // instead of trusting each state's Update to notice isOnGame dropped.
+        PlayerItemState.EndAll(player.gameObject);
+
         if (repositionPlayer)
             player.transform.position = player.startPosition;
     }
@@ -298,6 +302,12 @@ public class GameManager : MonoBehaviour
     private void OnPlayersDeath(PlayerController player)
     {
         Vector2 deathPosition = player.transform.position;
+
+        // A dead chicken keeps no power-up (design, oct 2026). The hot potato
+        // goes off on the spot, so it must detonate before the body is moved.
+        if (player.TryGetComponent(out HotPotatoState potato))
+            potato.DetonateOnCarrierDeath();
+        PlayerItemState.EndAll(player.gameObject);
 
         player.gameObject.transform.position = deathPos.position;
         player.DropBlock();

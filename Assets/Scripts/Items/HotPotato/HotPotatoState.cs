@@ -90,10 +90,28 @@ public sealed class HotPotatoState : PlayerItemState
         SetTintColor(Color.Lerp(Color.white, _baseTint, 0.35f + 0.65f * wave));
     }
 
+    // EndState goes first so that, when Controller.OnDeath reaches
+    // GameManager.OnPlayersDeath, this potato is no longer active and does not
+    // get detonated a second time.
     protected override void OnStateExpired()
     {
-        Explode();
         EndState();
+        Explode();
+        Controller.OnDeath();
+    }
+
+    /// <summary>
+    /// The carrier died with the potato in hand (design, oct 2026): it goes off
+    /// right there. Called by GameManager before the dead chicken is moved away,
+    /// so the blast happens where they died. The carrier is already dying, so
+    /// it does not kill them again.
+    /// </summary>
+    public void DetonateOnCarrierDeath()
+    {
+        if (!IsActive) return;
+
+        EndState();
+        Explode();
     }
 
     /// <summary>
@@ -153,7 +171,5 @@ public sealed class HotPotatoState : PlayerItemState
             Vector2 direction = toOther.sqrMagnitude > 0.0001f ? toOther.normalized : Vector2.up;
             other.AddImpulse(direction * _explosionImpulse, isKick: true, resetSpeed: true);
         }
-
-        Controller.OnDeath();
     }
 }
