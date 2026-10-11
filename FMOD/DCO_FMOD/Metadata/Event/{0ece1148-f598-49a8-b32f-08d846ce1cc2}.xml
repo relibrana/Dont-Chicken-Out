@@ -286,7 +286,7 @@
 			<value>52.386375000000001</value>
 		</property>
 		<property name="length">
-			<value>46.551147727272721</value>
+			<value>46.551147727272735</value>
 		</property>
 		<property name="name">
 			<value>Loop B</value>
@@ -331,7 +331,7 @@
 	</object>
 	<object class="TransitionMarker" id="{29713b25-a485-4e69-9c28-8724b4225608}">
 		<property name="position">
-			<value>164.07075737652389</value>
+			<value>164.07075737652386</value>
 		</property>
 		<relationship name="timeline">
 			<destination>{cef05570-a61e-4eb4-be69-674fb31432b0}</destination>
