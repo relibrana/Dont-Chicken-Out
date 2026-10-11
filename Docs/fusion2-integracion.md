@@ -227,7 +227,7 @@ Verificado a 20 jul 2026 sobre 55 scripts. Esto **no es un diagnóstico de error
 **Capa 3 (interacciones) — hoy sin arbitraje:**
 - `KickCollider` ([:8-32](../Assets/Scripts/Controllers/KickCollider.cs)): sin autoridad, timestamp, cooldown ni dedup por víctima; dos jugadores que se patean ejecutan ambos golpes. El impulso lo aplica el receptor, no el atacante ([KickResponse.cs:14](../Assets/Scripts/Controllers/KickResponse.cs)).
 - `BlockDamageable.TakeDamage` recibe el atacante y lo descarta — sin atribución de daño/kill.
-- `ItemCapsule` sin guard `life <= 0` ([:27](../Assets/Scripts/Objects/ItemCapsule.cs)): dos golpes en el mismo frame entregan el item dos veces.
+- ~~`ItemCapsule` sin guard: dos golpes en el mismo frame entregaban el item dos veces.~~ Arreglado (oct 2026): `TakeDamage` ignora el golpe si la cápsula ya está desactivada.
 
 **Capa 5–6 (autoridad) — ver tabla en §5.**
 

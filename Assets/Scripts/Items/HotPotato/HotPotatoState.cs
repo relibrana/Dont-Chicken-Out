@@ -9,8 +9,12 @@ using UnityEngine;
 /// appears and keeps running across every hand-off — a transfer never resets it
 /// nor restarts the warning. Whoever holds it when it hits zero dies, no matter
 /// how recently they got it. That is why the transfer carries BOTH the time left
-/// and the original window: the blink accelerates against the whole window, not
+/// and the original window: the pulse accelerates against the whole window, not
 /// against each carrier's slice of it.
+///
+/// Seen as the potato over the carrier's head (HotPotatoVisual), pulsing like
+/// the bomb; it goes off with the bomb's explosion where the carrier stands
+/// (design, oct 2026). No tint: the potato itself is the tell.
 /// </summary>
 public sealed class HotPotatoState : PlayerItemState
 {
@@ -22,11 +26,16 @@ public sealed class HotPotatoState : PlayerItemState
     private float _explosionImpulse;
     private int   _explosionBlockDamage;
     private LayerMask _explosionLayers;
-    private Color _baseTint;
+
+    private HotPotatoVisual _visualPrefab;
+    private Vector3         _visualOffset;
+    private HotPotatoVisual _visual;
 
     private float _noTransferUntil;
 
     private const float TransferImmunitySeconds = 0.5f;
+
+    protected override bool UsesTint => false;
 
     /// <summary>Seconds left on the shared timer. For the HUD once real UI exists.</summary>
     public float FuseRemaining => IsActive ? Remaining : 0f;
@@ -39,7 +48,8 @@ public sealed class HotPotatoState : PlayerItemState
         float explosionImpulse,
         int explosionBlockDamage,
         LayerMask explosionLayers,
-        Color tint)
+        HotPotatoVisual visualPrefab,
+        Vector3 visualOffset)
     {
         Begin(
             fuseSeconds,
@@ -49,7 +59,8 @@ public sealed class HotPotatoState : PlayerItemState
             explosionImpulse,
             explosionBlockDamage,
             explosionLayers,
-            tint);
+            visualPrefab,
+            visualOffset);
     }
 
     private void Begin(
@@ -60,7 +71,8 @@ public sealed class HotPotatoState : PlayerItemState
         float explosionImpulse,
         int explosionBlockDamage,
         LayerMask explosionLayers,
-        Color tint)
+        HotPotatoVisual visualPrefab,
+        Vector3 visualOffset)
     {
         _fuseWindow           = Mathf.Max(remaining, window);
         _speedMultiplier      = speedMultiplier;
@@ -68,26 +80,35 @@ public sealed class HotPotatoState : PlayerItemState
         _explosionImpulse     = explosionImpulse;
         _explosionBlockDamage = explosionBlockDamage;
         _explosionLayers      = explosionLayers;
-        _baseTint             = tint;
+        _visualPrefab         = visualPrefab;
+        _visualOffset         = visualOffset;
         _noTransferUntil      = Time.time + TransferImmunitySeconds;
 
-        BeginState(remaining, tint);
+        BeginState(remaining, Color.white);
     }
 
-    protected override void OnStateStarted() => Movement.SpeedMultiplier = _speedMultiplier;
+    protected override void OnStateStarted()
+    {
+        Movement.SpeedMultiplier = _speedMultiplier;
+        _visual = HotPotatoVisual.Spawn(_visualPrefab, transform, _visualOffset);
+    }
 
-    protected override void OnStateEnded() => Movement.SpeedMultiplier = 1f;
+    protected override void OnStateEnded()
+    {
+        Movement.SpeedMultiplier = 1f;
+
+        // Hand-off or round reset: the potato just leaves this chicken. When it
+        // explodes, TakeVisual already moved it out of here before EndState.
+        if (_visual != null) _visual.Discard();
+        _visual = null;
+    }
 
     protected override void OnTick()
     {
-        // Pulse speeds up as the shared window runs out: ~2 Hz early, ~8 Hz at
-        // the end. Measured against _fuseWindow, so a hand-off does not reset
-        // the warning — the new carrier picks it up already blinking fast.
-        float urgency   = 1f - Mathf.Clamp01(Remaining / Mathf.Max(0.01f, _fuseWindow));
-        float frequency = Mathf.Lerp(2f, 8f, urgency);
-        float wave      = 0.5f + 0.5f * Mathf.Sin(Time.time * frequency * 2f * Mathf.PI);
-
-        SetTintColor(Color.Lerp(Color.white, _baseTint, 0.35f + 0.65f * wave));
+        // Measured against _fuseWindow, so a hand-off does not reset the
+        // warning — the new carrier picks it up already pulsing fast.
+        float urgency = 1f - Mathf.Clamp01(Remaining / Mathf.Max(0.01f, _fuseWindow));
+        if (_visual != null) _visual.Pulse(urgency);
     }
 
     // EndState goes first so that, when Controller.OnDeath reaches
@@ -95,8 +116,9 @@ public sealed class HotPotatoState : PlayerItemState
     // get detonated a second time.
     protected override void OnStateExpired()
     {
+        HotPotatoVisual visual = TakeVisual();
         EndState();
-        Explode();
+        Explode(visual);
         Controller.OnDeath();
     }
 
@@ -110,8 +132,9 @@ public sealed class HotPotatoState : PlayerItemState
     {
         if (!IsActive) return;
 
+        HotPotatoVisual visual = TakeVisual();
         EndState();
-        Explode();
+        Explode(visual);
     }
 
     /// <summary>
@@ -144,14 +167,26 @@ public sealed class HotPotatoState : PlayerItemState
             _explosionImpulse,
             _explosionBlockDamage,
             _explosionLayers,
-            _baseTint);
+            _visualPrefab,
+            _visualOffset);
 
         EndState();
     }
 
-    private void Explode()
+    /// <summary>Hands the potato over to the explosion so EndState does not discard it.</summary>
+    private HotPotatoVisual TakeVisual()
+    {
+        HotPotatoVisual visual = _visual;
+        _visual = null;
+        return visual;
+    }
+
+    private void Explode(HotPotatoVisual visual)
     {
         Vector2 origin = transform.position;
+
+        if (visual != null) visual.Detonate(origin);
+        SimEvents.Raise(SimEvent.HotPotatoExploded, origin, this);
 
         Collider2D[] hits = Physics2D.OverlapCircleAll(origin, _explosionRadius, _explosionLayers);
 
@@ -167,9 +202,14 @@ public sealed class HotPotatoState : PlayerItemState
             if (body == null || !body.TryGetComponent(out PlayerController other)) continue;
             if (other == Controller) continue;
 
-            Vector2 toOther  = (Vector2)other.transform.position - origin;
-            Vector2 direction = toOther.sqrMagnitude > 0.0001f ? toOther.normalized : Vector2.up;
-            other.AddImpulse(direction * _explosionImpulse, isKick: true, resetSpeed: true);
+            // Same falloff as the bomb (design, oct 2026): full push at the
+            // centre, none at the edge of the radius. Unlike the bomb it does
+            // not kill the neighbours, it only throws them.
+            Vector2 toOther   = (Vector2)other.transform.position - origin;
+            float   distance  = toOther.magnitude;
+            Vector2 direction = distance > 0.0001f ? toOther / distance : Vector2.up;
+            float   falloff   = Mathf.Clamp01(1f - distance / Mathf.Max(0.0001f, _explosionRadius));
+            other.AddImpulse(direction * (_explosionImpulse * falloff), isKick: true, resetSpeed: true);
         }
     }
 }

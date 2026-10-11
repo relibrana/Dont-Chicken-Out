@@ -1,42 +1,21 @@
-using System.Collections.Generic;
 using UnityEngine;
 
+/// <summary>
+/// The egg capsule. Breaks on the first hit (design, oct 2026: no damage
+/// states) and hands an item from the weighted pool to whoever broke it.
+/// </summary>
 public class ItemCapsule : MonoBehaviour, IDamageable
 {
-    [Header("Damage Visuals")]
-    [SerializeField, Tooltip("Sprites por daño: [0]=intacto, [1]=dañado1, [2]=dañado2")]
-    private List<Sprite> damageSprites = new();
-
-    [SerializeField] private SpriteRenderer sr;
-
-    private const int baseLife = 1;
-    private int life;
-
-    private void Awake()
-    {
-        ResetState();
-    }
-
-    private void OnDisable()
-    {
-        ResetState();
-    }
-
     public void TakeDamage(int amount, PlayerController player)
     {
         if (amount <= 0) return;
 
-        life -= amount;
+        // Two kicks landing in the same physics step both reach here; only the
+        // first one may break the egg, or it would hand out two items.
+        if (!gameObject.activeInHierarchy) return;
 
         SimEvents.Raise(SimEvent.CapsuleHit, transform.position, this);
-
-        if (life <= 0)
-        {
-            Break(player);
-            return;
-        }
-
-        UpdateSprite();
+        Break(player);
     }
 
     private void Break(PlayerController player)
@@ -63,23 +42,5 @@ public class ItemCapsule : MonoBehaviour, IDamageable
         }
 
         gameObject.SetActive(false);
-    }
-
-    private void ResetState()
-    {
-        life = baseLife;
-        UpdateSprite();
-    }
-
-    private void UpdateSprite()
-    {
-        if (sr == null) return;
-        if (damageSprites == null || damageSprites.Count == 0) return;
-
-        int index = Mathf.Clamp(baseLife - life, 0, damageSprites.Count - 1);
-
-        Sprite sprite = damageSprites[index];
-        if (sprite != null)
-            sr.sprite = sprite;
     }
 }

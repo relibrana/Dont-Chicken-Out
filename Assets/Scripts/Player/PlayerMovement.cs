@@ -313,6 +313,7 @@ public sealed class PlayerMovement : MonoBehaviour
             {
                 _isGliding = isGliding;
                 OnGlideStateChanged?.Invoke(_isGliding);
+                SimEvents.Raise(_isGliding ? SimEvent.PlayerGlideStarted : SimEvent.PlayerGlideEnded, transform.position, this);
             }
 
             _animController?.SetGliding(isGliding);
@@ -393,6 +394,7 @@ public sealed class PlayerMovement : MonoBehaviour
             {
                 _isGliding = false;
                 OnGlideStateChanged?.Invoke(false);
+                SimEvents.Raise(SimEvent.PlayerGlideEnded, transform.position, this);
             }
         }
 

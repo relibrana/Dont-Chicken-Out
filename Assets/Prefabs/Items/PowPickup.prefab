@@ -67,7 +67,12 @@ MonoBehaviour:
   countFrom: 3
   stunSeconds: 2.5
   stunTint: {r: 0.6, g: 0.6, b: 0.75, a: 1}
-  countdownSize: 140
+  countdownSprites:
+  - {fileID: 1740000201, guid: 3290cba7691d69e46b357ef22f0db09d, type: 3}
+  - {fileID: 1740000202, guid: 3290cba7691d69e46b357ef22f0db09d, type: 3}
+  - {fileID: 1740000203, guid: 3290cba7691d69e46b357ef22f0db09d, type: 3}
+  jumpSprite: {fileID: 21300000, guid: 9192434330a34be4e83b01a4cb51e071, type: 3}
+  countdownScale: 1
   shakeDuration: 0.22
   shakeAmplitude: 0.9
 --- !u!50 &1000000000000000004
@@ -124,7 +129,7 @@ Transform:
   m_GameObject: {fileID: 1100000000000000001}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0.677, y: 0.625, z: 0}
+  m_LocalPosition: {x: 0.527, y: 0.545, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -179,8 +184,8 @@ SpriteRenderer:
   m_SortingLayer: 2
   m_SortingOrder: 0
   m_MaskInteraction: 0
-  m_Sprite: {fileID: -1407352606, guid: 0ffc5fab8be73d04497bd11583456948, type: 3}
-  m_Color: {r: 1, g: 0.85, b: 0.2, a: 1}
+  m_Sprite: {fileID: 21300000, guid: 86124573fccede44fbbf709f7ce764b7, type: 3}
+  m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
   m_FlipY: 0
   m_DrawMode: 0
@@ -223,5 +228,5 @@ CircleCollider2D:
   m_UsedByEffector: 0
   m_CompositeOperation: 0
   m_CompositeOrder: 0
-  m_Offset: {x: -0.15, y: -0.08}
+  m_Offset: {x: 0, y: 0}
   m_Radius: 0.5

@@ -61,11 +61,10 @@ public sealed class TeleportPickup : HoldableItem
         }
 
         user.TeleportTo(destination);
+        SimEvents.Raise(SimEvent.PlayerTeleported, destination, user);
 
         if (grantedAirJumps > 0)
             user.GrantAirJump(grantedAirJumps);
-
-        // SFX pendiente: los ítems nuevos aún no tienen claves propias (ver Docs/items-implementacion.md).
     }
 
     /// <summary>Highest living rival. Ties resolve to whoever is found first.</summary>

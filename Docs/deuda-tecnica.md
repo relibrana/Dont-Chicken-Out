@@ -135,7 +135,7 @@ frontera que se va a networkear. Ver `Docs/items-implementacion.md` §Pendientes
 
 `AnvilPickup` instancia y destruye su `Anvil.prefab` con `Instantiate`/`Destroy` en vez de pasar por
 `PoolingManager`. Si un yunque no termina su caída antes del fin de ronda, `ResetPool` no lo ve
-(no está en `itemList`) y se queda en escena.
+(no está en `itemList`) y se queda en escena. Desde oct 2026 su columna de aviso (`AnvilZone`) va con él: se cierra cuando el yunque sale de la pantalla o se destruye, así que también sobreviviría a la ronda si el yunque lo hace.
 
 Es el mismo patrón de bug que tenían las cápsulas (arreglado en sep 2026: `GetCapsule` instanciaba
 cápsulas nuevas sin añadirlas a `capsuleList`, así que los huevos sobrevivían a la ronda).
@@ -156,10 +156,6 @@ cápsulas nuevas sin añadirlas a `capsuleList`, así que los huevos sobrevivía
 
 - **Finales de línea mezclados.** Hay scripts en CRLF y otros en LF dentro de `Assets/Scripts`.
   Con `core.autocrlf=true` no ensucia los diffs, pero conviene un `.gitattributes` que lo fije.
-- **`TireProjectile.prefab` se llama como un script que ya no existe.** El doc dice que
-  `TireProjectile` se eliminó y que la llanta es `SpringDisc`; el prefab lleva efectivamente el
-  componente `SpringDisc`, sólo que conserva el nombre viejo. Renombrarlo a `SpringDisc.prefab`
-  (con cuidado: `ItemsPool.asset` lo referencia por GUID, así que el rename es seguro).
 - **Súper patada: el rango de `Block Damage` está tapado.** Los sub-bloques tienen 3 de vida y una
   patada normal hace 1, así que los únicos valores distinguibles son 1 (= patada normal), 2 y 3
   (= one-shot); de 3 en adelante da igual lo que pongas. **Pendiente de decisión de diseño**: subir
@@ -179,4 +175,5 @@ Apuntado para que nadie pierda una tarde re-diagnosticando algo que ya tiene due
 | Piezas que no volvían al pool y consola llena de `Pool is full` | `BlockOverlapCheck.DisableBlock` escondía un sub-bloque solapado apagándole collider y sprite, pero seguía contando como vivo para el `BlockScript` padre. Sin collider nadie podía matarlo, así que la pieza nunca llegaba a cero hijos. Ahora pasa por `BlockDamageable.RemoveFromPlay()` | sep 2026 |
 | Un sacudón de cámara corto se sentía flojo | `UpdateShake` normalizaba la caída de amplitud contra la duración **por defecto**, no contra la del sacudón en curso: cualquier shake más corto que el default arrancaba a una fracción de su amplitud | sep 2026 |
 | `Block Damage` de la súper patada "no hacía nada" | Sí llegaba al bloque. El valor que se probó (1) es exactamente el daño de una patada normal, así que no había diferencia que ver. Lo que sigue abierto es el rango útil, arriba en §10 | sep 2026 (diagnóstico) |
+| `TireProjectile.prefab` llevaba el script `SpringDisc` (la llanta se llamaba "disco" por su versión colocable) | El script se renombró a `Tire` (`Items/Tire/Tire.cs`, mismo GUID: el prefab no se tocó). El prefab sigue llamándose `TireProjectile` | oct 2026 |
 | Un pollo con power-up lo conservaba (efecto y tinte) en la ronda siguiente | Dos cosas: (1) el cierre de los estados dependía de que el `Update` de cada uno notara que `isOnGame` bajó; ahora `GameManager.ResetPlayer` llama a `PlayerItemState.EndAll`. (2) Con dos estados a la vez, el segundo guardaba el **tinte** del primero como color "original" y lo devolvía al acabar; ahora se copian los originales reales y, al soltar un tinte, se reaplica el del estado que siga activo. Además (diseño, oct 2026) al morir también se cierran todos, y la papa caliente explota en el acto donde murió el portador | oct 2026 (pendiente de probar en editor) |

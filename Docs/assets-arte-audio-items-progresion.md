@@ -61,7 +61,7 @@ El sonido de lanzarlo no se repite acá: está en *Audio compartido entre items*
 
 ---
 
-### Llanta (`SpringDisc`) ✅
+### Llanta (`Tire`, antes `SpringDisc`) ✅
 
 | # | Tipo | Asset | Descripción | Estado |
 |---|---|---|---|---|
@@ -95,8 +95,8 @@ El sonido de lanzarlo no se repite acá: está en *Audio compartido entre items*
 | 5 | Animación | Jugador aturdido | Pollo mareado y sin control mientras dura el aturdimiento (2.5 s, quieto en el sitio). | ⬜ Pendiente |
 | 9 | Código | Plumas al recibir el POW | Estallido de plumas en los aturdidos, como al recibir una patada. | ✅ Hecho (sep 2026) |
 | 10 | Código | Vibración de mando | Leve al esquivarlo saltando, fuerte al recibirlo. Sin efecto en teclado. | ✅ Hecho (sep 2026) — `PlayerController.Rumble` |
-| 6 | Audio | Cuenta atrás | Pitido corto por cada número, ganando intensidad y profundidad a medida que la cuenta baja. | ⬜ Pendiente |
-| 7 | Audio | Detonación | Golpe grave al llegar a cero. | ⬜ Pendiente |
+| 6 | Audio | Cuenta atrás | Pitido corto por cada número, ganando intensidad y profundidad a medida que la cuenta baja. | ✅ `event:/SFX/Items/Pow` cubre cuenta y detonación (un disparo) |
+| 7 | Audio | Detonación | Golpe grave al llegar a cero. | ✅ Dentro de `Pow` |
 | 8 | Audio | Aturdimiento | Zumbido mareado mientras el jugador está aturdido. | ⬜ Pendiente |
 
 ---
@@ -109,7 +109,7 @@ El sonido de lanzarlo no se repite acá: está en *Audio compartido entre items*
 | 2 | Animación | Desaparición | El pollo se esfuma del sitio donde estaba al activar el item. Podría resolverse como un VFX; el traslado en sí lo hace el código. | ⬜ Pendiente |
 | 3 | Animación | Aparición | El pollo se materializa encima del rival que va más alto. Podría resolverse como un VFX. | ⬜ Pendiente |
 | 4 | Audio | Desaparición | Golpe de succión corto al desvanecerse. | ⬜ Pendiente |
-| 5 | Audio | Aparición | Golpe seco al materializarse en el destino. | ⬜ Pendiente |
+| 5 | Audio | Aparición | Golpe seco al materializarse en el destino. | ✅ `event:/SFX/Items/Teleport` (al llegar) |
 
 ---
 
@@ -131,11 +131,11 @@ El sonido de lanzarlo no se repite acá: está en *Audio compartido entre items*
 
 | # | Tipo | Asset | Descripción | Estado |
 |---|---|---|---|---|
-| 1 | Sprite | Yunque | El yunque tal como se ve durante la caída. | ⬜ Pendiente |
-| 2 | Sprite | Icono de aviso | Icono que aparece en la parte superior de la pantalla, alineado con la vertical por donde va a caer el yunque. | ⬜ Pendiente |
-| 3 | Código | Parpadeo del aviso | El icono parpadea antes de que el yunque empiece a caer. | ⬜ Pendiente |
+| 1 | Sprite | Yunque | El yunque tal como se ve durante la caída. | ✅ `Sprites/NewArt/Item-YunqueFall.png` (oct 2026) |
+| 2 | Sprite | Icono de aviso | Icono que aparece en la parte superior de la pantalla, alineado con la vertical por donde va a caer el yunque. | ✅ Cambiado por una columna de pantalla completa: `Zona-Yunque` + `Zona-YunqueFlecha` (`AnvilZone`) |
+| 3 | Código | Parpadeo del aviso | El icono parpadea antes de que el yunque empiece a caer. | ✅ La columna se abre y las flechas entran con fundido; después cae |
 | 4 | Audio | Aviso | Sonido de alerta mientras el icono parpadea. | ⬜ Pendiente |
-| 5 | Audio | Caída | Silbido que acompaña la caída. | ⬜ Pendiente |
+| 5 | Audio | Caída | Silbido que acompaña la caída. | ✅ `AnvilFall` (+ `AnvilHit` al romper bloques y aplastar) |
 
 La rotura de los bloques que atraviesa está en *Compartido entre items*.
 
@@ -145,15 +145,15 @@ La rotura de los bloques que atraviesa está en *Compartido entre items*.
 
 | # | Tipo | Asset | Descripción | Estado |
 |---|---|---|---|---|
-| 1 | Sprite | Elemento | El objeto en sí, tal como se ve. | ⬜ Pendiente |
-| 2 | Animación | Idle del elemento flotante | El elemento que va sobre la cabeza del portador, en bucle mientras lo lleva. | ⬜ Pendiente |
-| 3 | Animación | Crecimiento del elemento | El elemento flotante va aumentando de tamaño a medida que se acaba el tiempo. | ⬜ Pendiente |
-| 4 | Animación | Activación final | Lo que le cae encima al jugador que lo tenga cuando el tiempo llega a cero. | ⬜ Pendiente |
+| 1 | Sprite | Elemento | El objeto en sí, tal como se ve. | ✅ `Sprites/NewArt/Item-PapaCaliente.png` (oct 2026) |
+| 2 | Animación | Idle del elemento flotante | El elemento que va sobre la cabeza del portador, en bucle mientras lo lleva. | 🟡 Cubierto por código: `HotPotatoVisual` la hace "respirar" como la bomba |
+| 3 | Animación | Crecimiento del elemento | El elemento flotante va aumentando de tamaño a medida que se acaba el tiempo. | 🟡 Cubierto por código: el respirar acelera y crece al agotarse la ventana |
+| 4 | Animación | Activación final | Lo que le cae encima al jugador que lo tenga cuando el tiempo llega a cero. | ✅ Usa la explosión de la bomba (cuadros 6–12 de `Anim_Bomba`) en la posición del jugador |
 | 5 | Audio | Urgencia | Sonido que acompaña el crecimiento del elemento, ganando intensidad conforme queda menos tiempo. | ⬜ Pendiente |
 | 6 | Audio | Traspaso | Golpe corto en el momento en que cambia de dueño. | ⬜ Pendiente |
-| 7 | Audio | Activación final | Golpe al acabarse el tiempo. | ⬜ Pendiente |
+| 7 | Audio | Activación final | Golpe al acabarse el tiempo. | 🟡 Reutiliza `bomb_explosion` (`SimEvent.HotPotatoExploded` en `GameplayAudio`) |
 
-Falta definir qué es el elemento: una papa caliente, una nube que se va cargando y suelta un rayo sobre quien la lleva, una bomba de tiempo u otra cosa. Los audios dependen de esa decisión de dirección artística, así que se definen después.
+Decidido (oct 2026): es una **papa caliente** sobre la cabeza del portador que bombea como la bomba y explota con la misma explosión. El sonido de la explosión reutiliza `bomb_explosion` hasta que Audio haga uno propio; urgencia y traspaso siguen pendientes.
 
 ---
 
@@ -165,7 +165,7 @@ Falta definir qué es el elemento: una papa caliente, una nube que se va cargand
 | 2 | Animación | Patada reforzada | Patada más amplia y contundente que la normal. Falta confirmar si realmente cambia respecto a la patada de siempre. | ⬜ Pendiente |
 | 3 | Código | Aviso de expiración | El indicador flotante parpadea durante el último segundo, avisando que el efecto se acaba. | ⬜ Pendiente |
 | 4 | Audio | Activación | Golpe corto al recibir el efecto. | ⬜ Pendiente |
-| 5 | Audio | Patada reforzada | Patada con mucho más cuerpo que la normal. | ⬜ Pendiente |
+| 5 | Audio | Patada reforzada | Patada con mucho más cuerpo que la normal. | ✅ `event:/SFX/Items/Super Kick` |
 | 6 | Audio | Muerte por patada | Sonido particular para el momento en que la patada mata a un jugador. | ⬜ Pendiente |
 | 7 | Audio | Pérdida del efecto | Sonido corto que marca el momento en que se acaba. | ⬜ Pendiente |
 
@@ -202,4 +202,4 @@ Referencia de diseño: las etiquetas de Smash (hilo de Liliana, 10-14 sep 2026).
 ## Notas generales
 
 - Todos los sprites de items hoy son el sprite de la bomba tintado (moco verde, llanta oscura, yunque gris, teleport morado, POW amarillo) — por eso cerrar bien el sprite de la bomba primero condiciona la lectura del resto.
-- La cápsula (`ItemCapsule`) usa sprites de daño genéricos compartidos por todos los items (intacto/dañado1/dañado2) — no hace falta arte específico por item ahí, la sorpresa se revela al romperse.
+- La cápsula (`ItemCapsule`) es el huevo de `Sprites/NewArt/Item-Huevo.png` y se rompe de **un solo golpe** (diseño, oct 2026): ya no hay sprites de daño. No hace falta arte específico por item: la sorpresa se revela al romperse.

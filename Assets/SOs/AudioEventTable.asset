@@ -82,10 +82,10 @@ MonoBehaviour:
   - id: player_gliding
     eventRef:
       Guid:
-        Data1: 2050825056
-        Data2: 1204958301
-        Data3: 846742715
-        Data4: 1298040261
+        Data1: -2020497752
+        Data2: 1286824582
+        Data3: 890370179
+        Data4: 1532272795
       Path: event:/SFX/Player/Gliding
     sustained: 1
     pitchParameter: 
@@ -192,10 +192,10 @@ MonoBehaviour:
   - id: button_selected
     eventRef:
       Guid:
-        Data1: -253562955
-        Data2: 1150744543
-        Data3: -571450730
-        Data4: 2056614617
+        Data1: -1930756512
+        Data2: 1094720920
+        Data3: -182165346
+        Data4: 1355167570
       Path: event:/SFX/UI/Button Press
     sustained: 0
     pitchParameter: 
@@ -203,10 +203,10 @@ MonoBehaviour:
   - id: select
     eventRef:
       Guid:
-        Data1: -253562955
-        Data2: 1150744543
-        Data3: -571450730
-        Data4: 2056614617
+        Data1: -1930756512
+        Data2: 1094720920
+        Data3: -182165346
+        Data4: 1355167570
       Path: event:/SFX/UI/Button Press
     sustained: 0
     pitchParameter: 
@@ -225,10 +225,10 @@ MonoBehaviour:
   - id: button_hover
     eventRef:
       Guid:
-        Data1: 1884008674
-        Data2: 1238288817
-        Data3: 583084221
-        Data4: 1116643218
+        Data1: -1132985366
+        Data2: 1175203059
+        Data3: 1687672247
+        Data4: 1470056276
       Path: event:/SFX/UI/Button Hover
     sustained: 0
     pitchParameter: 
@@ -236,22 +236,22 @@ MonoBehaviour:
   - id: scene_transitionIn
     eventRef:
       Guid:
-        Data1: 0
-        Data2: 0
-        Data3: 0
-        Data4: 0
-      Path: 
+        Data1: 1106639344
+        Data2: 1315412560
+        Data3: -1029173074
+        Data4: -1719498048
+      Path: event:/SFX/UI/Transition In
     sustained: 0
     pitchParameter: 
     panParameter: 
   - id: scene_transitionOut
     eventRef:
       Guid:
-        Data1: 0
-        Data2: 0
-        Data3: 0
-        Data4: 0
-      Path: 
+        Data1: -1602362305
+        Data2: 1266988811
+        Data3: 1215386766
+        Data4: -1987874434
+      Path: event:/SFX/UI/Transition Out
     sustained: 0
     pitchParameter: 
     panParameter: 
@@ -266,14 +266,69 @@ MonoBehaviour:
     sustained: 0
     pitchParameter: 
     panParameter: 
+  - id: super_kick
+    eventRef:
+      Guid:
+        Data1: 1182916417
+        Data2: 1189267450
+        Data3: 1724095873
+        Data4: -1183308469
+      Path: event:/SFX/Items/Super Kick
+    sustained: 0
+    pitchParameter: 
+    panParameter: 
+  - id: pow
+    eventRef:
+      Guid:
+        Data1: -2000137561
+        Data2: 1167291877
+        Data3: 1511169174
+        Data4: -1484127032
+      Path: event:/SFX/Items/Pow
+    sustained: 0
+    pitchParameter: 
+    panParameter: 
+  - id: teleport
+    eventRef:
+      Guid:
+        Data1: 608951701
+        Data2: 1176919138
+        Data3: 1561094295
+        Data4: 352118478
+      Path: event:/SFX/Items/Teleport
+    sustained: 0
+    pitchParameter: 
+    panParameter: 
+  - id: anvil_fall
+    eventRef:
+      Guid:
+        Data1: 1432409900
+        Data2: 1303396002
+        Data3: 1967832989
+        Data4: -1775495785
+      Path: event:/SFX/Items/AnvilFall
+    sustained: 0
+    pitchParameter: 
+    panParameter: 
+  - id: anvil_hit
+    eventRef:
+      Guid:
+        Data1: 728780574
+        Data2: 1082616220
+        Data3: -545805950
+        Data4: 1159338313
+      Path: event:/SFX/Items/AnvilHit
+    sustained: 0
+    pitchParameter: 
+    panParameter: 
   music:
   - id: Game
     eventRef:
       Guid:
-        Data1: 93603995
-        Data2: 1122550904
-        Data3: -1646909776
-        Data4: 2093986886
+        Data1: 1693190315
+        Data2: 1208692399
+        Data3: 1616499604
+        Data4: -1238568945
       Path: event:/BGM/Gameplay
     sustained: 0
     pitchParameter: 

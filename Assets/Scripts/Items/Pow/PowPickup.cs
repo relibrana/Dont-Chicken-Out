@@ -13,7 +13,7 @@ using UnityEngine;
 public sealed class PowPickup : ThrowableItem
 {
     [Header("POW")]
-    [SerializeField, Range(1, 5), Tooltip("Desde dónde cuenta la cuenta regresiva.")]
+    [SerializeField, Range(1, 3), Tooltip("Desde dónde cuenta la cuenta regresiva. Hasta 3: es lo que dibujó Arte.")]
     private int countFrom = 3;
 
     [SerializeField, Min(0.5f), Tooltip("Duración del aturdimiento. Ojo: la cámara sigue subiendo (doc).")]
@@ -23,9 +23,15 @@ public sealed class PowPickup : ThrowableItem
     private Color stunTint = new Color(0.6f, 0.6f, 0.75f, 1f);
 
     [Header("Cuenta atrás")]
-    [SerializeField, Min(10f), Tooltip("Tamaño del texto de la cuenta. El cartel va centrado en pantalla "
-             + "porque el POW es un efecto global, así que esto son píxeles de UI, no unidades de mundo.")]
-    private float countdownSize = 140f;
+    [SerializeField, Tooltip("Sprites de los números: [0] = \"1\", [1] = \"2\", [2] = \"3\" (Item-PowNum).")]
+    private Sprite[] countdownSprites;
+
+    [SerializeField, Tooltip("El \"JUMP!\" del golpe (Item-PowAviso).")]
+    private Sprite jumpSprite;
+
+    [SerializeField, Min(0.1f), Tooltip("Escala sobre el tamaño nativo de los sprites. El cartel va centrado en "
+             + "pantalla porque el POW es un efecto global: el tamaño nativo son píxeles de UI.")]
+    private float countdownScale = 1f;
 
     [Header("Detonación")]
     [SerializeField, Min(0f), Tooltip("Duración del sacudón. Corto: es un golpe, no un terremoto.")]
@@ -50,9 +56,11 @@ public sealed class PowPickup : ThrowableItem
 
         PowSequence.Run(
             countFrom,
+            countdownSprites,
+            jumpSprite,
+            countdownScale,
             stunSeconds,
             stunTint,
-            countdownSize,
             shakeDuration,
             shakeAmplitude,
             Despawn);

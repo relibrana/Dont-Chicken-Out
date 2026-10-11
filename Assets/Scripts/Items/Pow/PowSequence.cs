@@ -1,6 +1,5 @@
 using System;
 using System.Collections;
-using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -13,24 +12,27 @@ using UnityEngine.UI;
 /// Every grounded player — the thrower included — gets stunned; whoever is in
 /// the air is safe.
 ///
-/// Builds its own overlay canvas at runtime so no scene wiring is needed
-/// (placeholder until Arte entregue los sprites de la cuenta y esto se mueva
-/// a UIManager).
+/// The numbers and the "JUMP!" are Arte's sprites (Item-PowNum, Item-PowAviso,
+/// oct 2026), shown at their native size times <c>displayScale</c>. Builds its
+/// own overlay canvas at runtime so no scene wiring is needed.
 /// </summary>
 public sealed class PowSequence : MonoBehaviour
 {
     private static PowSequence _instance;
 
-    private TextMeshProUGUI _label;
-    private bool _running;
+    private Image _image;
+    private bool  _running;
 
     /// <summary>Starts the countdown. Ignored if one is already running.</summary>
+    /// <param name="numberSprites">[0] = "1", [1] = "2", [2] = "3"…</param>
     /// <param name="onFinished">Called after the blast, so the POW can despawn.</param>
     public static void Run(
         int countFrom,
+        Sprite[] numberSprites,
+        Sprite jumpSprite,
+        float displayScale,
         float stunSeconds,
         Color stunTint,
-        float labelSize,
         float shakeDuration,
         float shakeAmplitude,
         Action onFinished)
@@ -44,10 +46,9 @@ public sealed class PowSequence : MonoBehaviour
             return;
         }
 
-        _instance._label.fontSize = labelSize;
-
         _instance.StartCoroutine(_instance.Sequence(
-            countFrom, stunSeconds, stunTint, shakeDuration, shakeAmplitude, onFinished));
+            countFrom, numberSprites, jumpSprite, displayScale,
+            stunSeconds, stunTint, shakeDuration, shakeAmplitude, onFinished));
     }
 
     private static PowSequence Create()
@@ -62,26 +63,36 @@ public sealed class PowSequence : MonoBehaviour
         canvas.renderMode   = RenderMode.ScreenSpaceOverlay;
         canvas.sortingOrder = 900;
 
-        var textGo = new GameObject("Count", typeof(TextMeshProUGUI));
-        textGo.transform.SetParent(canvasGo.transform, false);
+        var imageGo = new GameObject("Count", typeof(Image));
+        imageGo.transform.SetParent(canvasGo.transform, false);
 
-        sequence._label = textGo.GetComponent<TextMeshProUGUI>();
-        sequence._label.alignment = TextAlignmentOptions.Center;
-        sequence._label.fontSize  = 140f;
-        sequence._label.fontStyle = FontStyles.Bold;
-        sequence._label.color     = new Color(1f, 0.85f, 0.2f, 1f);
-        sequence._label.text      = string.Empty;
+        sequence._image = imageGo.GetComponent<Image>();
+        sequence._image.raycastTarget  = false;
+        sequence._image.preserveAspect = true;
+        sequence._image.enabled        = false;
 
-        RectTransform rt = sequence._label.rectTransform;
+        RectTransform rt = sequence._image.rectTransform;
         rt.anchorMin = rt.anchorMax = new Vector2(0.5f, 0.5f);
         rt.anchoredPosition = Vector2.zero;
-        rt.sizeDelta = new Vector2(900f, 300f);
 
         return sequence;
     }
 
+    private void Show(Sprite sprite, float displayScale)
+    {
+        _image.enabled = sprite != null;
+        if (sprite == null) return;
+
+        _image.sprite = sprite;
+        _image.SetNativeSize();
+        _image.rectTransform.sizeDelta *= displayScale;
+    }
+
     private IEnumerator Sequence(
         int countFrom,
+        Sprite[] numberSprites,
+        Sprite jumpSprite,
+        float displayScale,
         float stunSeconds,
         Color stunTint,
         float shakeDuration,
@@ -90,21 +101,26 @@ public sealed class PowSequence : MonoBehaviour
     {
         _running = true;
 
+        // One FMOD event covers the whole 3-2-1-JUMP! (design, oct 2026). Global
+        // effect, so no position to pan from.
+        SimEvents.Raise(SimEvent.PowCountdownStarted, Vector3.zero, this);
+
         for (int i = countFrom; i > 0; i--)
         {
-            _label.text = i.ToString();
+            Sprite number = numberSprites != null && i - 1 < numberSprites.Length ? numberSprites[i - 1] : null;
+            Show(number, displayScale);
 
             float t = 0f;
             while (t < 1f)
             {
                 t += Time.deltaTime;
-                _label.transform.localScale = Vector3.one * Mathf.Lerp(1.5f, 1f, Mathf.Clamp01(t));
+                _image.transform.localScale = Vector3.one * Mathf.Lerp(1.5f, 1f, Mathf.Clamp01(t));
                 yield return null;
             }
         }
 
-        _label.text = "JUMP!";
-        _label.transform.localScale = Vector3.one * 1.5f;
+        Show(jumpSprite, displayScale);
+        _image.transform.localScale = Vector3.one * 1.5f;
 
         // Sacudón corto y fuerte, estilo Mario: el golpe se siente en el
         // instante, no como un temblor largo.
@@ -116,8 +132,8 @@ public sealed class PowSequence : MonoBehaviour
 
         yield return new WaitForSeconds(0.8f);
 
-        _label.text = string.Empty;
-        _running    = false;
+        _image.enabled = false;
+        _running       = false;
     }
 
     private static void StunGroundedPlayers(float stunSeconds, Color stunTint)

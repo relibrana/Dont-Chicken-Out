@@ -14,10 +14,10 @@ public sealed class HotPotatoPickup : MonoBehaviour, IInstantItem
     private float speedMultiplier = 1.3f;
 
     [SerializeField, Min(0f), Tooltip("Radio de la explosión final.")]
-    private float explosionRadius = 2.5f;
+    private float explosionRadius = 2f;
 
-    [SerializeField, Min(0f), Tooltip("Empuje a los jugadores cercanos al explotar (no letal en v1).")]
-    private float explosionImpulse = 12f;
+    [SerializeField, Min(0f), Tooltip("Empuje a los jugadores cercanos al explotar, atenuado con la distancia como la bomba. No letal.")]
+    private float explosionImpulse = 60f;
 
     [SerializeField, Min(0), Tooltip("Daño a los sub-bloques dentro del radio.")]
     private int explosionBlockDamage = 3;
@@ -25,8 +25,12 @@ public sealed class HotPotatoPickup : MonoBehaviour, IInstantItem
     [SerializeField, Tooltip("Capas afectadas por la explosión (jugadores y bloques).")]
     private LayerMask explosionLayers = ~0;
 
-    [SerializeField, Tooltip("Tinte placeholder del portador; pulsa más rápido al agotarse.")]
-    private Color carrierTint = new Color(1f, 0.35f, 0.15f, 1f);
+    [Header("Visual")]
+    [SerializeField, Tooltip("La papa que se ve encima del portador y explota como la bomba.")]
+    private HotPotatoVisual visualPrefab;
+
+    [SerializeField, Tooltip("Dónde va la papa respecto al portador. Por encima de la etiqueta 'Player N' (+1,6).")]
+    private Vector3 visualOffset = new Vector3(0f, 2.25f, 0f);
 
     public void Apply(PlayerController player)
     {
@@ -40,6 +44,7 @@ public sealed class HotPotatoPickup : MonoBehaviour, IInstantItem
             explosionImpulse,
             explosionBlockDamage,
             explosionLayers,
-            carrierTint);
+            visualPrefab,
+            visualOffset);
     }
 }

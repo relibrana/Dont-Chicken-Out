@@ -47,6 +47,8 @@ MonoBehaviour:
   anvilPrefab: {fileID: 3000000000000000001, guid: 841c246b11c64b788405a4402f8ffbd0,
     type: 3}
   fallSpeed: 10
-  telegraphSeconds: 1
+  zonePrefab: {fileID: 6160000000000000003, guid: 3abf804ba21047958c933edf231c741a, type: 3}
+  zoneOpenSeconds: 0.3
+  arrowsFadeSeconds: 0.7
   stopOnKill: 0
   spawnMargin: 1.5

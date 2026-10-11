@@ -106,8 +106,21 @@ public abstract class PlayerItemState : MonoBehaviour
 
     // ── Placeholder tint ──────────────────────────────────────────────────────
 
+    /// <summary>
+    /// False for states that already show themselves with their own art (the
+    /// hot potato over the head). Item states are moving from tints to visible
+    /// items/abilities (design, oct 2026); this lets each one switch over.
+    /// </summary>
+    protected virtual bool UsesTint => true;
+
     protected void SetTintVisible(bool visible)
     {
+        if (!UsesTint)
+        {
+            _tintVisible = false;
+            return;
+        }
+
         _tintVisible = visible;
 
         for (int i = 0; i < _renderers.Count; i++)

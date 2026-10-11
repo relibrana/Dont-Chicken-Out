@@ -39,7 +39,13 @@ se toca **en un sitio**. Con `EventReference` repartido, en dieciocho.
 
 ## 2. Qué está mapeado
 
-29 eventos existen en el proyecto de Studio (10 oct 2026). 22 ya están conectados:
+32 eventos existen en el proyecto de Studio (11 oct 2026). 29 ya están conectados; los 3 restantes son
+versiones viejas duplicadas (§3.4).
+
+> ⚠️ **Rehacer un evento le cambia el GUID.** La tabla guarda el GUID, no el nombre: si en Studio se
+> borra un evento y se crea otro igual, la fila deja de sonar (pasó con `Gameplay`, `Button Hover` y
+> `Button Press` el 11 oct). Renombrar o mover un evento NO rompe nada. Si se rehace, hay que volver a
+> asignarlo en `AudioEventTable.asset`.
 
 > ⚠️ Hasta el 10 oct 2026 la tabla **no estaba asignada** en `Assets/Prefabs/AudioManager.prefab` (campo `eventTable`): todo sonaba por el sistema viejo y FMOD nunca llegó a sonar en el juego. Si el audio deja de sonar entero, mirar eso primero: sin tabla, el `AudioManager` lo avisa con un error al arrancar.
 
@@ -49,7 +55,7 @@ se toca **en un sitio**. Con `EventReference` repartido, en dieciocho.
 | `player_steps` | `event:/SFX/Player/Steps` |
 | `player_death` | `event:/SFX/Player/Death` |
 | `player_spawn` | `event:/SFX/Player/Spawn` |
-| `player_gliding` | `event:/SFX/Player/Gliding` — **sostenido, sin usar todavía** |
+| `player_gliding` | `event:/SFX/Player/Gliding` — **sostenido**, un loop por pollo mientras planea (`PlayerGlideStarted/Ended`; se corta también al morir) |
 | `block_placement` / `block_invalid` | `event:/SFX/Blocks/{Placement,Invalid}` |
 | `block_pushing` | `event:/SFX/Blocks/Pushing` — **sostenido, sin usar todavía** |
 | `egg_break` | `event:/SFX/Items/Obtain Item` (reemplaza a `Easter Egg`, oct 2026) |
@@ -60,6 +66,11 @@ se toca **en un sitio**. Con `EventReference` repartido, en dieciocho.
 | `button_selected` / `select` | `event:/SFX/UI/Button Press` |
 | `button_hover` | `event:/SFX/UI/Button Hover` |
 | `Title` | `event:/SFX/UI/Title Animation` — evento de animación `PlaySFX("Title")` en el primer cuadro de `Animation/Title/Appear.anim` |
+| `scene_transitionIn` / `scene_transitionOut` | `event:/SFX/UI/Transition In` / `Transition Out` |
+| `super_kick` | `event:/SFX/Items/Super Kick` — sustituye a la patada normal mientras dura la súper patada |
+| `pow` | `event:/SFX/Items/Pow` — **un solo disparo** al empezar la cuenta: cubre todo el 3-2-1-JUMP! |
+| `teleport` | `event:/SFX/Items/Teleport` — al llegar al destino |
+| `anvil_fall` / `anvil_hit` | `event:/SFX/Items/{AnvilFall,AnvilHit}` — al empezar a caer / al romper cada bloque y al aplastar a un pollo |
 | `Game` | `event:/BGM/Gameplay` |
 | `BGM_Menu_A1` / `A2` / `B` | `event:/BGM/Menu` |
 | *(victoria)* | `event:/BGM/Menu` arrancado con `GameState = 1`: entra por "Victory C" en vez de desde el principio. Lo pide `GameManager.DoWin` al ganar la partida con `PlayMusic("BGM_Menu_B", gameState: 1)` |
@@ -114,7 +125,7 @@ suena** (no hay respaldo).
 
 ### 3.1 VCAs — ✅ hecho (10 oct 2026)
 
-> ⚠️ **Pendiente (Juan):** los 11 eventos creados después de los VCAs no están asignados a `vca:/SFX`, así que el slider de efectos no les afectará: `Bomb Explosion`, `Bomb Fuse`, `Button Hover`, `Button Press`, `Obtain Item`, `Title Animation`, `AnvilFall`, `AnvilHit`, `Pow`, `Super Kick`, `Teleport`. Suenan bien; solo falta asignarlos al VCA y reconstruir.
+> ⚠️ **Pendiente (Juan, 11 oct):** 15 eventos no están en ningún VCA, así que los sliders de ajustes no les afectarán. **Música → `vca:/MUSIC`:** `Gameplay` (se rehízo y perdió el VCA). **Efectos → `vca:/SFX`:** `Bomb Explosion`, `Bomb Fuse`, `Button Hover`, `Button Press`, `Obtain Item`, `Title Animation`, `Transition In`, `Transition Out`, `Gliding` (el nuevo), `AnvilFall`, `AnvilHit`, `Pow`, `Super Kick`, `Teleport`. Suenan bien; solo falta asignarlos y reconstruir.
 
 Juan creó **`vca:/MUSIC`** (Gameplay, Menu) y **`vca:/SFX`** (los otros 19 eventos), guardó y
 reconstruyó bancos. El `AudioEventTable.asset` ya apunta a esas dos rutas. `UI.bank` desapareció: sus
@@ -127,11 +138,10 @@ Si se renombran, basta con corregir los dos campos del `AudioEventTable.asset`.
 > Ojo con la confusión habitual: un bank (`BGM.bank`, `SFX.bank`) es una unidad de carga, no un punto
 > del mixer. No sirve para atenuar grupos.
 
-### 3.2 Ids sin evento — hoy mudos 🔴
+### 3.2 Ids sin evento — ✅ ninguno (11 oct 2026)
 
-| id | qué es | qué hace falta |
-|---|---|---|
-| `scene_transitionIn` / `scene_transitionOut` | Entrada y salida de transición de escena. Existe `event:/SFX/UI/Transitions`, uno solo para los dos. | ¿Un parámetro que distinga in/out, o dos eventos? Si los mapeo los dos al mismo, sonarán idénticos. |
+Las transiciones ya tienen evento propio (`Transition In` / `Transition Out`). Solo quedan mudos los del
+listón (`ribbon_break`, `phase_change`), que aún no están autorados (§3.5).
 
 ### 3.3 Parámetros que el código ya manda y faltan en FMOD 🟠
 
@@ -149,14 +159,18 @@ no exista, el evento suena tal cual, sin variación.
 
 ### 3.4 Eventos que existen y nadie usa
 
-`event:/SFX/Player/Gliding`, `event:/SFX/Blocks/Pushing` y `event:/SFX/UI/Title` están construidos
-pero el juego no los dispara. Los dos primeros son loops de estado y el código ya tiene el hook
-(`OnGlideStateChanged`, `SetTouchingBlock`); enchufarlos es media hora. ¿Se quieren?
+- **Duplicados viejos, para borrar en Studio:** `event:/SFX/Player/Gliding` (el que no está en ningún
+  banco; el bueno es el otro con el mismo nombre), `event:/SFX/UI/Title` (sustituido por `Title
+  Animation`) y `event:/SFX/UI/Transitions` (sustituido por `Transition In/Out`). Dos eventos con el
+  mismo nombre confunden a cualquiera que los busque por ruta.
+- `event:/SFX/Blocks/Pushing` está construido y mapeado (`block_pushing`) pero el juego no lo dispara:
+  es un loop de estado y el hook existe (`SetTouchingBlock`). ¿Se quiere?
 
 ### 3.5 Lo que falta por autorar
 
-Nada de los **ítems nuevos** tiene evento: moco, POW, teleporte, metálico, papa caliente, yunque,
-súper patada, doble salto. Tampoco el **listón de progresión** (`ribbon_break`, `phase_change`).
+Ya tienen evento (oct 2026): POW, teleporte, yunque y súper patada (un evento cada uno), y la papa
+reutiliza la explosión de la bomba. Faltan **moco, metálico y doble salto**, y el resto de momentos de
+cada ítem que lista el doc de assets. Tampoco el **listón de progresión** (`ribbon_break`, `phase_change`).
 La lista detallada, con la descripción de cada sonido, está en
 `Docs/assets-arte-audio-items-progresion.md`.
 

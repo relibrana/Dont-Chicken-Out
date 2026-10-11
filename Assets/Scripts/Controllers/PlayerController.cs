@@ -221,7 +221,9 @@ public sealed class PlayerController : MonoBehaviour, IKickable
         if (IsMovementLocked) return;
 
         animController.PlayKick();
-        SimEvents.Raise(SimEvent.PlayerKicked, transform.position, this);
+
+        bool superKick = TryGetComponent(out SuperKickState superKickState) && superKickState.IsActive;
+        SimEvents.Raise(superKick ? SimEvent.PlayerSuperKicked : SimEvent.PlayerKicked, transform.position, this);
 
         FeatherVFXController.Instance?.EmitKickDealt(
             transform.position,
