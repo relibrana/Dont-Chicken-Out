@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <objects serializationModel="Studio.02.03.00">
-	<object class="AudioFile" id="{58d20f74-8dab-4f52-9afc-c31157cb550f}">
+	<object class="AudioFile" id="{a5aebf2d-e16b-46cc-85e8-9fc64d8e25eb}">
 		<property name="color">
 			<value>Green Light 1</value>
 		</property>
@@ -17,7 +17,7 @@
 			<value>2</value>
 		</property>
 		<property name="length">
-			<value>119.44799999999999</value>
+			<value>226.512</value>
 		</property>
 		<relationship name="masterAssetFolder">
 			<destination>{314f77b0-b70e-432e-a6b1-5d226fa946ae}</destination>
