@@ -30,6 +30,13 @@ public sealed class TeleportPickup : HoldableItem
     [SerializeField, Min(0), Tooltip("Saltos aéreos de un solo uso que se conceden al teletransportarse.")]
     private int grantedAirJumps = 1;
 
+    [Header("Animación (dentro del sonido, que dura ~1,4 s)")]
+    [SerializeField, Min(0.05f), Tooltip("El pollo se encoge hasta desaparecer donde está. Corto: es un tp, no un fundido.")]
+    private float shrinkSeconds = 0.15f;
+
+    [SerializeField, Min(0.05f), Tooltip("Reaparece en el destino creciendo hasta su tamaño, con un pequeño rebote.")]
+    private float growSeconds = 0.2f;
+
     /// <summary>Nunca se coloca: se consume al activarlo, desde el suelo o en el aire.</summary>
     public override bool BypassPlacementChecks => true;
 
@@ -46,9 +53,34 @@ public sealed class TeleportPickup : HoldableItem
     private void Activate(PlayerController user)
     {
         if (user == null) return;
+        if (PickHighestTarget(user) == null) return; // nobody to go to: the item is spent, nothing happens
 
+        // The sound covers the whole shrink → reappear (design, oct 2026).
+        SimEvents.Raise(SimEvent.PlayerTeleported, user.transform.position, user);
+
+        // Copies: this pickup goes back to the pool right away.
+        float height = appearHeight; LayerMask blocked = blockedLayers; Vector2 clearance = clearanceSize;
+        float step = nudgeStep; int nudges = maxNudges; int airJumps = grantedAirJumps;
+
+        if (!user.TryGetComponent(out TeleportState state))
+            state = user.gameObject.AddComponent<TeleportState>();
+
+        state.Activate(
+            shrinkSeconds,
+            growSeconds,
+            () => FindDestination(user, height, blocked, clearance, step, nudges),
+            () => { if (airJumps > 0) user.GrantAirJump(airJumps); });
+    }
+
+    /// <summary>
+    /// Asked when the chicken reappears, not when the button is pressed, so it
+    /// lands over wherever the highest rival is by then. Null = nobody left.
+    /// </summary>
+    private static Vector2? FindDestination(PlayerController user, float appearHeight, LayerMask blockedLayers,
+                                            Vector2 clearanceSize, float nudgeStep, int maxNudges)
+    {
         PlayerController target = PickHighestTarget(user);
-        if (target == null) return;
+        if (target == null) return null;
 
         Vector2 destination = (Vector2)target.transform.position + Vector2.up * appearHeight;
 
@@ -60,11 +92,7 @@ public sealed class TeleportPickup : HoldableItem
             destination += Vector2.up * nudgeStep;
         }
 
-        user.TeleportTo(destination);
-        SimEvents.Raise(SimEvent.PlayerTeleported, destination, user);
-
-        if (grantedAirJumps > 0)
-            user.GrantAirJump(grantedAirJumps);
+        return destination;
     }
 
     /// <summary>Highest living rival. Ties resolve to whoever is found first.</summary>
@@ -73,7 +101,7 @@ public sealed class TeleportPickup : HoldableItem
         PlayerController best = null;
         float bestY = float.NegativeInfinity;
 
-        foreach (PlayerController player in FindObjectsByType<PlayerController>(FindObjectsSortMode.None))
+        foreach (PlayerController player in PlayerController.Active)
         {
             if (player == self || !player.isOnGame) continue;
 

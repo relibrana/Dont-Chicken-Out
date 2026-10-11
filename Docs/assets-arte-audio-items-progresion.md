@@ -106,8 +106,8 @@ El sonido de lanzarlo no se repite acá: está en *Audio compartido entre items*
 | # | Tipo | Asset | Descripción | Estado |
 |---|---|---|---|---|
 | 1 | Sprite | Item de teleporte | Cómo se ve el item en la mano del jugador mientras lo lleva encima. | ⬜ Pendiente |
-| 2 | Animación | Desaparición | El pollo se esfuma del sitio donde estaba al activar el item. Podría resolverse como un VFX; el traslado en sí lo hace el código. | ⬜ Pendiente |
-| 3 | Animación | Aparición | El pollo se materializa encima del rival que va más alto. Podría resolverse como un VFX. | ⬜ Pendiente |
+| 2 | Animación | Desaparición | El pollo se esfuma del sitio donde estaba al activar el item. Podría resolverse como un VFX; el traslado en sí lo hace el código. | 🟡 Por código: el pollo se encoge hasta desaparecer (`TeleportState`), dentro del sonido |
+| 3 | Animación | Aparición | El pollo se materializa encima del rival que va más alto. Podría resolverse como un VFX. | 🟡 Por código: reaparece creciendo hasta su tamaño (`TeleportState`) |
 | 4 | Audio | Desaparición | Golpe de succión corto al desvanecerse. | ⬜ Pendiente |
 | 5 | Audio | Aparición | Golpe seco al materializarse en el destino. | ✅ `event:/SFX/Items/Teleport` (al llegar) |
 

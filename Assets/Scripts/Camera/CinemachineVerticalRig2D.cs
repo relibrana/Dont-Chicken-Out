@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using Unity.Cinemachine;
 using UnityEngine;
 
@@ -68,7 +69,7 @@ public class CinemachineVerticalRig2D : MonoBehaviour
     [Tooltip("Whether the shake affects the Y axis.")]
     [SerializeField] private bool shakeAffectsY = true;
 
-    [Tooltip("Curva de caída de la amplitud. 1 = lineal. Por debajo de 1 el temblor "
+    [Tooltip("Curva de caï¿½da de la amplitud. 1 = lineal. Por debajo de 1 el temblor "
              + "se mantiene fuerte casi hasta el final y corta de golpe (estilo Mario).")]
     [SerializeField, Range(0.2f, 3f)] private float shakeFalloff = 0.6f;
 
@@ -195,13 +196,15 @@ public class CinemachineVerticalRig2D : MonoBehaviour
     /// </summary>
     private void UpdateMaxHeightFromPlayers()
     {
-        PlayerController[] players = FindObjectsByType<PlayerController>(FindObjectsSortMode.None);
-        if (players == null || players.Length == 0) return;
+        // Every frame: the registry, never a scene scan (no allocation).
+        IReadOnlyList<PlayerController> players = PlayerController.Active;
+        if (players.Count == 0) return;
 
         float highestGroundedY = float.NegativeInfinity;
 
-        foreach (PlayerController p in players)
+        for (int i = 0; i < players.Count; i++)
         {
+            PlayerController p = players[i];
             if (p == null || !p.isActiveAndEnabled || !p.isOnGame) continue;
             if (!p.IsGrounded) continue;
 

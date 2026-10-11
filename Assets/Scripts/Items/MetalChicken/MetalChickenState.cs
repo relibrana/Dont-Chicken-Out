@@ -8,6 +8,8 @@ using UnityEngine;
 /// </summary>
 public sealed class MetalChickenState : PlayerItemState
 {
+    protected override string Label => "Metal Body";
+
     public float KickMultiplier { get; private set; } = 1f;
 
     private float _jumpMultiplier        = 1f;

@@ -52,6 +52,7 @@ public abstract class PlayerItemState : MonoBehaviour
 
         CacheRenderers();
         SetTintVisible(true);
+        Controller.ShowStateLabel(Label);
         OnStateStarted();
     }
 
@@ -61,8 +62,16 @@ public abstract class PlayerItemState : MonoBehaviour
 
         IsActive = false;
         SetTintVisible(false);
+        if (Controller != null) Controller.HideStateLabel(Label);
         OnStateEnded();
     }
+
+    /// <summary>
+    /// Name shown over the chicken's head while the state lasts (placeholder
+    /// until it gets its own art). Null = no label, e.g. states that already
+    /// show themselves (hot potato) or that are not a power-up (stun, moco).
+    /// </summary>
+    protected virtual string Label => null;
 
     private void Update()
     {

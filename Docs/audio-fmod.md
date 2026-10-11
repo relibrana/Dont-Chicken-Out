@@ -55,7 +55,7 @@ versiones viejas duplicadas (§3.4).
 | `player_steps` | `event:/SFX/Player/Steps` |
 | `player_death` | `event:/SFX/Player/Death` |
 | `player_spawn` | `event:/SFX/Player/Spawn` |
-| `player_gliding` | `event:/SFX/Player/Gliding` — **sostenido**, un loop por pollo mientras planea (`PlayerGlideStarted/Ended`; se corta también al morir) |
+| `player_gliding` | `event:/SFX/Player/Gliding` — **sostenido**, un loop por pollo mientras planea (`PlayerGlideStarted/Ended`; se corta también al morir). `Glide.anim` ya no lo pide por evento de animación: arrancaba un loop global que nunca se paraba |
 | `block_placement` / `block_invalid` | `event:/SFX/Blocks/{Placement,Invalid}` |
 | `block_pushing` | `event:/SFX/Blocks/Pushing` — **sostenido, sin usar todavía** |
 | `egg_break` | `event:/SFX/Items/Obtain Item` (reemplaza a `Easter Egg`, oct 2026) |
@@ -99,7 +99,9 @@ cae a `setPitch` ni `setVolume`.
 
 La única excepción es el volumen que **elige el jugador** en ajustes: entra por los VCAs `MUSIC` y
 `SFX` como un multiplicador encima de la mezcla de Audio. Arranca en 1, o sea, la mezcla tal cual.
-Hoy no hay ninguna UI que lo cambie.
+Se cambia en el panel de audio del menú principal (`AudioSettingsPanel`, botón de ajustes; se construye con
+*Tools → Don't Chicken Out → Crear panel de audio en el menú*) y se guarda en `PlayerPrefs`
+(`settings.musicVolume`, `settings.sfxVolume`), así que se mantiene entre sesiones.
 
 ### Lo que el código decidía y ahora decide FMOD
 
@@ -150,12 +152,12 @@ no exista, el evento suena tal cual, sin variación.
 
 | Parámetro | Rango | Dónde | Qué era antes en código |
 |---|---|---|---|
-| Lado de pantalla de la explosión | −1 izq … 1 der | Local en `event:/SFX/Items/Bomb Explosion` → `panParameter` de `bomb_explosion` | Paneo recortado al 80% |
-| Celda de la pieza colocada | 0, 1, 2… (una por celda de la pieza) | Local en `event:/SFX/Blocks/Placement` → `valueParameter` de `block_placement` | Escala de pitch: +0.08 por celda, tope 1.5 |
+| Lado de pantalla de la explosión | −1 … 1 | Cubierto por `ScreenPan` (fila de abajo); `panParameter` por evento sigue disponible si algún evento necesita su propio paneo | Paneo recortado al 80% |
+| Lado de pantalla de cada sonido de juego | −1 … 1 | ✅ **`ScreenPan` global** (11 oct 2026): mueve el panner de los buses `Player`, `Items` y `Blocks`. El código lo pone justo antes de cada sonido de juego con su posición (`AudioEventTable.screenPanParameter`); UI, música y el POW no lo tocan. Al ser global, el paneo va por grupo y sigue al último sonido | Paneo recortado al 80% |
+| Celda de la pieza colocada | 0, 1, 2… (una por celda; se reinicia en cada pieza) | ✅ **`PitchCombo`** (local en `event:/SFX/Blocks/Placement`, 0–10), puesto en la fila `block_placement` (11 oct 2026) | Escala de pitch: +0.08 por celda, tope 1.5 |
 | Fase de progresión | 1, 2, 3… | **Global** → `progressionPhaseParameter` | Pitch de la música: +3% por fase, tope 1.25 |
 
-> Mientras no existan, **la escala de colocación y la aceleración de la música no suenan**: el código
-> ya no las fabrica. Es el cambio de comportamiento que se nota.
+> La escala de colocación ya suena (`PitchCombo`). Sigue sin sonar la **aceleración de la música por fase**: falta el parámetro global de fase.
 
 ### 3.4 Eventos que existen y nadie usa
 

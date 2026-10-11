@@ -23,6 +23,7 @@ public enum SimEvent
     BombExploded,
     HotPotatoExploded,
     PowCountdownStarted,
+    PowCancelled,
     AnvilFell,
     AnvilHit,
 }
@@ -72,7 +73,7 @@ public static class SimEvents
     // Los eventos que cierran algo sostenido (un loop) pasan siempre: si una resimulación se los
     // comiera, el loop quedaría sonando para siempre. Repetir un "stop" es inofensivo.
     private static bool EndsSomething(SimEvent type) =>
-        type == SimEvent.BombFuseOut || type == SimEvent.PlayerGlideEnded;
+        type == SimEvent.BombFuseOut || type == SimEvent.PlayerGlideEnded || type == SimEvent.PowCancelled;
 
     // Con "Enter Play Mode" sin domain reload los estáticos sobreviven entre sesiones de play.
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]

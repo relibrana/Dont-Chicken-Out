@@ -109,6 +109,9 @@ public class AudioManager : MonoBehaviour
             return;
         }
 
+        // The player's own choice from the settings panel, kept between sessions.
+        musicVolume        = PlayerPrefs.GetFloat(MusicVolumeKey, 1f);
+        soundEffectsVolume = PlayerPrefs.GetFloat(SfxVolumeKey,   1f);
         ApplyVcaVolumes();
 
         if (!logUnmappedIdsOnStart) return;
@@ -298,12 +301,19 @@ public class AudioManager : MonoBehaviour
     /// </summary>
     public void PlaySoundAt(string id, Vector3 worldPosition) => PlaySfx(id, null, worldPosition);
 
+    /// <summary>Lado de pantalla y dato del juego a la vez (la colocación: dónde y qué celda).</summary>
+    public void PlaySoundAt(string id, Vector3 worldPosition, float value) => PlaySfx(id, value, worldPosition);
+
     /// <summary>
     /// Loop con dueño: varios pueden sonar a la vez (una mecha por bomba) y cada
     /// dueño para sólo el suyo con <see cref="StopSoundFor"/>. Para un one-shot
     /// el dueño no cambia nada.
     /// </summary>
     public void PlaySoundFor(string id, UnityEngine.Object owner) => PlaySfx(id, null, null, OwnerKey(owner));
+
+    /// <summary>Loop con dueño que además dice dónde empieza (para el paneo por grupo).</summary>
+    public void PlaySoundFor(string id, UnityEngine.Object owner, Vector3 worldPosition) =>
+        PlaySfx(id, null, worldPosition, OwnerKey(owner));
 
     /// <summary>Para el loop de ese dueño, sin tocar los de los demás.</summary>
     public void StopSoundFor(string id, UnityEngine.Object owner) => StopSustained((id, OwnerKey(owner)));
@@ -374,9 +384,18 @@ public class AudioManager : MonoBehaviour
     private void ApplyPan(FMOD.Studio.EventInstance instance, AudioEventTableSO.Binding binding, Vector3? worldPosition)
     {
         if (!worldPosition.HasValue) return;
-        if (string.IsNullOrEmpty(binding.panParameter)) return;
 
-        instance.setParameterByName(binding.panParameter, ScreenSideOf(worldPosition.Value));
+        float side = ScreenSideOf(worldPosition.Value);
+
+        // Paneo por grupo (Audio, oct 2026): un parámetro global mueve el panner
+        // de los buses Player / Items / Blocks. Se pone justo antes de arrancar
+        // el sonido, así que sigue al último sonido de juego que suena.
+        if (!string.IsNullOrEmpty(eventTable.screenPanParameter))
+            FMODUnity.RuntimeManager.StudioSystem.setParameterByName(eventTable.screenPanParameter, side);
+
+        // Paneo propio del evento, si Audio le pone uno local.
+        if (!string.IsNullOrEmpty(binding.panParameter))
+            instance.setParameterByName(binding.panParameter, side);
     }
 
     private void StopSustained((string id, int owner) key)
@@ -447,15 +466,20 @@ public class AudioManager : MonoBehaviour
         {
             case SoundsType.Music:
                 musicVolume = clampedValue;
+                PlayerPrefs.SetFloat(MusicVolumeKey, clampedValue);
                 break;
 
             case SoundsType.Sfxs:
                 soundEffectsVolume = clampedValue;
+                PlayerPrefs.SetFloat(SfxVolumeKey, clampedValue);
                 break;
         }
 
         ApplyVcaVolumes();
     }
+
+    private const string MusicVolumeKey = "settings.musicVolume";
+    private const string SfxVolumeKey   = "settings.sfxVolume";
 
     private void ApplyVcaVolumes()
     {

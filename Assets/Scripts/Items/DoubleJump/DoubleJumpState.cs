@@ -8,6 +8,8 @@ using UnityEngine;
 /// </summary>
 public sealed class DoubleJumpState : PlayerItemState
 {
+    protected override string Label => "Double Jump";
+
     private float _airJumpMultiplier = 1f;
     private bool  _repeatable;
     private bool  _subscribed;

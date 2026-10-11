@@ -1,16 +1,13 @@
 using UnityEngine;
 
 /// <summary>
-/// POW (item catalog #2). Cambio de diseño (sep 2026): ya no se activa al
-/// romper la cápsula. Se lleva en la mano como el moco o la llanta, se lanza
-/// con el botón de colocar y **la cuenta atrás arranca en el impacto** — así el
-/// jugador elige el momento y el sitio en vez de dispararse solo al recoger.
-///
-/// Al impactar se clava donde cae y la cuenta 3-2-1-JUMP! sale encima de él,
-/// para que todos vean de dónde va a venir el golpe. El aturdimiento en sí lo
-/// resuelve PowSequence.
+/// POW (item catalog #2). Se lleva en la mano (sep 2026: ya no se activa al
+/// romper la cápsula) y **no se lanza** (oct 2026): al pulsar colocar, el POW
+/// desaparece y arranca en ese momento la cuenta 3-2-1-JUMP!, centrada en
+/// pantalla porque es un efecto global. Así el jugador elige el momento. El
+/// aturdimiento en sí lo resuelve PowSequence.
 /// </summary>
-public sealed class PowPickup : ThrowableItem
+public sealed class PowPickup : HoldableItem
 {
     [Header("POW")]
     [SerializeField, Range(1, 3), Tooltip("Desde dónde cuenta la cuenta regresiva. Hasta 3: es lo que dibujó Arte.")]
@@ -40,20 +37,15 @@ public sealed class PowPickup : ThrowableItem
     [SerializeField, Min(0f), Tooltip("Amplitud del sacudón. Fuerte.")]
     private float shakeAmplitude = 0.9f;
 
-    private bool _armed;
+    /// <summary>Se usa desde el suelo o en el aire: no hay nada que colocar.</summary>
+    public override bool BypassPlacementChecks => true;
 
     /// <summary>
-    /// Primer impacto tras el lanzamiento: se clava donde cae y arranca la
-    /// cuenta. Se queda en el mundo hasta que estalla para que se vea dónde
-    /// aterrizó, aunque el cartel de la cuenta va centrado en pantalla.
+    /// El botón de colocar activa el POW en vez de colocarlo. No se llama a
+    /// base.PlaceHoldable(): no deja nada en el mundo.
     /// </summary>
-    protected override void OnProjectileHit(Collision2D collision)
+    public override void PlaceHoldable()
     {
-        if (_armed) return;
-        _armed = true;
-
-        StickInPlace();
-
         PowSequence.Run(
             countFrom,
             countdownSprites,
@@ -63,26 +55,8 @@ public sealed class PowPickup : ThrowableItem
             stunTint,
             shakeDuration,
             shakeAmplitude,
-            Despawn);
-    }
+            onFinished: null);
 
-    private void StickInPlace()
-    {
-        rb2d.linearVelocity  = Vector2.zero;
-        rb2d.angularVelocity = 0f;
-        rb2d.bodyType        = RigidbodyType2D.Static;
-
-        // Sin collider sólido mientras cuenta: no queremos que se convierta en
-        // una plataforma improvisada ni que estorbe al construir.
-        foreach (Collider2D col in colliders)
-            col.isTrigger = true;
-    }
-
-    private void Despawn() => gameObject.SetActive(false);
-
-    protected override void OnDisable()
-    {
-        base.OnDisable();
-        _armed = false;
+        gameObject.SetActive(false);
     }
 }

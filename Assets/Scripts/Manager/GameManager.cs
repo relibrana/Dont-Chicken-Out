@@ -70,6 +70,13 @@ public class GameManager : MonoBehaviour
 
     public GameState gameState = GameState.Menu;
 
+    /// <summary>
+    /// True only while the round is being played and still undecided. False
+    /// from the moment one chicken is left (the tie window before the win
+    /// screen included), through the win screen, until the next round starts.
+    /// </summary>
+    public bool IsRoundLive => gameState == GameState.Game && currPlayersAlive > 1;
+
     public PlayerController[] InGamePlayers
     {
         get
@@ -126,9 +133,36 @@ public class GameManager : MonoBehaviour
             case GameState.Menu:
             case GameState.Win:
                 OnGameEnd?.Invoke();
+                EndRoundEffects();
                 break;
         }
     }
+
+    /// <summary>
+    /// The round stopped counting (someone won, or back to the menu). Anything
+    /// still running on its own timer (POW countdown, falling anvil, lit bomb…)
+    /// subscribes here and stops, so nothing goes off over the win screen or
+    /// spills into the next round. Static: those effects are spawned at runtime
+    /// and should not have to look for the GameManager.
+    /// </summary>
+    public static event Action RoundEnded;
+
+    private void EndRoundEffects()
+    {
+        // Power-ups on the chickens (hot potato, teleport mid-way…) end now
+        // too: a potato in the winner's hands would otherwise go off on the
+        // win screen and kill them.
+        foreach (PlayerController player in inGamePlayers)
+        {
+            if (player != null) PlayerItemState.EndAll(player.gameObject);
+        }
+
+        RoundEnded?.Invoke();
+    }
+
+    // Enter Play Mode without domain reload keeps statics alive between sessions.
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+    private static void ResetRoundEvents() => RoundEnded = null;
 
     private void OnMenuState()
     {
@@ -301,6 +335,11 @@ public class GameManager : MonoBehaviour
 
     private void OnPlayersDeath(PlayerController player)
     {
+        // The round is already decided: a death on the win screen (the winner
+        // falling out of view, anything still in the air) must not count, or it
+        // re-runs CheckWinner and plays the win sequence a second time.
+        if (gameState == GameState.Win) return;
+
         Vector2 deathPosition = player.transform.position;
 
         // A dead chicken keeps no power-up (design, oct 2026). The hot potato
@@ -411,7 +450,10 @@ public class GameManager : MonoBehaviour
             GameStatus status = GetPlayerStatus(i, total);
             remainingPlayers[i].SetGameRank(status);
 
+#if UNITY_EDITOR
+            // Editor only: in a build every Debug.Log captures a stack trace.
             Debug.Log($"Posición: {i + 1} | Jugador: {remainingPlayers[i].name} | Estado: {status}");
+#endif
         }
     }
 

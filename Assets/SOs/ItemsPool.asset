@@ -30,10 +30,10 @@ MonoBehaviour:
     chance: 10
   - prefab: {fileID: 4000000000000000001, guid: 883919a2938d48dd8dd416546a3eafb4,
       type: 3}
-    chance: 9
+    chance: 0
   - prefab: {fileID: 1000000000000000001, guid: 1be7ed2be974463e8577fdbf74f87cb7,
       type: 3}
-    chance: 8
+    chance: 0
   - prefab: {fileID: 1000000000000000001, guid: 27ed885b774d49168dc1122dc711ebb5,
       type: 3}
     chance: 7

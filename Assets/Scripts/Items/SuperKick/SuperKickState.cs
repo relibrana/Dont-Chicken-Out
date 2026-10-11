@@ -8,6 +8,8 @@ using UnityEngine;
 /// </summary>
 public sealed class SuperKickState : PlayerItemState
 {
+    protected override string Label => "Super Kick";
+
     public int   BlockDamage       { get; private set; } = 1;
     public float ImpulseMultiplier { get; private set; } = 1f;
 

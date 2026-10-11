@@ -38,6 +38,9 @@ public sealed class AnvilFall : MonoBehaviour
         foreach (SpriteRenderer sr in _renderers)
             sr.enabled = false;
 
+        // Round over before it lands: gone, column included (OnDestroy closes it).
+        GameManager.RoundEnded += HandleRoundEnded;
+
         // "Luego de esa animación, cae el yunque" (design, oct 2026).
         if (_zone != null) _zone.Open(zoneOpenSeconds, arrowsFadeSeconds, StartFalling);
         else               StartFalling();
@@ -80,8 +83,11 @@ public sealed class AnvilFall : MonoBehaviour
     // the column goes with the anvil.
     private void OnDestroy()
     {
+        GameManager.RoundEnded -= HandleRoundEnded;
         if (_zone != null) _zone.Close();
     }
+
+    private void HandleRoundEnded() => Destroy(gameObject);
 
     private void OnTriggerEnter2D(Collider2D other)
     {

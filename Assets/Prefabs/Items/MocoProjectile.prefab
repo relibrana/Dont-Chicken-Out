@@ -47,7 +47,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 35bd582fedfc717449350afbc08c719e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  holdColor: {r: 1, g: 1, b: 1, a: 0.25}
+  holdColor: {r: 0.54901963, g: 0.90196085, b: 0.3019608, a: 0.25}
   overlappingColor: {r: 1, g: 0, b: 0, a: 0.25}
   colliders:
   - {fileID: 4100000000000000004}
@@ -142,7 +142,7 @@ Transform:
   m_GameObject: {fileID: 4100000000000000001}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0.677, y: 0.625, z: 0}
+  m_LocalPosition: {x: 0.5, y: 0.5, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -197,7 +197,8 @@ SpriteRenderer:
   m_SortingLayer: 2
   m_SortingOrder: 0
   m_MaskInteraction: 0
-  m_Sprite: {fileID: -1407352606, guid: 0ffc5fab8be73d04497bd11583456948, type: 3}
+  m_Sprite: {fileID: -2413806693520163455, guid: a86470a33a6bf42c4b3595704624658b,
+    type: 3}
   m_Color: {r: 0.55, g: 0.9, b: 0.3, a: 1}
   m_FlipX: 0
   m_FlipY: 0
@@ -241,5 +242,5 @@ CircleCollider2D:
   m_UsedByEffector: 0
   m_CompositeOperation: 0
   m_CompositeOrder: 0
-  m_Offset: {x: -0.15, y: -0.08}
+  m_Offset: {x: 0, y: 0}
   m_Radius: 0.5

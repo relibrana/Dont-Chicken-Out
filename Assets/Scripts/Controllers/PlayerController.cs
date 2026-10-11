@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using DG.Tweening;
 using UnityEngine;
@@ -31,6 +32,9 @@ public sealed class PlayerController : MonoBehaviour, IKickable
 
     [SerializeField, Tooltip("Recuadro detrás del nombre para que se lea sobre cualquier fondo.")]
     private Color nameTagBackdrop = new Color(0f, 0f, 0f, 0.55f);
+
+    [SerializeField, Tooltip("Dónde va el texto del power-up activo (Metal Body, Double Jump…): a la altura de la papa caliente.")]
+    private Vector3 stateTagOffset = new Vector3(0f, 2.25f, 0f);
 
     // ── Public state (read by GameManager / UIManager) ────────────────────────
 
@@ -140,6 +144,25 @@ public sealed class PlayerController : MonoBehaviour, IKickable
         UnsubscribeFromMovementEvents();
     }
 
+    // ── Registry ──────────────────────────────────────────────────────────────
+
+    private static readonly List<PlayerController> _active = new();
+
+    /// <summary>
+    /// Every active chicken, kept by OnEnable/OnDisable. Use this instead of
+    /// FindObjectsByType: the camera rig asks every frame, and a scene scan
+    /// there walks the whole scene and allocates an array each time.
+    /// Same set FindObjectsByType returned (active and enabled only).
+    /// </summary>
+    public static IReadOnlyList<PlayerController> Active => _active;
+
+    private void OnEnable()  => _active.Add(this);
+    private void OnDisable() => _active.Remove(this);
+
+    // Enter Play Mode without domain reload keeps statics alive between sessions.
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+    private static void ResetRegistry() => _active.Clear();
+
     private void Update()
     {
         _movement.ProcessInput(IsMovementLocked ? default : _inputHandler.CurrentInput);
@@ -245,9 +268,10 @@ public sealed class PlayerController : MonoBehaviour, IKickable
     }
 
     /// <summary>
-    /// The chicken's visual rig. Items that need to shake or nudge the chicken
-    /// move THIS and not the body: the body is driven by the Rigidbody2D, and
-    /// while stuck in moco it is frozen on purpose.
+    /// The chicken's visual rig. Items that need to shake, nudge or scale the
+    /// chicken (moco, teleport) touch THIS and not the body: the body is driven
+    /// by the Rigidbody2D (frozen on purpose while stuck in moco), its X scale is
+    /// the facing sign and it carries the colliders.
     /// </summary>
     public Transform VisualRoot => animController != null ? animController.transform : transform;
 
@@ -256,6 +280,11 @@ public sealed class PlayerController : MonoBehaviour, IKickable
         if (IsOnPause()) return;
         if (!isOnGame) return;
         if (IsMovementLocked) return;
+
+        // Once the round is decided nobody places anything until the next one
+        // starts (design, oct 2026). Covers items used with this button too
+        // (POW, teleport, throws).
+        if (GameManager.instance != null && !GameManager.instance.IsRoundLive) return;
 
         _blockHandler.TryPlaceBlock();
     }
@@ -339,6 +368,44 @@ public sealed class PlayerController : MonoBehaviour, IKickable
 
     /// <summary>Entry point for the future name-customisation screen.</summary>
     public void SetDisplayName(string displayName) => _nameTag?.SetLabel(displayName);
+
+    // ── Active power-up label ─────────────────────────────────────────────────
+    // Placeholder until item states get their own art (design, oct 2026): the
+    // name of every active power-up over the chicken's head, one per line, in
+    // a single tag so two of them never overlap. Driven by PlayerItemState.
+
+    private PlayerNameTag _stateTag;
+    private readonly List<string> _stateLabels = new();
+
+    public void ShowStateLabel(string label)
+    {
+        if (string.IsNullOrEmpty(label) || _stateLabels.Contains(label)) return;
+        _stateLabels.Add(label);
+        RefreshStateTag();
+    }
+
+    public void HideStateLabel(string label)
+    {
+        if (!_stateLabels.Remove(label)) return;
+        RefreshStateTag();
+    }
+
+    private void RefreshStateTag()
+    {
+        if (_stateLabels.Count == 0)
+        {
+            if (_stateTag != null) Destroy(_stateTag.gameObject);
+            _stateTag = null;
+            return;
+        }
+
+        string text = string.Join("\n", _stateLabels);
+
+        if (_stateTag == null)
+            _stateTag = PlayerNameTag.Create(this, text, Color.white, stateTagOffset, nameTagSize, nameTagBackdrop);
+        else
+            _stateTag.SetLabel(text);
+    }
 
     /// <summary>Triggers the player death flow.</summary>
     public void OnDeath() => onDeath?.Invoke(this);
@@ -451,7 +518,7 @@ public sealed class PlayerController : MonoBehaviour, IKickable
 
     // ── Step sound (called by animation event) ────────────────────────────────
 
-    public void StepSound() => AudioManager.Instance.MakeStepSound();
+    public void StepSound() => AudioManager.Instance.PlaySoundAt("player_steps", transform.position);
 
     /// <summary>Delegated from PlayerMovement. Used by CinemachineVerticalRig2D.</summary>
     public bool IsGrounded => _movement.IsGrounded;

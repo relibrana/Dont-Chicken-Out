@@ -82,10 +82,10 @@ MonoBehaviour:
   - id: player_gliding
     eventRef:
       Guid:
-        Data1: -2020497752
-        Data2: 1286824582
-        Data3: 890370179
-        Data4: 1532272795
+        Data1: 2050825056
+        Data2: 1204958301
+        Data3: 846742715
+        Data4: 1298040261
       Path: event:/SFX/Player/Gliding
     sustained: 1
     pitchParameter: 
@@ -99,7 +99,7 @@ MonoBehaviour:
         Data4: -1380791719
       Path: event:/SFX/Blocks/Placement
     sustained: 0
-    pitchParameter: 
+    pitchParameter: PitchCombo
     panParameter: 
   - id: block_invalid
     eventRef:
@@ -285,7 +285,7 @@ MonoBehaviour:
         Data3: 1511169174
         Data4: -1484127032
       Path: event:/SFX/Items/Pow
-    sustained: 0
+    sustained: 1
     pitchParameter: 
     panParameter: 
   - id: teleport
@@ -381,3 +381,4 @@ MonoBehaviour:
   sfxVca: vca:/SFX
   musicTempoParameter: 
   gameStateParameter: GameState
+  screenPanParameter: ScreenPan

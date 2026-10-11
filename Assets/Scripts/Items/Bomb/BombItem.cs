@@ -79,6 +79,7 @@ public sealed class BombItem : ThrowableItem
     private SpriteRenderer[] cachedSpriteRenderers;
     private Coroutine fuseRoutine;
     private float landedGravityScale = 1f;
+    private float landedLinearDamping;
 
     // Breathing / fuse visuals.
     private Transform    _breathTarget;
@@ -102,6 +103,11 @@ public sealed class BombItem : ThrowableItem
         // El lanzamiento pisa la gravedad con la del proyectil; se restaura
         // al aterrizar para que la bomba caída pese lo mismo que siempre.
         landedGravityScale = rb2d != null ? rb2d.gravityScale : 1f;
+
+        // Lo mismo con el rozamiento: el de la bomba en el suelo es muy alto
+        // (para que una patada no la mande rodando lejos) y en el aire frenaba
+        // el lanzamiento en seco. Vuela sin él y lo recupera al tocar algo.
+        landedLinearDamping = rb2d != null ? rb2d.linearDamping : 0f;
 
         _breathTarget = breathingVisual != null
             ? breathingVisual
@@ -138,9 +144,16 @@ public sealed class BombItem : ThrowableItem
     /// el moco: sigue siendo un cuerpo físico normal para que los rivales
     /// puedan patearla lejos, que es su counterplay de siempre.
     /// </summary>
+    protected override void Launch()
+    {
+        base.Launch();
+        rb2d.linearDamping = 0f;
+    }
+
     protected override void OnProjectileHit(Collision2D collision)
     {
-        rb2d.gravityScale = landedGravityScale;
+        rb2d.gravityScale  = landedGravityScale;
+        rb2d.linearDamping = landedLinearDamping;
 
         if (!fuseStartsOnThrow)
             TryStartFuse();
@@ -308,9 +321,32 @@ public sealed class BombItem : ThrowableItem
         // The explosion sound is the FMOD event raised in Explode (SimEvent.BombExploded).
     }
 
+    private void OnEnable() => GameManager.RoundEnded += HandleRoundEnded;
+
+    // A bomb already thrown must not go off over the win screen (it would kill
+    // the winner) nor carry into the next round: it is defused on the spot.
+    // One still in hand is left alone; the round reset drops it.
+    private void HandleRoundEnded()
+    {
+        if (Launched && !hasExploded)
+            gameObject.SetActive(false);
+    }
+
     protected override void OnDisable() {
         base.OnDisable();
+        GameManager.RoundEnded -= HandleRoundEnded;
         SimEvents.Raise(SimEvent.BombFuseOut, transform.position, this);
+
+        // Disabling stops the coroutine but keeps the handle: clear it, or a
+        // pooled bomb could never be lit again (TryStartFuse checks for null).
+        fuseRoutine = null;
+
+        // Dropped mid-flight (round reset): come back with its ground values.
+        if (rb2d != null)
+        {
+            rb2d.gravityScale  = landedGravityScale;
+            rb2d.linearDamping = landedLinearDamping;
+        }
 
         ResetBreathing();
         HideFuse();

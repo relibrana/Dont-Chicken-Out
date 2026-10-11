@@ -85,9 +85,9 @@ public class BlockScript : HoldableItem
 		for (int i = 0; i < animators.Count; i++)
 		{
 			var overlapCheck = _overlapChecks[i];
-			if (overlapCheck.OverlapCheck(overlapCheck.DisableBlock)) 
+			if (overlapCheck.OverlapCheck(overlapCheck.DisableBlock))
 				continue;
-			
+
 			var animator = animators[i];
 			animator.enabled = true;
 			animator.SetTrigger("appear");
@@ -102,5 +102,18 @@ public class BlockScript : HoldableItem
 
 		foreach (var overlapCheck in _overlapChecks)
 			overlapCheck.OverlapCheck(overlapCheck.DisableBlock);
+
+		// Performance (oct 2026): after "appear" the controller sits forever in
+		// an empty idle loop, and an enabled Animator is evaluated every frame
+		// anyway — 4 per piece, so a tall tower spent a big slice of the frame
+		// animating nothing. Switch them off once the last one has settled; a
+		// disabled Animator leaves the sprites exactly as they were.
+		yield return new WaitForSeconds(AppearSettleSeconds);
+
+		foreach (Animator animator in animators)
+			animator.enabled = false;
 	}
+
+	// block_orange_appear lasts 0.42 s, plus room for the transition into idle.
+	private const float AppearSettleSeconds = 0.6f;
 }

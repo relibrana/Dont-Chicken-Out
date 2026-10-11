@@ -210,18 +210,21 @@ public sealed class PlayerBlockHandler : MonoBehaviour
         CurrentBlock.overlapping = IsBlockUnavailable;
     }
 
+    // Runs every frame for every sub-block of the held piece: one reused buffer
+    // instead of a new List per call (that was ~16 lists a frame with 4 players).
+    private readonly List<Collider2D> _overlapResults = new();
+
     private bool CheckOverlapping(Collider2D collider)
     {
         ContactFilter2D filter = new ContactFilter2D();
         filter.SetLayerMask(layersToDetect);
         filter.useTriggers = false;
 
-        List<Collider2D> results = new List<Collider2D>();
-        int count = collider.Overlap(filter, results);
+        int count = collider.Overlap(filter, _overlapResults);
 
         for (int i = 0; i < count; i++)
         {
-            if (results[i] != collider)
+            if (_overlapResults[i] != collider)
                 return true;
         }
 

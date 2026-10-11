@@ -6,8 +6,8 @@ using UnityEngine;
 /// decision, ago 2026): carried like any holdable but thrown on the place
 /// input. It sticks where it first lands — pushing the player it hits, if
 /// any — and stays there for the whole round as a trampoline that works for
-/// everyone. Keeps the original disc's bounce feel and squash/recoil
-/// animations. Once stuck it is immovable: kicks no longer shove it around.
+/// everyone. Keeps the original disc's bounce feel and squash animation.
+/// Once stuck it is immovable: kicks no longer shove it around.
 /// Named SpringDisc until oct 2026.
 /// </summary>
 public class Tire : ThrowableItem
@@ -28,22 +28,14 @@ public class Tire : ThrowableItem
     [SerializeField] private float animationScaleAmount;
     [SerializeField] private Ease animationEasing;
 
-    [Header("Render recoil")]
-    [SerializeField] private float recoilDistance;
-    [SerializeField] private float recoilAnimationDuration;
-    [SerializeField] private Ease recoilAnimationEasing;
-    [SerializeField] private Ease recoilAnimationReturnEasing;
-    private Sequence recoilAnimation;
     private Sequence squashAnimation;
-    private Vector3 spriteInitialPos;
     private Vector3 spriteBaseScale;
 
     private bool _stuck;
 
     void Awake()
     {
-        spriteInitialPos = spriteRenderer.transform.localPosition;
-        spriteBaseScale  = spriteRenderer.transform.localScale;
+        spriteBaseScale = spriteRenderer.transform.localScale;
     }
 
     protected override void OnCollisionEnter2D(Collision2D collision)
@@ -92,7 +84,6 @@ public class Tire : ThrowableItem
         SimEvents.Raise(SimEvent.TireBounced, transform.position, this);
 
         TriggerAnimation();
-        RecoilAnimation(-direction);
     }
 
     protected override void OnDisable()
@@ -100,16 +91,16 @@ public class Tire : ThrowableItem
         base.OnDisable();
         _stuck = false;
 
-        // Pooled: never come back squashed or mid-recoil.
+        // Pooled: never come back squashed.
         squashAnimation?.Kill();
-        recoilAnimation?.Kill();
-        spriteRenderer.transform.localScale    = spriteBaseScale;
-        spriteRenderer.transform.localPosition = spriteInitialPos;
+        spriteRenderer.transform.localScale = spriteBaseScale;
     }
 
-    // Only the rubber (spriteRenderer, Item-LlantaBack) squashes and recoils.
-    // The rigid hub on top (Item-LlantaFront) is a sibling and stays still, so
-    // the root is never scaled here — which also keeps its facing flip intact.
+    // Only the rubber (spriteRenderer, Item-LlantaBack) squashes, in place: it
+    // no longer recoils sideways, which pulled it off the rigid hub on top
+    // (Item-LlantaFront) and showed the hole inside (design, oct 2026). The hub
+    // is a sibling and stays still, so the root is never scaled here — which
+    // also keeps its facing flip intact.
     private void TriggerAnimation()
     {
         Transform rubber = spriteRenderer.transform;
@@ -123,21 +114,5 @@ public class Tire : ThrowableItem
         squashAnimation.Append(rubber.DOScale(squashed, animationDuration / 2).SetEase(animationEasing));
         squashAnimation.Append(rubber.DOScale(spriteBaseScale, animationDuration / 2).SetEase(animationEasing));
         squashAnimation.Play();
-    }
-
-    private void RecoilAnimation(Vector2 direction)
-    {
-        if (recoilAnimation != null && recoilAnimation.IsActive())
-        {
-            recoilAnimation.Kill();
-            spriteRenderer.transform.localPosition = spriteInitialPos;
-        }
-
-        spriteInitialPos = spriteRenderer.transform.localPosition;
-        Vector3 targetPosition = spriteInitialPos + (Vector3)(direction.normalized * recoilDistance);
-        recoilAnimation = DOTween.Sequence();
-        recoilAnimation.Append(spriteRenderer.transform.DOLocalMove(targetPosition, recoilAnimationDuration / 2).SetEase(recoilAnimationEasing));
-        recoilAnimation.Append(spriteRenderer.transform.DOLocalMove(spriteInitialPos, recoilAnimationDuration / 2).SetEase(recoilAnimationReturnEasing));
-        recoilAnimation.Play();
     }
 }

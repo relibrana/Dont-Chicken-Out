@@ -75,7 +75,27 @@ public sealed class PowSequence : MonoBehaviour
         rt.anchorMin = rt.anchorMax = new Vector2(0.5f, 0.5f);
         rt.anchoredPosition = Vector2.zero;
 
+        GameManager.RoundEnded += sequence.Cancel;
         return sequence;
+    }
+
+    private void OnDestroy() => GameManager.RoundEnded -= Cancel;
+
+    /// <summary>
+    /// The round ended mid-countdown: no blast, no stun, nothing carried into
+    /// the next round (bug, oct 2026: the countdown showed up again at its start).
+    /// </summary>
+    private void Cancel()
+    {
+        if (!_running) return;
+
+        StopAllCoroutines();
+        _image.enabled = false;
+        _image.transform.localScale = Vector3.one;
+        _running = false;
+
+        // Ending event: never dropped by a resimulation, so the sound always stops.
+        SimEvents.Raise(SimEvent.PowCancelled, Vector3.zero, this);
     }
 
     private void Show(Sprite sprite, float displayScale)
@@ -138,7 +158,7 @@ public sealed class PowSequence : MonoBehaviour
 
     private static void StunGroundedPlayers(float stunSeconds, Color stunTint)
     {
-        foreach (PlayerController player in FindObjectsByType<PlayerController>(FindObjectsSortMode.None))
+        foreach (PlayerController player in PlayerController.Active)
         {
             if (!player.isOnGame) continue;
 

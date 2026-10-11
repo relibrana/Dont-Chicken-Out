@@ -69,6 +69,11 @@ public sealed class AudioEventTableSO : ScriptableObject
     [FormerlySerializedAs("musicTempoParameter")]
     public string progressionPhaseParameter = "";
 
+    [Tooltip("Parámetro global con el lado de pantalla del último sonido de juego (−1 izquierda … 1 derecha). "
+             + "Audio lo usa en el panner de los buses Player, Items y Blocks: el paneo va por grupo, no por "
+             + "evento. Los sonidos de UI y la música no lo tocan. Vacío = no se manda.")]
+    public string screenPanParameter = "ScreenPan";
+
     [Tooltip("Parámetro LOCAL de los eventos de música con el estado de juego. Se pone al arrancar la "
              + "pista: event:/BGM/Menu salta a \"Victory C\" si arranca con GameState = 1 (al ganar la partida).")]
     public string gameStateParameter = "GameState";
