@@ -1,5 +1,86 @@
 %YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
+--- !u!114 &-9127761161457147020
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ceb653cd98e289a4e8697a1af55201f2, type: 3}
+  m_Name: event:/SFX/Items/Bomb Fuse
+  m_EditorClassIdentifier: FMODUnityEditor::FMODUnity.EditorEventRef
+  Path: event:/SFX/Items/Bomb Fuse
+  Guid:
+    Data1: 1725327831
+    Data2: 1130234933
+    Data3: 273244294
+    Data4: 749162575
+  Banks:
+  - {fileID: -1408646923448449264}
+  IsStream: 0
+  Is3D: 0
+  IsOneShot: 1
+  Parameters: []
+  MinDistance: 1
+  MaxDistance: 20
+  Length: 0
+--- !u!114 &-8744103155149116695
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ceb653cd98e289a4e8697a1af55201f2, type: 3}
+  m_Name: event:/SFX/Items/AnvilFall
+  m_EditorClassIdentifier: FMODUnityEditor::FMODUnity.EditorEventRef
+  Path: event:/SFX/Items/AnvilFall
+  Guid:
+    Data1: 1432409900
+    Data2: 1303396002
+    Data3: 1967832989
+    Data4: -1775495785
+  Banks:
+  - {fileID: -1408646923448449264}
+  IsStream: 0
+  Is3D: 0
+  IsOneShot: 1
+  Parameters: []
+  MinDistance: 1
+  MaxDistance: 20
+  Length: 0
+--- !u!114 &-8038123331058279664
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ceb653cd98e289a4e8697a1af55201f2, type: 3}
+  m_Name: event:/SFX/Items/Bomb Explosion
+  m_EditorClassIdentifier: FMODUnityEditor::FMODUnity.EditorEventRef
+  Path: event:/SFX/Items/Bomb Explosion
+  Guid:
+    Data1: -1888842151
+    Data2: 1077824143
+    Data3: -1685849176
+    Data4: 1298542120
+  Banks:
+  - {fileID: -1408646923448449264}
+  IsStream: 0
+  Is3D: 0
+  IsOneShot: 1
+  Parameters: []
+  MinDistance: 1
+  MaxDistance: 20
+  Length: 0
 --- !u!114 &-7126511251869512649
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -42,10 +123,10 @@ MonoBehaviour:
   Path: FMOD/Desktop/Master.strings.bank
   Name: Master.strings
   StudioPath: bank:/Master.strings
-  lastModified: 639272520849664684
+  lastModified: 639272631995384972
   FileSizes:
   - Name: 
-    Value: 1886
+    Value: 2260
   Exists: 1
 --- !u!114 &-5963865781302355944
 MonoBehaviour:
@@ -86,7 +167,7 @@ MonoBehaviour:
   Path: FMOD/Desktop/Master.bank
   Name: Master
   StudioPath: bank:/Master
-  lastModified: 639272520849658638
+  lastModified: 639272631995379390
   FileSizes: []
   Exists: 1
 --- !u!114 &-4293587059892161078
@@ -107,6 +188,60 @@ MonoBehaviour:
     Data2: 1204958301
     Data3: 846742715
     Data4: 1298040261
+  Banks:
+  - {fileID: -1408646923448449264}
+  IsStream: 0
+  Is3D: 0
+  IsOneShot: 1
+  Parameters: []
+  MinDistance: 1
+  MaxDistance: 20
+  Length: 0
+--- !u!114 &-4001195496409258776
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ceb653cd98e289a4e8697a1af55201f2, type: 3}
+  m_Name: event:/SFX/UI/Title Animation
+  m_EditorClassIdentifier: FMODUnityEditor::FMODUnity.EditorEventRef
+  Path: event:/SFX/UI/Title Animation
+  Guid:
+    Data1: -882171574
+    Data2: 1120922691
+    Data3: 771450275
+    Data4: 1827043703
+  Banks:
+  - {fileID: -1408646923448449264}
+  IsStream: 0
+  Is3D: 0
+  IsOneShot: 1
+  Parameters: []
+  MinDistance: 1
+  MaxDistance: 20
+  Length: 0
+--- !u!114 &-2855108331928598628
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ceb653cd98e289a4e8697a1af55201f2, type: 3}
+  m_Name: event:/SFX/Items/Pow
+  m_EditorClassIdentifier: FMODUnityEditor::FMODUnity.EditorEventRef
+  Path: event:/SFX/Items/Pow
+  Guid:
+    Data1: -2000137561
+    Data2: 1167291877
+    Data3: 1511169174
+    Data4: -1484127032
   Banks:
   - {fileID: -1408646923448449264}
   IsStream: 0
@@ -143,6 +278,33 @@ MonoBehaviour:
   MinDistance: 1
   MaxDistance: 20
   Length: 1104
+--- !u!114 &-1880928190689439660
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ceb653cd98e289a4e8697a1af55201f2, type: 3}
+  m_Name: event:/SFX/UI/Button Hover
+  m_EditorClassIdentifier: FMODUnityEditor::FMODUnity.EditorEventRef
+  Path: event:/SFX/UI/Button Hover
+  Guid:
+    Data1: 1884008674
+    Data2: 1238288817
+    Data3: 583084221
+    Data4: 1116643218
+  Banks:
+  - {fileID: -1408646923448449264}
+  IsStream: 0
+  Is3D: 0
+  IsOneShot: 1
+  Parameters: []
+  MinDistance: 1
+  MaxDistance: 20
+  Length: 0
 --- !u!114 &-1569954902776359813
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -170,33 +332,6 @@ MonoBehaviour:
   MinDistance: 1
   MaxDistance: 20
   Length: 0
---- !u!114 &-1443294468917021877
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: ceb653cd98e289a4e8697a1af55201f2, type: 3}
-  m_Name: event:/SFX/Items/Easter Egg
-  m_EditorClassIdentifier: FMODUnityEditor::FMODUnity.EditorEventRef
-  Path: event:/SFX/Items/Easter Egg
-  Guid:
-    Data1: -573824313
-    Data2: 1196919357
-    Data3: -412136549
-    Data4: -1293921594
-  Banks:
-  - {fileID: -1408646923448449264}
-  IsStream: 0
-  Is3D: 0
-  IsOneShot: 1
-  Parameters: []
-  MinDistance: 1
-  MaxDistance: 20
-  Length: 0
 --- !u!114 &-1408646923448449264
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -212,7 +347,7 @@ MonoBehaviour:
   Path: FMOD/Desktop/SFX.bank
   Name: SFX
   StudioPath: bank:/SFX
-  lastModified: 639272520850093924
+  lastModified: 639272631995697894
   FileSizes: []
   Exists: 1
 --- !u!114 &-647483504746299980
@@ -233,6 +368,33 @@ MonoBehaviour:
     Data2: 1160606139
     Data3: -2060564301
     Data4: 1981623827
+  Banks:
+  - {fileID: -1408646923448449264}
+  IsStream: 0
+  Is3D: 0
+  IsOneShot: 1
+  Parameters: []
+  MinDistance: 1
+  MaxDistance: 20
+  Length: 0
+--- !u!114 &-458173823576448217
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ceb653cd98e289a4e8697a1af55201f2, type: 3}
+  m_Name: event:/SFX/Items/Super Kick
+  m_EditorClassIdentifier: FMODUnityEditor::FMODUnity.EditorEventRef
+  Path: event:/SFX/Items/Super Kick
+  Guid:
+    Data1: 1182916417
+    Data2: 1189267450
+    Data3: 1724095873
+    Data4: -1183308469
   Banks:
   - {fileID: -1408646923448449264}
   IsStream: 0
@@ -272,22 +434,30 @@ MonoBehaviour:
   - {fileID: 3454967780772247171}
   - {fileID: -4293587059892161078}
   - {fileID: -7126511251869512649}
-  - {fileID: 2921287378198705573}
   - {fileID: 427259353166353523}
-  - {fileID: 4534116543096101796}
   - {fileID: 3166666569287953550}
   - {fileID: 6058835273323009828}
   - {fileID: -2011071791882210406}
-  - {fileID: -1443294468917021877}
   - {fileID: 8827595701748517863}
   - {fileID: -647483504746299980}
+  - {fileID: 8673738929394603242}
+  - {fileID: -8744103155149116695}
+  - {fileID: -458173823576448217}
+  - {fileID: -8038123331058279664}
+  - {fileID: 2861017240862346958}
+  - {fileID: 664343168956417340}
+  - {fileID: -2855108331928598628}
+  - {fileID: -9127761161457147020}
+  - {fileID: -4001195496409258776}
+  - {fileID: 7413558340812141242}
+  - {fileID: -1880928190689439660}
   EditorParameters: []
   MasterBanks:
   - {fileID: -5886937445408039585}
   StringsBanks:
   - {fileID: -6042418105628590328}
   cacheVersion: 131860
-  cacheTime: 639272520850093924
+  cacheTime: 639272631995697894
   SerializableEventsDict:
   - key: event:/BGM/Menu
     index: 0
@@ -313,24 +483,38 @@ MonoBehaviour:
     index: 10
   - key: event:/SFX/UI/Start Round
     index: 11
-  - key: event:/SFX/Items/Bomb
-    index: 12
   - key: event:/SFX/Player/Death
-    index: 13
+    index: 12
   - key: event:/SFX/UI/Button
-    index: 14
+    index: 13
   - key: event:/SFX/Player/Steps
-    index: 15
+    index: 14
   - key: event:/SFX/Player/Kick
-    index: 16
+    index: 15
   - key: event:/SFX/UI/Transitions
-    index: 17
-  - key: event:/SFX/Items/Easter Egg
-    index: 18
+    index: 16
   - key: event:/SFX/Blocks/Placement
-    index: 19
+    index: 17
   - key: event:/SFX/UI/Title
+    index: 18
+  - key: event:/SFX/Items/AnvilHit
+    index: 19
+  - key: event:/SFX/Items/AnvilFall
     index: 20
+  - key: event:/SFX/Items/Super Kick
+    index: 21
+  - key: event:/SFX/Items/Bomb Explosion
+    index: 22
+  - key: event:/SFX/Items/Obtain Item
+    index: 23
+  - key: event:/SFX/Items/Teleport
+    index: 24
+  - key: event:/SFX/Items/Pow
+    index: 25
+  - key: event:/SFX/Items/Bomb Fuse
+    index: 26
+  - key: event:/SFX/UI/Title Animation
+    index: 27
 --- !u!114 &427259353166353523
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -385,6 +569,33 @@ MonoBehaviour:
   MinDistance: 1
   MaxDistance: 20
   Length: 2000
+--- !u!114 &664343168956417340
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ceb653cd98e289a4e8697a1af55201f2, type: 3}
+  m_Name: event:/SFX/Items/Teleport
+  m_EditorClassIdentifier: FMODUnityEditor::FMODUnity.EditorEventRef
+  Path: event:/SFX/Items/Teleport
+  Guid:
+    Data1: 608951701
+    Data2: 1176919138
+    Data3: 1561094295
+    Data4: 352118478
+  Banks:
+  - {fileID: -1408646923448449264}
+  IsStream: 0
+  Is3D: 0
+  IsOneShot: 1
+  Parameters: []
+  MinDistance: 1
+  MaxDistance: 20
+  Length: 0
 --- !u!114 &1199450774343641664
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -412,7 +623,7 @@ MonoBehaviour:
   MinDistance: 1
   MaxDistance: 20
   Length: 0
---- !u!114 &2921287378198705573
+--- !u!114 &2861017240862346958
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -422,14 +633,14 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: ceb653cd98e289a4e8697a1af55201f2, type: 3}
-  m_Name: event:/SFX/Items/Bomb
+  m_Name: event:/SFX/Items/Obtain Item
   m_EditorClassIdentifier: FMODUnityEditor::FMODUnity.EditorEventRef
-  Path: event:/SFX/Items/Bomb
+  Path: event:/SFX/Items/Obtain Item
   Guid:
-    Data1: 1644962679
-    Data2: 1158529146
-    Data3: 2111539630
-    Data4: 2016927511
+    Data1: -761552026
+    Data2: 1207000998
+    Data3: -2059963244
+    Data4: 416921943
   Banks:
   - {fileID: -1408646923448449264}
   IsStream: 0
@@ -438,7 +649,7 @@ MonoBehaviour:
   Parameters: []
   MinDistance: 1
   MaxDistance: 20
-  Length: 5344
+  Length: 0
 --- !u!114 &3166666569287953550
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -520,33 +731,6 @@ MonoBehaviour:
   MinDistance: 1
   MaxDistance: 20
   Length: 0
---- !u!114 &4534116543096101796
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: ceb653cd98e289a4e8697a1af55201f2, type: 3}
-  m_Name: event:/SFX/UI/Button
-  m_EditorClassIdentifier: FMODUnityEditor::FMODUnity.EditorEventRef
-  Path: event:/SFX/UI/Button
-  Guid:
-    Data1: 1694192274
-    Data2: 1246949801
-    Data3: -803562309
-    Data4: 88409689
-  Banks:
-  - {fileID: -1408646923448449264}
-  IsStream: 0
-  Is3D: 0
-  IsOneShot: 1
-  Parameters: []
-  MinDistance: 1
-  MaxDistance: 20
-  Length: 90
 --- !u!114 &5151474240253621636
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -683,6 +867,33 @@ MonoBehaviour:
   MinDistance: 1
   MaxDistance: 20
   Length: 164070
+--- !u!114 &7413558340812141242
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ceb653cd98e289a4e8697a1af55201f2, type: 3}
+  m_Name: event:/SFX/UI/Button Press
+  m_EditorClassIdentifier: FMODUnityEditor::FMODUnity.EditorEventRef
+  Path: event:/SFX/UI/Button Press
+  Guid:
+    Data1: -253562955
+    Data2: 1150744543
+    Data3: -571450730
+    Data4: 2056614617
+  Banks:
+  - {fileID: -1408646923448449264}
+  IsStream: 0
+  Is3D: 0
+  IsOneShot: 1
+  Parameters: []
+  MinDistance: 1
+  MaxDistance: 20
+  Length: 0
 --- !u!114 &8257216011656841480
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -698,7 +909,7 @@ MonoBehaviour:
   Path: FMOD/Desktop/BGM.bank
   Name: BGM
   StudioPath: bank:/BGM
-  lastModified: 639272520849845134
+  lastModified: 639272630871270251
   FileSizes: []
   Exists: 1
 --- !u!114 &8564771476381813687
@@ -719,6 +930,33 @@ MonoBehaviour:
     Data2: 1179873175
     Data3: -1609551477
     Data4: 776760049
+  Banks:
+  - {fileID: -1408646923448449264}
+  IsStream: 0
+  Is3D: 0
+  IsOneShot: 1
+  Parameters: []
+  MinDistance: 1
+  MaxDistance: 20
+  Length: 0
+--- !u!114 &8673738929394603242
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ceb653cd98e289a4e8697a1af55201f2, type: 3}
+  m_Name: event:/SFX/Items/AnvilHit
+  m_EditorClassIdentifier: FMODUnityEditor::FMODUnity.EditorEventRef
+  Path: event:/SFX/Items/AnvilHit
+  Guid:
+    Data1: 728780574
+    Data2: 1082616220
+    Data3: -545805950
+    Data4: 1159338313
   Banks:
   - {fileID: -1408646923448449264}
   IsStream: 0
