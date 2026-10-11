@@ -1,6 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <objects serializationModel="Studio.02.03.00">
 	<object class="Event" id="{88c852a7-75e5-4593-969c-125ac8048aa7}">
+		<property name="note">
+			<value>When activated, lower music</value>
+		</property>
 		<property name="color">
 			<value>Magenta Light 1</value>
 		</property>
@@ -82,6 +85,9 @@
 		</relationship>
 	</object>
 	<object class="EventMixerMaster" id="{6fdba782-06ba-441f-9702-a9d7ddd97786}">
+		<property name="volume">
+			<value>-2.5</value>
+		</property>
 		<relationship name="effectChain">
 			<destination>{65cb0db6-7608-452e-9977-a61dc10169c1}</destination>
 		</relationship>

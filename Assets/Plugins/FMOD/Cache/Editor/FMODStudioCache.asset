@@ -455,7 +455,7 @@ MonoBehaviour:
   Path: FMOD/Desktop/SFX.bank
   Name: SFX
   StudioPath: bank:/SFX
-  lastModified: 639272843828112302
+  lastModified: 639272855921214259
   FileSizes: []
   Exists: 1
 --- !u!114 &11400000
@@ -512,7 +512,7 @@ MonoBehaviour:
   StringsBanks:
   - {fileID: -6042418105628590328}
   cacheVersion: 131860
-  cacheTime: 639272844609157765
+  cacheTime: 639272855921214259
   SerializableEventsDict:
   - key: event:/BGM/Menu
     index: 0
@@ -952,7 +952,7 @@ MonoBehaviour:
   Parameters: []
   MinDistance: 1
   MaxDistance: 20
-  Length: 0
+  Length: 2100
 --- !u!114 &7826684178249185950
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1022,6 +1022,6 @@ MonoBehaviour:
   Path: FMOD/Desktop/BGM.bank
   Name: BGM
   StudioPath: bank:/BGM
-  lastModified: 639272844609157765
+  lastModified: 639272853679308736
   FileSizes: []
   Exists: 1
