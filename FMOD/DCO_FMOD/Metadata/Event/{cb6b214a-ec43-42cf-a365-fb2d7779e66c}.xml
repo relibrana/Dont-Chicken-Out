@@ -14,8 +14,8 @@
 			<destination>{6b1c568c-7eb0-4ec7-8c20-5c5d359f5861}</destination>
 		</relationship>
 		<relationship name="tags">
-			<destination>{76dd208e-1ab0-4505-b637-f10800c40688}</destination>
 			<destination>{b2fb178f-f10e-4565-b4c9-77c664f5e54a}</destination>
+			<destination>{76dd208e-1ab0-4505-b637-f10800c40688}</destination>
 		</relationship>
 		<relationship name="mixer">
 			<destination>{43c3329c-b711-4bc1-a6e9-81f5a98a4c75}</destination>
@@ -56,6 +56,9 @@
 		</relationship>
 	</object>
 	<object class="MixerInput" id="{4b57bd88-970c-4bad-b57b-b50af31bf7e9}">
+		<relationship name="masters">
+			<destination>{e52b140f-f6b1-4df4-acd3-f976d19ac614}</destination>
+		</relationship>
 		<relationship name="effectChain">
 			<destination>{dd5bb4b3-977d-4509-8010-c4b6109e44e6}</destination>
 		</relationship>
