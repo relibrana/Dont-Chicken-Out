@@ -11,9 +11,6 @@ public sealed class SuperKickPickup : MonoBehaviour, IInstantItem
     [SerializeField, Min(0.5f), Tooltip("Duración del estado. Rango del doc: 3 a 5 segundos.")]
     private float duration = 4f;
 
-    [SerializeField, Min(1), Tooltip("Daño por patada a cada sub-bloque. La vida base es 3, así que 3 = romper de una patada.")]
-    private int blockDamage = 3;
-
     [SerializeField, Min(1f), Tooltip("Multiplicador de fuerza de la patada contra objetos pateables (discos, bombas...).")]
     private float impulseMultiplier = 1.5f;
 
@@ -25,6 +22,6 @@ public sealed class SuperKickPickup : MonoBehaviour, IInstantItem
         if (!player.TryGetComponent(out SuperKickState state))
             state = player.gameObject.AddComponent<SuperKickState>();
 
-        state.Activate(duration, blockDamage, impulseMultiplier, carrierTint);
+        state.Activate(duration, impulseMultiplier, carrierTint);
     }
 }

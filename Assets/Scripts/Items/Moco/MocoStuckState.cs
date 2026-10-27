@@ -105,8 +105,11 @@ public sealed class MocoStuckState : PlayerItemState
     {
         // The bar drains: stop mashing and you lose ground.
         if (_drainPerSecond > 0f && _struggleFilled > 0f)
-            _struggleFilled = Mathf.Max(0f, _struggleFilled - _drainPerSecond * Time.deltaTime);
+            _struggleFilled = Mathf.Max(0f, _struggleFilled - _drainPerSecond * Time.fixedDeltaTime);
+    }
 
+    protected override void OnRender()
+    {
         TickYank();
 
         // Placeholder feedback until the bar has real UI: the tint washes out

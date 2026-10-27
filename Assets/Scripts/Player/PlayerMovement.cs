@@ -1,13 +1,17 @@
 using System;
-using DG.Tweening;
 using UnityEngine;
 
 /// <summary>
 /// Handles all physics-based movement for the player.
 /// Consumes an InputPayload each tick and produces a StatePayload.
 /// Has no knowledge of game state, blocks, UI, or networking.
-/// Network-ready: ProcessInput() can be driven by local input or by a
-/// reconciled payload from the server without changing any logic here.
+///
+/// Simulation vs presentation: everything that decides gameplay runs in the
+/// fixed tick (FixedUpdate) and reads the Rigidbody2D, never the Transform.
+/// The Transform is the drawn position: the body interpolates it between the
+/// last two ticks, so motion is smooth at any display refresh rate (60 Hz TVs,
+/// 144 Hz laptops) and the jump is identical on all of them. With Fusion 2 the
+/// tick becomes FixedUpdateNetwork() and its Render() takes over the drawing.
 /// </summary>
 [RequireComponent(typeof(Rigidbody2D))]
 public sealed class PlayerMovement : MonoBehaviour
@@ -73,24 +77,39 @@ public sealed class PlayerMovement : MonoBehaviour
 
     // ── Private state ─────────────────────────────────────────────────────────
 
+    // Blocks a second ground jump right after takeoff, while the ground rays
+    // still touch the floor.
+    private const float JumpLockSeconds = 0.5f;
+
     private Rigidbody2D          _rb;
     private PlayerAnimController _animController;
 
     private Vector2 _currentVelocity;
     private float   _velocitySmoothing;
 
+    // Input arrives every frame; the tick reads the latest one. A press is
+    // latched until a tick consumes it, so it is never lost on high refresh
+    // rates (frames with no tick) nor applied twice on low ones (several ticks
+    // in one frame).
+    private InputPayload _input;
+    private bool         _jumpPressedLatched;
+
     private bool _isGrounded;
     private bool _wasGrounded;
     private bool _isPlayerOnHead;
     private bool _isHoldingJump;
-    private bool _jumpLocked;
     private bool _isGliding;
 
     private float _coyoteTimer;
     private float _jumpBufferTimer;
+    private float _jumpLockTimer;
 
     private float _calculatedGravity;
     private float _calculatedInitialJumpVelocity;
+
+    // Set by Teleport: interpolation is off until the next tick so the body
+    // jumps instead of sliding from where it was.
+    private bool _restoreInterpolation;
 
     // ── Unity lifecycle ───────────────────────────────────────────────────────
 
@@ -100,8 +119,15 @@ public sealed class PlayerMovement : MonoBehaviour
 
         _rb.gravityScale   = 0f;
         _rb.freezeRotation = true;
+        _rb.interpolation  = RigidbodyInterpolation2D.Interpolate;
 
         CalculateJumpValues();
+    }
+
+    private void OnDisable()
+    {
+        _input              = default;
+        _jumpPressedLatched = false;
     }
 
     /// <summary>
@@ -113,36 +139,23 @@ public sealed class PlayerMovement : MonoBehaviour
         _animController = animController;
     }
 
-    private void Update()
-    {
-        if (valuesSO == null) return;
-
-        UpdateTimers();
-        CheckGround();
-        HandleGravity();
-        NotifyGroundedChange();
-        _animController?.SetVelocityY(_currentVelocity.y);
-    }
-
+    /// <summary>The simulation tick. All movement decisions happen here.</summary>
     private void FixedUpdate()
     {
         if (valuesSO == null) return;
 
-        _currentVelocity.y = Mathf.Min(_currentVelocity.y, valuesSO.maxJumpSpeed);
-        ApplyVelocityToRigidbody();
-    }
+        if (_restoreInterpolation)
+        {
+            _rb.interpolation     = RigidbodyInterpolation2D.Interpolate;
+            _restoreInterpolation = false;
+        }
 
-    // ── Public methods ────────────────────────────────────────────────────────
+        float dt = Time.fixedDeltaTime;
 
-    /// <summary>
-    /// Main entry point. Called by PlayerController every Update with the
-    /// current frame's InputPayload. Drives horizontal movement and jump.
-    /// Gravity runs independently in Update so it always applies regardless
-    /// of game state.
-    /// </summary>
-    public void ProcessInput(InputPayload input)
-    {
-        _isHoldingJump = input.jumpHeld;
+        UpdateTimers(dt);
+        CheckGround();
+
+        _isHoldingJump = _input.jumpHeld;
 
         if (HoldPosition)
         {
@@ -151,9 +164,18 @@ public sealed class PlayerMovement : MonoBehaviour
         }
         else
         {
-            HandleHorizontalMovement(input.moveDirection);
-            HandleJump(input.jumpPressed);
+            HandleHorizontalMovement(_input.moveDirection, dt);
+            HandleJump(_jumpPressedLatched);
         }
+        _jumpPressedLatched = false;
+
+        // Gravity always applies, regardless of game state.
+        HandleGravity(dt);
+        NotifyGroundedChange();
+        _animController?.SetVelocityY(_currentVelocity.y);
+
+        _currentVelocity.y = Mathf.Min(_currentVelocity.y, valuesSO.maxJumpSpeed);
+        ApplyVelocityToRigidbody();
 
         CurrentState = new StatePayload
         {
@@ -161,6 +183,18 @@ public sealed class PlayerMovement : MonoBehaviour
             velocity   = _currentVelocity,
             isGrounded = _isGrounded,
         };
+    }
+
+    // ── Public methods ────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Main entry point. Called by PlayerController every Update with the
+    /// current frame's InputPayload. Only stores it: the next tick applies it.
+    /// </summary>
+    public void ProcessInput(InputPayload input)
+    {
+        _input = input;
+        if (input.jumpPressed) _jumpPressedLatched = true;
     }
 
     /// <summary>
@@ -186,11 +220,18 @@ public sealed class PlayerMovement : MonoBehaviour
         _velocitySmoothing = 0f;
     }
 
-    /// <summary>Instantly moves the body (teleport item). Clears velocity and airborne timers.</summary>
+    /// <summary>
+    /// Instantly moves the body (teleport item, spawn, death zone). Clears
+    /// velocity and airborne timers. Any instant reposition of the chicken must
+    /// go through here: writing transform.position directly is overwritten by
+    /// interpolation, or slides the chicken across the screen.
+    /// </summary>
     public void Teleport(Vector2 position)
     {
-        _rb.position       = position;
-        transform.position = position;
+        _rb.interpolation     = RigidbodyInterpolation2D.None;
+        _rb.position          = position;
+        transform.position    = position;
+        _restoreInterpolation = true;
 
         _currentVelocity   = Vector2.zero;
         _velocitySmoothing = 0f;
@@ -209,7 +250,7 @@ public sealed class PlayerMovement : MonoBehaviour
 
     // ── Movement ──────────────────────────────────────────────────────────────
 
-    private void HandleHorizontalMovement(float moveDirection)
+    private void HandleHorizontalMovement(float moveDirection, float dt)
     {
         // Lateral speed is one of the seven progression variables. The jump is
         // deliberately left untouched (doc §4.3), so only the arc width changes.
@@ -226,7 +267,9 @@ public sealed class PlayerMovement : MonoBehaviour
             _currentVelocity.x,
             targetSpeed,
             ref _velocitySmoothing,
-            smoothTime
+            smoothTime,
+            Mathf.Infinity,
+            dt
         );
 
         _animController?.SetSpeed(Mathf.Abs(_currentVelocity.x));
@@ -240,10 +283,10 @@ public sealed class PlayerMovement : MonoBehaviour
         bool canJump = _jumpBufferTimer > 0f
                     && _coyoteTimer     > 0f
                     && !_isPlayerOnHead
-                    && !_jumpLocked;
+                    && _jumpLockTimer  <= 0f;
 
         // Air jump (doble salto item): a fresh press while airborne, past coyote.
-        // Ignores _jumpLocked on purpose — it only guards the ground jump, and
+        // Ignores the jump lock on purpose — it only guards the ground jump, and
         // would otherwise block a double jump within 0.5 s of takeoff.
         bool canAirJump = !canJump
                        && _jumpBufferTimer   > 0f
@@ -267,16 +310,15 @@ public sealed class PlayerMovement : MonoBehaviour
         }
         else
         {
-            _jumpLocked = true;
-            DOVirtual.DelayedCall(0.5f, () => _jumpLocked = false, false);
+            _jumpLockTimer = JumpLockSeconds;
         }
 
-        SimEvents.Raise(SimEvent.PlayerJumped, transform.position, this);
+        SimEvents.Raise(SimEvent.PlayerJumped, _rb.position, this);
         _animController?.SetGrounded(false);
         OnJumped?.Invoke();
     }
 
-    private void HandleGravity()
+    private void HandleGravity(float dt)
     {
         if (HoldPosition)
         {
@@ -299,7 +341,7 @@ public sealed class PlayerMovement : MonoBehaviour
         if (_currentVelocity.y < 0f)
             gravity *= FallGravityMultiplier;
 
-        _currentVelocity.y += gravity * Time.deltaTime;
+        _currentVelocity.y += gravity * dt;
 
         if (_currentVelocity.y < 0f)
         {
@@ -313,19 +355,19 @@ public sealed class PlayerMovement : MonoBehaviour
             {
                 _isGliding = isGliding;
                 OnGlideStateChanged?.Invoke(_isGliding);
-                SimEvents.Raise(_isGliding ? SimEvent.PlayerGlideStarted : SimEvent.PlayerGlideEnded, transform.position, this);
+                SimEvents.Raise(_isGliding ? SimEvent.PlayerGlideStarted : SimEvent.PlayerGlideEnded, _rb.position, this);
             }
 
             _animController?.SetGliding(isGliding);
 
             float nextY = _currentVelocity.y
-                        + gravity * (valuesSO.fallMultiplier - 1f - glideMultiplier) * Time.deltaTime;
+                        + gravity * (valuesSO.fallMultiplier - 1f - glideMultiplier) * dt;
 
             _currentVelocity.y = Mathf.Clamp(nextY, fallLimit, 50f);
         }
         else if (_currentVelocity.y > 0f && !_isHoldingJump)
         {
-            _currentVelocity.y += gravity * (valuesSO.lowJumpMultiplier - 1f) * Time.deltaTime;
+            _currentVelocity.y += gravity * (valuesSO.lowJumpMultiplier - 1f) * dt;
         }
     }
 
@@ -338,7 +380,9 @@ public sealed class PlayerMovement : MonoBehaviour
 
     private void CheckGround()
     {
-        Vector2 pos = transform.position;
+        // The body, not the Transform: the Transform is the interpolated
+        // (drawn) position and lags up to one tick behind.
+        Vector2 pos = _rb.position;
 
         _isGrounded =
             RaycastNonTrigger(new Vector2(pos.x - checkSpacing, pos.y - spacingY), Vector2.down) != null
@@ -370,14 +414,15 @@ public sealed class PlayerMovement : MonoBehaviour
 
     // ── Timers ────────────────────────────────────────────────────────────────
 
-    private void UpdateTimers()
+    private void UpdateTimers(float dt)
     {
-        if (_jumpBufferTimer > 0f) _jumpBufferTimer -= Time.deltaTime;
+        if (_jumpBufferTimer > 0f) _jumpBufferTimer -= dt;
+        if (_jumpLockTimer   > 0f) _jumpLockTimer   -= dt;
 
         if (_isGrounded)
             _coyoteTimer = valuesSO.coyoteTime;
         else if (_coyoteTimer > 0f)
-            _coyoteTimer -= Time.deltaTime;
+            _coyoteTimer -= dt;
     }
 
     // ── Grounded change notification ──────────────────────────────────────────
@@ -388,13 +433,13 @@ public sealed class PlayerMovement : MonoBehaviour
 
         if (_isGrounded)
         {
-            SimEvents.Raise(SimEvent.PlayerLanded, transform.position, this);
+            SimEvents.Raise(SimEvent.PlayerLanded, _rb.position, this);
 
             if (_isGliding)
             {
                 _isGliding = false;
                 OnGlideStateChanged?.Invoke(false);
-                SimEvents.Raise(SimEvent.PlayerGlideEnded, transform.position, this);
+                SimEvents.Raise(SimEvent.PlayerGlideEnded, _rb.position, this);
             }
         }
 

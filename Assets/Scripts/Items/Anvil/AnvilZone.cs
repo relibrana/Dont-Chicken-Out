@@ -1,12 +1,12 @@
-using System;
 using System.Collections;
 using UnityEngine;
 
 /// <summary>
 /// Telegraph of the anvil's column (design, oct 2026). Opens a full-height
-/// column over the target X (Zona-Yunque, scale X 0 → 1), fades the arrows in
-/// on top (Zona-YunqueFlecha) and only then lets the anvil fall. Drawn on the
-/// Bg layer above every background sprite and behind the floor.
+/// column over the target X (Zona-Yunque, scale X 0 → 1) and fades the arrows
+/// in on top (Zona-YunqueFlecha). Presentation only: AnvilFall counts the
+/// warning on the tick and decides when it falls. Drawn on the Bg layer above
+/// every background sprite and behind the floor.
 ///
 /// Spans the whole view (the art is 1080 px = the camera's 10.8 units), so it
 /// follows the camera vertically while it is up. Closes when the anvil leaves.
@@ -30,9 +30,9 @@ public sealed class AnvilZone : MonoBehaviour
         return zone;
     }
 
-    /// <summary>Column opens, then arrows fade in, then <paramref name="onOpened"/> (the anvil falls).</summary>
-    public void Open(float openSeconds, float arrowsFadeSeconds, Action onOpened)
-        => StartCoroutine(OpenRoutine(openSeconds, arrowsFadeSeconds, onOpened));
+    /// <summary>Column opens, then arrows fade in. Only draws: the anvil falls on its own timer.</summary>
+    public void Open(float openSeconds, float arrowsFadeSeconds)
+        => StartCoroutine(OpenRoutine(openSeconds, arrowsFadeSeconds));
 
     public void Close()
     {
@@ -53,7 +53,7 @@ public sealed class AnvilZone : MonoBehaviour
         transform.position = new Vector3(p.x, cam.transform.position.y, p.z);
     }
 
-    private IEnumerator OpenRoutine(float openSeconds, float arrowsFadeSeconds, Action onOpened)
+    private IEnumerator OpenRoutine(float openSeconds, float arrowsFadeSeconds)
     {
         SetAlpha(arrows, 0f);
 
@@ -70,8 +70,6 @@ public sealed class AnvilZone : MonoBehaviour
             yield return null;
         }
         SetAlpha(arrows, 1f);
-
-        onOpened?.Invoke();
     }
 
     private IEnumerator CloseRoutine()

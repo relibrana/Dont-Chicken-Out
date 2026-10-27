@@ -42,11 +42,14 @@ public sealed class AnvilPickup : MonoBehaviour, IInstantItem
         float x   = player.transform.position.x;
         float top = GameplayCamera.TopY(player.transform.position.y + 12f);
 
-        AnvilZone  zone  = AnvilZone.Spawn(zonePrefab, x);
-        GameObject anvil = Instantiate(anvilPrefab, new Vector3(x, top + spawnMargin, 0f), Quaternion.identity);
+        Vector3 spawn = new Vector3(x, top + spawnMargin, 0f);
+
+        // From the pool, not Instantiate: ResetPool only turns off what is in
+        // its lists, and an anvil outside them outlived the round.
+        GameObject anvil = GameManager.instance.poolManager.GetPooledItem(anvilPrefab, spawn);
 
         if (anvil.TryGetComponent(out AnvilFall fall))
-            fall.Begin(fallSpeed, stopOnKill, zone, zoneOpenSeconds, arrowsFadeSeconds);
+            fall.Begin(spawn, fallSpeed, stopOnKill, AnvilZone.Spawn(zonePrefab, x), zoneOpenSeconds, arrowsFadeSeconds);
         else
             Debug.LogWarning("AnvilPickup: el prefab no tiene AnvilFall.");
     }

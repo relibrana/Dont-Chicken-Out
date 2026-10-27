@@ -95,7 +95,11 @@ public sealed class TeleportPickup : HoldableItem
         return destination;
     }
 
-    /// <summary>Highest living rival. Ties resolve to whoever is found first.</summary>
+    /// <summary>
+    /// Highest living rival. Ties resolve to whoever is found first. A dead
+    /// chicken never qualifies: until oct 2026 the dead were parked in a death
+    /// zone with isOnGame still true, and the teleport sent people there.
+    /// </summary>
     private static PlayerController PickHighestTarget(PlayerController self)
     {
         PlayerController best = null;
@@ -103,7 +107,7 @@ public sealed class TeleportPickup : HoldableItem
 
         foreach (PlayerController player in PlayerController.Active)
         {
-            if (player == self || !player.isOnGame) continue;
+            if (player == self || !player.IsAlive || !player.isOnGame) continue;
 
             float y = player.transform.position.y;
             if (y <= bestY) continue;

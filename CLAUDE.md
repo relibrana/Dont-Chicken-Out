@@ -1,6 +1,6 @@
 # Don't Chicken Out! — Raymi Games
 
-Party game 2D (Unity 6, URP) para 2–4 jugadores: pollos trepan bloques tipo Tetris mientras la cámara sube; el último en pie gana la ronda, First-to-N gana el match. Target: PC + consola, julio 2027.
+Party game 2D (Unity 6, Built-in RP) para 2–4 jugadores: pollos trepan bloques tipo Tetris mientras la cámara sube; el último en pie gana la ronda, First-to-N gana el match. Target: PC + consola, julio 2027.
 
 ## Reglas para ahorrar tokens (importante)
 
@@ -34,20 +34,22 @@ Party game 2D (Unity 6, URP) para 2–4 jugadores: pollos trepan bloques tipo Te
 
 ## Mapa del código (`Assets/Scripts`, ~55 scripts)
 
-- `Manager/` — `GameManager` (state machine Menu/Prepare/Game/Win + rondas), `PlayersManager` (join local 2–4P teclado split + gamepad), `PoolingManager` (bloques por rank Winning/Neutral/Losing), `AudioManager`/`MusicManager`/`SoundManager`, `PauseManager`, `UIManager`
+- `Manager/` — `GameManager` (state machine Menu/Prepare/Game/Win + rondas), `PlayersManager` (join local 2–4P teclado split + gamepad), `PoolingManager` (bloques por rank Winning/Neutral/Losing), `AudioManager`, `PauseManager`, `UIManager`, `DisplaySettings` (monitor/modo/VSync/límite FPS, en `PlayerPrefs`)
 - `Player/` — `PlayerMovement` (jump buffer, coyote, glide, fall multiplier; consume `InputPayload`→`StatePayload` por tick, patrón network-ready en `PlayerPayloads.cs`), `PlayerInputHandler`, `PlayerBlockHandler`, `CluckSystem`, `HeadCollider`
-- `Controllers/` — `PlayerController`, `PlayerAnimController`, `KickCollider`/`KickResponse`, `FeatherVFXController`, `CameraController`
+- `Controllers/` — `PlayerController`, `PlayerAnimController`, `KickCollider`/`KickResponse`, `FeatherVFXController`
 - `Camera/` — `CinemachineVerticalRig2D` (auto-rise con curva de aceleración + shake), `ScreenShake` (puerta estática: `ScreenShake.Punch(dur, amp)` desde cualquier sitio)
-- `Items/` — catálogo completo implementado (ver `Docs/items-implementacion.md`): `PlayerItemState` (base de estados con timer/tinte/cleanup), `Throwing/ThrowableItem` (lanzables), por carpeta: `SuperKick`, `Pow`, `Moco`, `HotPotato`, `Teleport`, `Anvil`, `MetalChicken`, `DoubleJump`, más `Bomb` y `Tire` (= la llanta lanzable del catálogo); `Objects/ItemCapsule` (pool con pesos + `IInstantItem` vs `HoldableItem`)
+- `Items/` — catálogo completo implementado (ver `Docs/items-implementacion.md`): `PlayerItemState` (base de estados con timer/tinte/cleanup; `OnTick` = tick, `OnRender` = visual), `Throwing/ThrowableItem` (lanzables), por carpeta: `SuperKick`, `Pow`, `Moco`, `HotPotato`, `Teleport`, `Anvil`, `MetalChicken`, `DoubleJump`, más `Bomb` y `Tire` (= la llanta lanzable del catálogo); `Objects/ItemCapsule` (pool con pesos + `IInstantItem` vs `HoldableItem`)
 - `Objects/` — `BlockScript`, `BlockDamageable` (vida de bloques), `BlockOverlapCheck`, `PlayerKiller`, interfaces `IDamageable`/`IKickable`
 - `SOs/` — config en ScriptableObjects: `PlatformerValuesSO`, `BlocksPoolSO`, `BlocksValuesSO`, `FeatherVFXConfigSO`, `MelodySO`, `SoundData`
 - `SceneChange/` — transiciones, `MainMenuController`, `MenuInputRouter`, `SessionData`
-- `UI/` — `PlayerUI`, `UIButtonSFX`, `PlayerNameTag` (etiqueta "Player N" en el mundo, color leído del shader del pollo)
+- `UI/` — `PlayerUI`, `UIButtonSFX`, `PlayerNameTag` (etiqueta "Player N" en el mundo, color leído del shader del pollo), `SettingsPanel` (ajustes del menú con pestañas; cada pestaña es un `SettingsSection`: `AudioSettingsPanel`, `DisplaySettingsPanel`; `SelectionHighlight` marca la opción con foco; se monta con Tools > Don't Chicken Out > Crear panel de ajustes)
+- `Utility/` — `DebugOverlay` (F3 o L3+R3 en mando, también en builds: FPS, peor frame, Hz del monitor, VSync, tick), `CursorAutoHide` (esconde el cursor en pantalla completa tras 2 s quieto; solo builds)
 
 ## Stack y convenciones
 
-- Unity **6000.3.9f1** (Unity 6 LTS), URP, Input System 1.18, Cinemachine 3.1.5, DOTween, 2D Feature set.
+- Unity **6000.3.9f1** (Unity 6 LTS), **Built-in Render Pipeline** (no hay paquete URP instalado), Input System 1.18, Cinemachine 3.1.5, DOTween, 2D Feature set.
 - Física: `Rigidbody2D`/`Physics2D` (no determinista — restricción clave para netcode).
+- **Simulación vs presentación:** la lógica de gameplay corre en `FixedUpdate` (tick, 50 Hz) y lee el `Rigidbody2D`; el `Transform` es la posición dibujada, interpolada entre ticks. Reposicionar un pollo solo con `PlayerController.TeleportTo` (escribir `transform.position` lo pisa la interpolación). Ver `Docs/deuda-tecnica.md` (tabla de arreglados, oct 2026).
 - Docs y comunicación del equipo en español; código/identificadores en inglés.
 - **El GDD tiene contradicciones conocidas y puede estar desactualizado.** Antes de asumir o proponer cualquier cambio de diseño (GDD o mecánicas), **preguntar al usuario** si es realmente lo planeado — él no lleva diseño y lo valida con los design leads.
 - Commits estilo actual: cortos, descriptivos (`fix(...)`, nombre del sistema). No commitear sin que lo pidan.

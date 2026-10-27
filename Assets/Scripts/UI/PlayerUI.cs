@@ -14,8 +14,6 @@ public class PlayerUI : MonoBehaviour
     public string place;
     [SerializeField] private PlayerUIState uiState;
     [SerializeField] private TextMeshProUGUI InitialText;
-    // [SerializeField] private GameObject InGameBox;
-    // [SerializeField] private GameObject DeadBox;
 
     [Header("Points HUD")]
     [SerializeField] private GameObject contentRoot;
@@ -45,8 +43,6 @@ public class PlayerUI : MonoBehaviour
     public void ChangeUIState(PlayerUIState newState)
     {
         InitialText?.gameObject.SetActive(false);
-        // InGameBox.SetActive(false);
-        // DeadBox.SetActive(false);
 
         uiState = newState;
 
@@ -62,15 +58,10 @@ public class PlayerUI : MonoBehaviour
                 InitialText.gameObject.SetActive(true);
                 InitialText.text = "KICK THE BUTTON TO START";
                 break;
+            // Nothing on screen for these: the text is already hidden above.
             case PlayerUIState.Ready:
-                // InitialText.gameObject.SetActive(true);
-                // InitialText.text = $"PLAYER {playerIndex} READY";
-                break;
             case PlayerUIState.InGame:
-                // InGameBox.SetActive(true);
-                break;
             case PlayerUIState.Dead:
-                // DeadBox.SetActive(true);
                 break;
             case PlayerUIState.Round:
                 InitialText.gameObject.SetActive(true);

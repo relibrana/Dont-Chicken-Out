@@ -1,5 +1,4 @@
-﻿using System.Collections;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEngine;
 
 [DisallowMultipleComponent]
@@ -18,7 +17,7 @@ public sealed class BombItem : ThrowableItem
     [SerializeField, Min(0f), Tooltip("Impulso máximo aplicado a los cuerpos afectados.")]
     private float explosionImpulse = 12f;
 
-    [SerializeField, Min(0f), Tooltip("Delay para destruir luego de explotar (para que se vea el final de la animación).")]
+    [SerializeField, Min(0f), Tooltip("Delay para devolverla al pool luego de explotar (para que se vea el final de la animación).")]
     private float destroyDelay = 0.5f;
 
     [Header("Detection")]
@@ -77,7 +76,7 @@ public sealed class BombItem : ThrowableItem
     [SerializeField] private ParticleSystem[] explosionParticles;
 
     private SpriteRenderer[] cachedSpriteRenderers;
-    private Coroutine fuseRoutine;
+    private Color[] originalSpriteColors;
     private float landedGravityScale = 1f;
     private float landedLinearDamping;
 
@@ -89,7 +88,13 @@ public sealed class BombItem : ThrowableItem
 
     private static Material _sharedFuseMaterial;
 
-    private bool hasExploded;
+    // Simulation state, advanced by the tick only (same split as PlayerItemState):
+    // the fuse and the despawn after the blast count in FixedUpdate so the bomb
+    // goes off on the same tick on every machine. Update only draws.
+    private bool  fuseLit;
+    private float fuseRemaining;
+    private bool  hasExploded;
+    private float despawnRemaining;
 
     private readonly HashSet<Rigidbody2D> uniqueBodies = new HashSet<Rigidbody2D>();
 
@@ -99,6 +104,11 @@ public sealed class BombItem : ThrowableItem
     private void Awake()
     {
         cachedSpriteRenderers = GetComponentsInChildren<SpriteRenderer>(includeInactive: true);
+
+        // The fuse tints every sprite; a pooled bomb has to come back with its own colours.
+        originalSpriteColors = new Color[cachedSpriteRenderers.Length];
+        for (int i = 0; i < cachedSpriteRenderers.Length; i++)
+            originalSpriteColors[i] = cachedSpriteRenderers[i].color;
 
         // El lanzamiento pisa la gravedad con la del proyectil; se restaura
         // al aterrizar para que la bomba caída pese lo mismo que siempre.
@@ -116,14 +126,39 @@ public sealed class BombItem : ThrowableItem
         _breathBaseScale = _breathTarget.localScale;
     }
 
-    private void Update()
+    private void FixedUpdate()
     {
+        if (hasExploded)
+        {
+            despawnRemaining -= Time.fixedDeltaTime;
+            if (despawnRemaining <= 0f)
+                gameObject.SetActive(false); // back to the pool; OnDisable resets it
+            return;
+        }
+
+        if (!fuseLit) return;
+
+        fuseRemaining -= Time.fixedDeltaTime;
+        if (fuseRemaining <= 0f)
+        {
+            Explosion();
+            despawnRemaining = destroyDelay;
+        }
+    }
+
+    protected override void Update()
+    {
+        base.Update();
+
 #if UNITY_EDITOR
         if (Input.GetKeyDown(KeyCode.K))
         {
             StartFuse();
         }
 #endif
+
+        if (fuseLit && !hasExploded)
+            RenderFuse();
     }
 
     /// <summary>
@@ -161,17 +196,20 @@ public sealed class BombItem : ThrowableItem
 
     private void TryStartFuse()
     {
-        if (fuseRoutine == null && !hasExploded)
+        if (!fuseLit && !hasExploded)
             StartFuse();
     }
 
     private void StartFuse()
     {
-        if (fuseRoutine != null)
-            StopCoroutine(fuseRoutine);
+        if (hasExploded) return;
 
         Prepare();
-        fuseRoutine = StartCoroutine(FuseRoutine());
+
+        fuseLit       = true;
+        fuseRemaining = Mathf.Max(0.0001f, fuseSeconds);
+        _breathPhase  = 0f;
+        EnsureFuseLine();
     }
 
     private void Prepare()
@@ -184,41 +222,26 @@ public sealed class BombItem : ThrowableItem
         SetSpriteColor(startColor);
     }
 
-    private IEnumerator FuseRoutine()
+    /// <summary>
+    /// Draws the fuse from the last tick's value minus the time since that
+    /// tick (same as PlayerItemState.RenderRemaining). Never decides anything.
+    /// </summary>
+    private void RenderFuse()
     {
-        float elapsed = 0f;
-        float fuseSafe = Mathf.Max(0.0001f, fuseSeconds);
+        float fuseSafe        = Mathf.Max(0.0001f, fuseSeconds);
+        float renderRemaining = Mathf.Max(0f, fuseRemaining - (Time.time - Time.fixedTime));
+        float t               = 1f - Mathf.Clamp01(renderRemaining / fuseSafe);
 
-        _breathPhase = 0f;
-        EnsureFuseLine();
-
-        while (elapsed < fuseSafe)
-        {
-            elapsed += Time.deltaTime;
-            float t = Mathf.Clamp01(elapsed / fuseSafe);
-
-            SetSpriteColor(Color.Lerp(startColor, endColor, t));
-            TickBreathing(t);
-            TickFuse(t);
-
-            yield return null;
-        }
-
-        ResetBreathing();
-        HideFuse();
-
-        Explosion();
-
-        if (destroyDelay > 0f)
-            yield return new WaitForSeconds(destroyDelay);
-
-        Destroy(gameObject);
+        SetSpriteColor(Color.Lerp(startColor, endColor, t));
+        TickBreathing(t);
+        TickFuse(t);
     }
 
     private void Explosion()
     {
         if (hasExploded) return;
         hasExploded = true;
+        fuseLit     = false;
         
 		rb2d.bodyType = RigidbodyType2D.Kinematic;
         
@@ -337,9 +360,21 @@ public sealed class BombItem : ThrowableItem
         GameManager.RoundEnded -= HandleRoundEnded;
         SimEvents.Raise(SimEvent.BombFuseOut, transform.position, this);
 
-        // Disabling stops the coroutine but keeps the handle: clear it, or a
-        // pooled bomb could never be lit again (TryStartFuse checks for null).
-        fuseRoutine = null;
+        // Back to the pool: a pooled bomb must come out unlit and whole.
+        fuseLit     = false;
+        hasExploded = false;
+
+        for (int i = 0; i < colliders.Count; i++)
+        {
+            if (colliders[i] != null)
+                colliders[i].enabled = true;
+        }
+
+        for (int i = 0; i < cachedSpriteRenderers.Length; i++)
+        {
+            if (cachedSpriteRenderers[i] != null)
+                cachedSpriteRenderers[i].color = originalSpriteColors[i];
+        }
 
         // Dropped mid-flight (round reset): come back with its ground values.
         if (rb2d != null)

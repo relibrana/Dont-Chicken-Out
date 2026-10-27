@@ -103,11 +103,11 @@ public sealed class HotPotatoState : PlayerItemState
         _visual = null;
     }
 
-    protected override void OnTick()
+    protected override void OnRender()
     {
         // Measured against _fuseWindow, so a hand-off does not reset the
         // warning — the new carrier picks it up already pulsing fast.
-        float urgency = 1f - Mathf.Clamp01(Remaining / Mathf.Max(0.01f, _fuseWindow));
+        float urgency = 1f - Mathf.Clamp01(RenderRemaining / Mathf.Max(0.01f, _fuseWindow));
         if (_visual != null) _visual.Pulse(urgency);
     }
 

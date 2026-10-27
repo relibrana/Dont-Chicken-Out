@@ -1,5 +1,4 @@
 using System.Collections.Generic;
-using DG.Tweening;
 using UnityEngine;
 
 /// <summary>
@@ -45,6 +44,13 @@ public sealed class PlayerBlockHandler : MonoBehaviour
 
     private PlatformerValuesSO _values;
 
+    // Both delays count down on the simulation tick (FixedUpdate), not with
+    // DOVirtual: a pending tween could not be cancelled, so a block swapped in
+    // mid-delay inherited the old countdown and became placeable early.
+    private bool  _generationPending;
+    private float _generationTimer;
+    private float _placementTimer;
+
     // ── Progression-scaled values ─────────────────────────────────────────────
 
     /// <summary>Cooldown between placements, scaled by the current phase.</summary>
@@ -78,6 +84,28 @@ public sealed class PlayerBlockHandler : MonoBehaviour
         HandleBlockLogic();
     }
 
+    private void FixedUpdate()
+    {
+        float dt = Time.fixedDeltaTime;
+
+        if (_generationPending)
+        {
+            _generationTimer -= dt;
+            if (_generationTimer <= 0f)
+            {
+                _generationPending = false;
+                CanPlaceBlock      = true;
+            }
+        }
+
+        if (!IsAvailable)
+        {
+            _placementTimer -= dt;
+            if (_placementTimer <= 0f)
+                IsAvailable = true;
+        }
+    }
+
     // ── Public methods ────────────────────────────────────────────────────────
 
     /// <summary>
@@ -90,8 +118,7 @@ public sealed class PlayerBlockHandler : MonoBehaviour
         CurrentBlock = newBlock;
         CurrentBlock.SetOwner(_controller);
         CurrentBlock.StartHold();
-        CanPlaceBlock = false;
-        DOVirtual.DelayedCall(GenerationDelay, () => CanPlaceBlock = true, false);
+        StartGenerationDelay();
     }
 
     /// <summary>
@@ -119,10 +146,10 @@ public sealed class PlayerBlockHandler : MonoBehaviour
         _animController.PlayPlace();
         CurrentBlock.PlaceHoldable();
         CurrentBlock = null;
-        CanPlaceBlock = false;
-        IsAvailable   = false;
-
-        DOVirtual.DelayedCall(PlacementCooldown, () => IsAvailable = true, false);
+        CanPlaceBlock      = false;
+        _generationPending = false;
+        IsAvailable        = false;
+        _placementTimer    = PlacementCooldown;
     }
 
     /// <summary>
@@ -134,8 +161,9 @@ public sealed class PlayerBlockHandler : MonoBehaviour
         if (CurrentBlock == null) return;
 
         CurrentBlock.gameObject.SetActive(false);
-        CurrentBlock  = null;
-        CanPlaceBlock = false;
+        CurrentBlock       = null;
+        CanPlaceBlock      = false;
+        _generationPending = false;
     }
 
     /// <summary>
@@ -174,8 +202,15 @@ public sealed class PlayerBlockHandler : MonoBehaviour
             block.SetBlockSprite(_controller.BlockSprite);
         CurrentBlock.StartHold();
 
-        CanPlaceBlock = false;
-        DOVirtual.DelayedCall(GenerationDelay, () => CanPlaceBlock = true, false);
+        StartGenerationDelay();
+    }
+
+    /// <summary>A freshly received block becomes placeable after GenerationDelay.</summary>
+    private void StartGenerationDelay()
+    {
+        CanPlaceBlock      = false;
+        _generationPending = true;
+        _generationTimer   = GenerationDelay;
     }
 
     private void UpdateBlockTransform()

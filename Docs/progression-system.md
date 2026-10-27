@@ -115,10 +115,9 @@ el asset de progresión las referencia en *Valores base* para poder previsualiza
 `CameraRig.prefab` y está `Untagged` —, así que `Camera.main` devuelve null. En la primera versión eso
 hacía que el listón naciera siempre en el origen del mundo, por debajo de todos y sin romperse nunca,
 congelando el cronómetro el resto de la ronda.
-Ahora el ProgressionManager resuelve la cámara por su cuenta: campo **View Camera** si se asigna,
-luego `Camera.main`, y por último la única Camera de la escena. Funciona sin tocar nada, pero tagear
-esa cámara como MainCamera sigue siendo buena práctica: hay fallbacks en `CinemachineVerticalRig2D`
-que hoy petarían si `cineCam` quedara sin asignar.
+Desde oct 2026 la Camera de `CameraRig.prefab` lleva el tag `MainCamera` y los fallbacks se quitaron:
+el ProgressionManager usa el campo **View Camera** si se asigna y si no `GameplayCamera.Get()`
+(= `Camera.main`). Si el listón vuelve a nacer en el origen, mirar primero que esa cámara siga tagueada.
 
 **Ancho del listón.** `ribbonWidth = 0` significa automático: cubre todo el ancho visible más un
 margen, sea cual sea el aspect ratio. Poner un número fijo solo si el arte lo exige.

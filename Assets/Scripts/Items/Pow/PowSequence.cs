@@ -1,5 +1,4 @@
 using System;
-using System.Collections;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -18,10 +17,29 @@ using UnityEngine.UI;
 /// </summary>
 public sealed class PowSequence : MonoBehaviour
 {
+    // Seconds each number stays on screen, and the "JUMP!" after the blast.
+    private const float StepSeconds     = 1f;
+    private const float JumpHoldSeconds = 0.8f;
+
     private static PowSequence _instance;
 
     private Image _image;
+
+    // Simulation state, advanced by the tick only (same split as PlayerItemState):
+    // the blast lands on the same tick on every machine. Update only draws.
     private bool  _running;
+    private bool  _blasted;
+    private int   _number;
+    private float _stepRemaining;
+
+    private Sprite[] _numberSprites;
+    private Sprite   _jumpSprite;
+    private float    _displayScale;
+    private float    _stunSeconds;
+    private Color    _stunTint;
+    private float    _shakeDuration;
+    private float    _shakeAmplitude;
+    private Action   _onFinished;
 
     /// <summary>Starts the countdown. Ignored if one is already running.</summary>
     /// <param name="numberSprites">[0] = "1", [1] = "2", [2] = "3"…</param>
@@ -46,9 +64,9 @@ public sealed class PowSequence : MonoBehaviour
             return;
         }
 
-        _instance.StartCoroutine(_instance.Sequence(
+        _instance.Begin(
             countFrom, numberSprites, jumpSprite, displayScale,
-            stunSeconds, stunTint, shakeDuration, shakeAmplitude, onFinished));
+            stunSeconds, stunTint, shakeDuration, shakeAmplitude, onFinished);
     }
 
     private static PowSequence Create()
@@ -89,10 +107,8 @@ public sealed class PowSequence : MonoBehaviour
     {
         if (!_running) return;
 
-        StopAllCoroutines();
-        _image.enabled = false;
+        Finish();
         _image.transform.localScale = Vector3.one;
-        _running = false;
 
         // Ending event: never dropped by a resimulation, so the sound always stops.
         SimEvents.Raise(SimEvent.PowCancelled, Vector3.zero, this);
@@ -108,7 +124,7 @@ public sealed class PowSequence : MonoBehaviour
         _image.rectTransform.sizeDelta *= displayScale;
     }
 
-    private IEnumerator Sequence(
+    private void Begin(
         int countFrom,
         Sprite[] numberSprites,
         Sprite jumpSprite,
@@ -119,41 +135,95 @@ public sealed class PowSequence : MonoBehaviour
         float shakeAmplitude,
         Action onFinished)
     {
-        _running = true;
+        _numberSprites  = numberSprites;
+        _jumpSprite     = jumpSprite;
+        _displayScale   = displayScale;
+        _stunSeconds    = stunSeconds;
+        _stunTint       = stunTint;
+        _shakeDuration  = shakeDuration;
+        _shakeAmplitude = shakeAmplitude;
+        _onFinished     = onFinished;
+
+        _running       = true;
+        _blasted       = false;
+        _number        = countFrom;
+        _stepRemaining = 0f;
 
         // One FMOD event covers the whole 3-2-1-JUMP! (design, oct 2026). Global
         // effect, so no position to pan from.
         SimEvents.Raise(SimEvent.PowCountdownStarted, Vector3.zero, this);
 
-        for (int i = countFrom; i > 0; i--)
-        {
-            Sprite number = numberSprites != null && i - 1 < numberSprites.Length ? numberSprites[i - 1] : null;
-            Show(number, displayScale);
+        if (_number > 0)
+            ShowNumber();
+        else
+            Blast();
+    }
 
-            float t = 0f;
-            while (t < 1f)
-            {
-                t += Time.deltaTime;
-                _image.transform.localScale = Vector3.one * Mathf.Lerp(1.5f, 1f, Mathf.Clamp01(t));
-                yield return null;
-            }
+    private void FixedUpdate()
+    {
+        if (!_running) return;
+
+        _stepRemaining -= Time.fixedDeltaTime;
+        if (_stepRemaining > 0f) return;
+
+        if (_blasted)
+        {
+            Finish();
+            return;
         }
 
-        Show(jumpSprite, displayScale);
+        _number--;
+        if (_number > 0)
+            ShowNumber();
+        else
+            Blast();
+    }
+
+    // Each number shrinks from 1.5x to 1x over its step. Drawn from the last
+    // tick's value minus the time since that tick; never decides anything.
+    private void Update()
+    {
+        if (!_running || _blasted) return;
+
+        float renderRemaining = Mathf.Max(0f, _stepRemaining - (Time.time - Time.fixedTime));
+        float t = 1f - Mathf.Clamp01(renderRemaining / StepSeconds);
+        _image.transform.localScale = Vector3.one * Mathf.Lerp(1.5f, 1f, t);
+    }
+
+    private void ShowNumber()
+    {
+        Sprite number = _numberSprites != null && _number - 1 < _numberSprites.Length ? _numberSprites[_number - 1] : null;
+        Show(number, _displayScale);
+        _stepRemaining += StepSeconds;
+    }
+
+    private void Blast()
+    {
+        _blasted = true;
+
+        Show(_jumpSprite, _displayScale);
         _image.transform.localScale = Vector3.one * 1.5f;
 
         // Sacudón corto y fuerte, estilo Mario: el golpe se siente en el
         // instante, no como un temblor largo.
-        ScreenShake.Punch(shakeDuration, shakeAmplitude);
+        ScreenShake.Punch(_shakeDuration, _shakeAmplitude);
 
-        StunGroundedPlayers(stunSeconds, stunTint);
+        StunGroundedPlayers(_stunSeconds, _stunTint);
 
+        Action onFinished = _onFinished;
+        _onFinished = null;
         onFinished?.Invoke();
 
-        yield return new WaitForSeconds(0.8f);
+        _stepRemaining += JumpHoldSeconds;
+    }
 
+    private void Finish()
+    {
         _image.enabled = false;
         _running       = false;
+        _onFinished    = null;
+        _numberSprites = null;
+        _jumpSprite    = null;
     }
 
     private static void StunGroundedPlayers(float stunSeconds, Color stunTint)

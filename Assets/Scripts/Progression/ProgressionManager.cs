@@ -41,8 +41,8 @@ public sealed class ProgressionManager : MonoBehaviour
              + "the ribbon is anchored to the world on purpose.")]
     [SerializeField] private Transform ribbonParent;
 
-    [Tooltip("Camera used to decide where the ribbon spawns. Leave empty to resolve it automatically: "
-             + "Camera.main first, then the only Camera in the scene.")]
+    [Tooltip("Camera used to decide where the ribbon spawns. Leave empty to use the gameplay camera "
+             + "(Camera.main, the one in CameraRig).")]
     [SerializeField] private Camera viewCamera;
 
     [Header("Placeholder")]
@@ -353,10 +353,8 @@ public sealed class ProgressionManager : MonoBehaviour
     // ── View helpers ──────────────────────────────────────────────────────────
 
     /// <summary>
-    /// Resolves the camera that defines the visible area.
-    /// Camera.main is NOT reliable here: no camera in this project carries the
-    /// MainCamera tag, so it returns null and every ribbon would spawn at the
-    /// world origin. The scene lookup is the fallback that actually works.
+    /// Resolves the camera that defines the visible area. Without one every
+    /// ribbon would spawn at the world origin, hence the error below.
     /// </summary>
     private Camera Cam
     {
@@ -364,10 +362,7 @@ public sealed class ProgressionManager : MonoBehaviour
         {
             if (_cam != null) return _cam;
 
-            _cam = viewCamera != null ? viewCamera : Camera.main;
-
-            if (_cam == null)
-                _cam = FindAnyObjectByType<Camera>();
+            _cam = viewCamera != null ? viewCamera : GameplayCamera.Get();
 
             if (_cam == null && !_cameraWarningLogged)
             {

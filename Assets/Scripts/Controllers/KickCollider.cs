@@ -52,19 +52,7 @@ public class KickCollider : MonoBehaviour
         }
         if(other.TryGetComponent(out IDamageable damageable))
         {
-            damageable.TakeDamage(superActive ? superKick.BlockDamage : 1, playerController);
+            damageable.TakeDamage(superActive ? SuperKickState.BlockDamage : 1, playerController);
         }
-        // if (!other.isTrigger && 
-        //     (other.gameObject.CompareTag("Capsule") 
-        //     || other.gameObject.CompareTag("Block") 
-        //     || other.gameObject.CompareTag("Item"))) //This needs to be improved
-        // {
-        //     Vector2 impulseDirection = forceDirection;
-        //     impulseDirection.x *= transform.lossyScale.x;
-
-        //     other.GetComponent<IKickable>()?.OnKick();
-
-        //     other.attachedRigidbody.linearVelocity = impulseDirection;
-        // }
     }
 }

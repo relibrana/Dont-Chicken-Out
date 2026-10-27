@@ -54,13 +54,13 @@ public class GameManager : MonoBehaviour
     private Coroutine checkerCoroutine;
     [SerializeField] private PlayerController[] inGamePlayers = new PlayerController[4];
     [SerializeField] private PlayerController[] playersAlive  = new PlayerController[4];
-    [SerializeField] private Transform deathPos;
     [SerializeField] private int playersCheckDelay;
 
     [Header("End Game")]
     [SerializeField, Min(0f)] private float resultsHoldTime = 1.25f;
 
     private PlayerController winner    = null;
+    private bool matchWon              = false;
     private bool needsAReset           = false;
     private bool triggerStartGame      = false;
     private bool _repositionOnReset    = false;
@@ -77,6 +77,14 @@ public class GameManager : MonoBehaviour
     /// </summary>
     public bool IsRoundLive => gameState == GameState.Game && currPlayersAlive > 1;
 
+    /// <summary>
+    /// The pause menu may open during a round, its countdown and the win
+    /// screen between rounds (playtest, oct 2026). Not once the match is won:
+    /// the results screen goes back to the menu on its own.
+    /// </summary>
+    public bool CanPause => gameState == GameState.Game
+                         || gameState == GameState.Prepare
+                         || (gameState == GameState.Win && !matchWon);
     public PlayerController[] InGamePlayers
     {
         get
@@ -96,6 +104,13 @@ public class GameManager : MonoBehaviour
             instance = this;
         else
             Destroy(gameObject);
+    }
+
+    private void OnDestroy()
+    {
+        // Leaving from the pause menu on the win screen: the pending "next
+        // round" call must not run against this destroyed scene.
+        winSequence?.Kill();
     }
 
     private void Start()
@@ -329,8 +344,13 @@ public class GameManager : MonoBehaviour
         // instead of trusting each state's Update to notice isOnGame dropped.
         PlayerItemState.EndAll(player.gameObject);
 
-        if (repositionPlayer)
-            player.transform.position = player.startPosition;
+        // A dead chicken has no valid position (it stays hidden where it died),
+        // so it always goes back to its start point, also on the way to the menu.
+        bool wasDead = !player.IsAlive;
+        player.SetAlive(true);
+
+        if (repositionPlayer || wasDead)
+            player.TeleportTo(player.startPosition);
     }
 
     private void OnPlayersDeath(PlayerController player)
@@ -340,16 +360,21 @@ public class GameManager : MonoBehaviour
         // re-runs CheckWinner and plays the win sequence a second time.
         if (gameState == GameState.Win) return;
 
+        // Two killers in the same step (anvil + kill zone) must count one death.
+        if (!player.IsAlive) return;
+
         Vector2 deathPosition = player.transform.position;
 
         // A dead chicken keeps no power-up (design, oct 2026). The hot potato
-        // goes off on the spot, so it must detonate before the body is moved.
+        // goes off on the spot, so it must detonate before the body is switched off.
         if (player.TryGetComponent(out HotPotatoState potato))
             potato.DetonateOnCarrierDeath();
         PlayerItemState.EndAll(player.gameObject);
 
-        player.gameObject.transform.position = deathPos.position;
+        // Switched off where it died, not moved to a "death zone": a body parked
+        // somewhere was still alive for teleports and other target sweeps.
         player.DropBlock();
+        player.SetAlive(false);
 
         playersAlive[player.playerIndex] = null;
 
@@ -397,6 +422,7 @@ public class GameManager : MonoBehaviour
 
         if (currPlayersAlive < 2) return;
 
+        matchWon           = false;
         triggerStartGame   = true;
         _repositionOnReset = repositionPlayers;
         ChangeGameState(GameState.Prepare);
@@ -493,6 +519,7 @@ public class GameManager : MonoBehaviour
 
             uiManager.OnWinRound(inGamePlayers, wonGame =>
             {
+                matchWon = wonGame;
                 winSequence?.Kill();
                 winSequence = DOVirtual.DelayedCall(2f, () => CheckGameWon(wonGame), false);
             });
@@ -510,6 +537,8 @@ public class GameManager : MonoBehaviour
 
         uiManager.OnWinRound(inGamePlayers, wonGame =>
         {
+            matchWon = wonGame;
+
             // Match won: menu music entering at "Victory C" (GameState 1 in
             // event:/BGM/Menu) instead of from the top of the track.
             if (wonGame)
@@ -558,17 +587,6 @@ public class GameManager : MonoBehaviour
         if (checkerCoroutine == null) return;
         StopCoroutine(checkerCoroutine);
         checkerCoroutine = null;
-    }
-
-    public float CheckPlayerCoordinates()
-    {
-        float lowestY = float.MaxValue;
-        foreach (var player in inGamePlayers)
-        {
-            if (player != null && player.transform.position.y < lowestY)
-                lowestY = player.transform.position.y;
-        }
-        return lowestY;
     }
 
     public void FreeKeyboardScheme(string schemeName) =>

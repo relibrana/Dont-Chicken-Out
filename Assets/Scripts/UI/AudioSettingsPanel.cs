@@ -1,70 +1,48 @@
+using TMPro;
 using UnityEngine;
-using UnityEngine.EventSystems;
-using UnityEngine.InputSystem.UI;
+using UnityEngine.UI;
 
 /// <summary>
-/// Small audio settings panel of the main menu: Music and SFX sliders (0..1).
-/// They only relay the player's choice to AudioManager.ChangeVolume, which
-/// scales the FMOD VCAs on top of Audio's mix and remembers it between
-/// sessions. Opened by the menu's SettingsButton; closed with its Back button
-/// or the UI Cancel action (B / Esc), handing the selection back so gamepad
-/// navigation carries on where it was.
+/// "Audio" tab of the settings panel: Music and SFX sliders (0..1) with their
+/// percentage. They only relay the player's choice to AudioManager.ChangeVolume,
+/// which scales the FMOD VCAs on top of Audio's mix and remembers it between
+/// sessions. Opening, closing and tabs belong to SettingsPanel.
 /// </summary>
-public sealed class AudioSettingsPanel : MonoBehaviour
+public sealed class AudioSettingsPanel : SettingsSection
 {
-    [SerializeField] private UnityEngine.UI.Slider musicSlider;
-    [SerializeField] private UnityEngine.UI.Slider sfxSlider;
-    [SerializeField] private UnityEngine.UI.Button backButton;
+    [SerializeField] private Slider musicSlider;
+    [SerializeField] private TextMeshProUGUI musicValue;
+    [SerializeField] private Slider sfxSlider;
+    [SerializeField] private TextMeshProUGUI sfxValue;
 
-    [SerializeField, Tooltip("Vuelve a quedar seleccionado al cerrar (el botón que abrió el panel).")]
-    private GameObject reselectOnClose;
+    public override Selectable First => musicSlider;
+    public override Selectable Last  => sfxSlider;
 
     private void Awake()
     {
-        if (musicSlider != null) musicSlider.onValueChanged.AddListener(v => SetVolume(SoundsType.Music, v));
-        if (sfxSlider   != null) sfxSlider.onValueChanged.AddListener(v => SetVolume(SoundsType.Sfxs, v));
-        if (backButton  != null) backButton.onClick.AddListener(Close);
+        if (musicSlider != null) musicSlider.onValueChanged.AddListener(v => { SetVolume(SoundsType.Music, v); RefreshLabels(); });
+        if (sfxSlider   != null) sfxSlider.onValueChanged.AddListener(v => { SetVolume(SoundsType.Sfxs, v); RefreshLabels(); });
     }
 
-    public void Open()
+    public override void OnShown()
     {
         AudioManager audio = AudioManager.Instance;
         if (audio != null)
         {
-            audio.MakeButtonSelectedSound();
             if (musicSlider != null) musicSlider.SetValueWithoutNotify(audio.GetMusicVolume());
             if (sfxSlider   != null) sfxSlider.SetValueWithoutNotify(audio.GetSFXsVolume());
         }
-
-        gameObject.SetActive(true);
-        Select(musicSlider != null ? musicSlider.gameObject : null);
+        RefreshLabels();
     }
 
-    public void Close()
+    private void RefreshLabels()
     {
-        AudioManager.Instance?.MakeButtonSelectedSound();
-        gameObject.SetActive(false);
-        Select(reselectOnClose);
+        if (musicValue != null && musicSlider != null) musicValue.text = Percent(musicSlider.value);
+        if (sfxValue   != null && sfxSlider   != null) sfxValue.text   = Percent(sfxSlider.value);
     }
 
-    private void Update()
-    {
-        if (EventSystem.current != null
-            && EventSystem.current.currentInputModule is InputSystemUIInputModule module
-            && module.cancel != null && module.cancel.action != null
-            && module.cancel.action.WasPressedThisFrame())
-        {
-            Close();
-        }
-    }
+    private static string Percent(float v) => $"{Mathf.RoundToInt(v * 100f)}%";
 
     private static void SetVolume(SoundsType type, float value) =>
         AudioManager.Instance?.ChangeVolume(type, value);
-
-    private static void Select(GameObject target)
-    {
-        if (EventSystem.current == null || target == null) return;
-        EventSystem.current.SetSelectedGameObject(null);
-        EventSystem.current.SetSelectedGameObject(target);
-    }
 }

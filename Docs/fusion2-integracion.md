@@ -239,7 +239,7 @@ Estos aparecen aun sin online; conviene barrerlos al reconstruir la capa corresp
 4. **Input legacy:** `Input.GetKeyDown(KeyCode.K)` en `BombItem` ([:57-61](../Assets/Scripts/Items/Bomb/BombItem.cs)).
 
 ### Código muerto a limpiar
-`StartGame.cs` (Input Manager antiguo), `MusicManager.cs` (sin referencias), `SoundManager.cs` (solo lo usa `StartGame`), `LoadingScreenController`/`MinigameDefinition` (el menú hardcodea `"Main_Level"`).
+✅ oct 2026: `StartGame.cs`, `MusicManager.cs` y `SoundManager.cs` ya no existen. `LoadingScreenController`/`MinigameDefinition` **no** eran código muerto: hoy los usan `MainMenu.unity`, `SceneTransitionService` y `MainMenuController`.
 
 ---
 
@@ -375,6 +375,8 @@ En el escenario optimista la factura anual de Photon es ~0,3 % de ingresos. **En
 ## 10. Secuencia de construcción
 
 Las **capas 1 y 2 no necesitan Fusion** (refactor de simulación pura) y **mejoran el juego local igualmente** — hoy la altura de salto depende del framerate. Pueden empezar ya, en paralelo a A-4→A-7. Las capas 3–6 quieren la red presente.
+
+**Avance (oct 2026), motivado por los tirones en TVs de 60 Hz en un evento:** `PlayerMovement` corre entero en el tick (`FixedUpdate`), con el input guardado por frame y consumido por tick. El contrato de capas ya rige para el pollo: **la simulación lee el `Rigidbody2D`, la presentación lee el `Transform`**, que el cuerpo interpola entre ticks. Al llegar Fusion cambia quién marca el tick y quién interpola (`FixedUpdateNetwork()`/`Render()`, `NetworkRigidbody` para bloques); los consumidores visuales (cámara, bloque en mano, plumas, etiquetas) siguen leyendo el `Transform` sin cambios. Falta de la capa 1: controller cinemático, estado completo, RNG sembrado y los temporizadores de items (ver `deuda-tecnica.md` §7). El tick rate sigue en 50 Hz; con interpolación ya no tiene que coincidir con la pantalla y se fija en el prototipo de riesgo.
 
 | Bloque | Capas | ¿Fusion? | Cuándo |
 |---|---|---|---|

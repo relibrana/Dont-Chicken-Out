@@ -33,10 +33,14 @@ public class HoldableItem : MonoBehaviour
 		}
 	}
 	
+	// Interpolation (smooth drawing between physics ticks) only while the body
+	// simulates on its own. In hand it is placed every frame from the holder's
+	// already-interpolated Transform, and interpolation would overwrite that.
 	public void StartHold ()
 	{
 		holding = true;
 		rb2d.bodyType = RigidbodyType2D.Kinematic;
+		rb2d.interpolation = RigidbodyInterpolation2D.None;
 
 		SetColor(holdColor);
 
@@ -56,6 +60,7 @@ public class HoldableItem : MonoBehaviour
 		gameObject.layer = (int)Mathf.Log(placedLayer.value, 2);
 		holding = false;
 		rb2d.bodyType = RigidbodyType2D.Dynamic;
+		rb2d.interpolation = RigidbodyInterpolation2D.Interpolate;
 		AnimateAppear();
 		OnPlaceSfx();
 	}
@@ -72,14 +77,9 @@ public class HoldableItem : MonoBehaviour
 	}
 
 
-	void Update ()
+	// Subclasses that need their own Update override this and call base.Update().
+	protected virtual void Update ()
 	{
-		// foreach (GameObject obj in blocks)
-		// {
-		// 	float xScale = transform.localScale.x * -1f;
-		// 	obj.transform.localScale = new Vector3 (xScale, 1, 1);
-		// }
-
 		if (overlapping)
 		{
 			SetColor(overlappingColor);

@@ -144,9 +144,8 @@ public class PlayersManager : MonoBehaviour
             pairWithDevice:  device
         );
 
-        newPlayer.transform.position = spawnPoints[currPlayersInGame].position;
-
         PlayerController playerController = newPlayer.GetComponent<PlayerController>();
+        playerController.TeleportTo(spawnPoints[currPlayersInGame].position);
         GameManager.instance.AddPlayer(
             playerController,
             spawnPoints[currPlayersInGame].position,

@@ -4,8 +4,31 @@ using UnityEngine;
 /// The egg capsule. Breaks on the first hit (design, oct 2026: no damage
 /// states) and hands an item from the weighted pool to whoever broke it.
 /// </summary>
+[RequireComponent(typeof(Rigidbody2D))]
 public class ItemCapsule : MonoBehaviour, IDamageable
 {
+    private Rigidbody2D _rb;
+    private bool        _armInterpolation;
+
+    private void Awake() => _rb = GetComponent<Rigidbody2D>();
+
+    // Pooled: HorizontalSpawner moves the capsule right after activating it.
+    // Interpolation (smooth drawing between physics ticks) is armed one tick
+    // later, or it would draw the egg sliding from where it was last disabled.
+    private void OnEnable()
+    {
+        _rb.interpolation = RigidbodyInterpolation2D.None;
+        _armInterpolation = true;
+    }
+
+    private void FixedUpdate()
+    {
+        if (!_armInterpolation) return;
+
+        _rb.interpolation = RigidbodyInterpolation2D.Interpolate;
+        _armInterpolation = false;
+    }
+
     public void TakeDamage(int amount, PlayerController player)
     {
         if (amount <= 0) return;

@@ -29,7 +29,7 @@ Todo vive en `Assets/Prefabs/Items/`. `Assets/SOs/ItemsPool.asset` ya tiene las 
 | `PowPickup` | 8 | **holdable, no se lanza** (oct 2026): al pulsar colocar desaparece y arranca la cuenta, centrada en pantalla · cuenta desde 3, stun 2.5 s, sacudón 0.22 s / 0.9 u |
 | `MetalChickenPickup` | 5 | duración 6 s, salto ×1 (**no se recorta**), gravedad general ×1, gravedad de caída ×1.8, patada ×3, sin planeo |
 | `HotPotatoPickup` | 4 | **ventana absoluta** 8 s (no se resetea al pasarla), vel ×1.3, radio 2.0, empuje 60 atenuado (= bomba), capas explosión = Player+Block · **se pasa pateando**, no por contacto |
-| `SuperKickPickup` | 4 | duración 4 s (3–5), daño a bloques 3, empuje ×1.5 |
+| `SuperKickPickup` | 4 | duración 4 s (3–5), empuje ×1.5. Rompe el sub-bloque tocado de un golpe siempre (fijo en código, no se tunea; diseño oct 2026) |
 | `AnvilPickup` | 3 | vel caída 14, aviso 1 s (columna `AnvilZone`: se abre 0,3 s + flechas 0,7 s), no se detiene al matar; referencia a `Anvil.prefab` (kinemático + trigger, layer Ground) |
 
 Para probar un ítem aislado: su peso a 100 y el resto a 0. Opcional: añadir prefabs a `Pooled Items` del PoolingManager (amount 2–3) para pre-instanciar; si no, se instancian al vuelo.
@@ -82,5 +82,5 @@ POW crea su propio canvas en runtime (placeholder hasta integrarlo a UIManager).
 - **SFX**: los ítems nuevos no tienen claves de audio propias (solo reusan `tire_bounce` en la llanta). Definir eventos con el encargado de FMOD.
 - **VFX/animaciones**: todo es tinte placeholder + parpadeos. Feather VFX / sprites reales pendientes.
 - **UI real**: countdown POW y timer de papa deberían vivir en UIManager/HUD (hoy: canvas runtime y pulso de color).
-- **Pooling de proyectiles**: moco/llanta persisten toda la ronda y el yunque usa Instantiate/Destroy; si se abusa, integrarlos al PoolingManager (la ronda los limpia vía `ResetPool` solo si entran al pool de ítems).
-- **Netcode (Fusion 2)**: los estados usan `Time.deltaTime` en `Update` y el POW usa corrutinas — al migrar al modelo por tick de la reconstrucción del core habrá que mover los temporizadores al tick simulado. Los hooks ya están centralizados en `PlayerMovement`/`PlayerController`, que es la frontera que se va a networkear.
+- **Pooling de proyectiles**: moco/llanta persisten toda la ronda; si se abusa, integrarlos al PoolingManager (la ronda los limpia vía `ResetPool` solo si entran al pool de ítems). El yunque y la bomba ya pasan por el pool (oct 2026).
+- **Netcode (Fusion 2)**: todos los temporizadores de gameplay de los ítems ya cuentan en el tick (oct 2026): estados del pollo, mecha de la bomba, cuenta del POW y aviso del yunque. Ver la tabla de arreglados de `Docs/deuda-tecnica.md`.

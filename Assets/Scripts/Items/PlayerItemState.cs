@@ -9,8 +9,14 @@ using UnityEngine;
 /// component being disabled. On death the hot potato detonates first.
 /// Several states may tint at once; the colour always returns to the real
 /// original once the last one ends. Subclasses hook OnStateStarted / OnTick /
-/// OnStateExpired / OnStateEnded and must undo in OnStateEnded everything they
-/// set in OnStateStarted.
+/// OnRender / OnStateExpired / OnStateEnded and must undo in OnStateEnded
+/// everything they set in OnStateStarted.
+///
+/// Simulation vs presentation (same split as PlayerMovement): the countdown,
+/// expiry and OnTick run in the fixed tick, so a state lasts the same on every
+/// machine and maps 1:1 to Fusion's FixedUpdateNetwork. OnRender runs every
+/// frame and only draws (blinks, pulses, scale); it reads RenderRemaining so
+/// animations stay smooth between ticks.
 /// NOTE: no DisallowMultipleComponent here — Unity applies it to subtypes, and
 /// a player must be able to hold several different states at once.
 /// </summary>
@@ -21,8 +27,14 @@ public abstract class PlayerItemState : MonoBehaviour
     protected PlayerController Controller { get; private set; }
     protected PlayerMovement   Movement   { get; private set; }
 
-    /// <summary>Seconds left before the state expires.</summary>
+    /// <summary>Seconds left before the state expires. Advanced by the tick only.</summary>
     protected float Remaining;
+
+    /// <summary>
+    /// Remaining as of this frame, for OnRender: the last tick's value minus
+    /// the time elapsed since that tick. Never decides anything.
+    /// </summary>
+    protected float RenderRemaining => Mathf.Max(0f, Remaining - (Time.time - Time.fixedTime));
 
     private Color _tint = Color.white;
     private bool  _tintVisible;
@@ -73,7 +85,7 @@ public abstract class PlayerItemState : MonoBehaviour
     /// </summary>
     protected virtual string Label => null;
 
-    private void Update()
+    private void FixedUpdate()
     {
         if (!IsActive) return;
 
@@ -83,7 +95,7 @@ public abstract class PlayerItemState : MonoBehaviour
             return;
         }
 
-        Remaining -= Time.deltaTime;
+        Remaining -= Time.fixedDeltaTime;
 
         if (Remaining <= 0f)
         {
@@ -92,6 +104,11 @@ public abstract class PlayerItemState : MonoBehaviour
         }
 
         OnTick();
+    }
+
+    private void Update()
+    {
+        if (IsActive) OnRender();
     }
 
     private void OnDisable() => EndState();
@@ -110,7 +127,13 @@ public abstract class PlayerItemState : MonoBehaviour
     protected virtual void OnStateExpired() => EndState();
 
     protected virtual void OnStateStarted() { }
+
+    /// <summary>One simulation step (Time.fixedDeltaTime). Gameplay only.</summary>
     protected virtual void OnTick() { }
+
+    /// <summary>Every frame while active. Drawing only: never changes gameplay.</summary>
+    protected virtual void OnRender() { }
+
     protected virtual void OnStateEnded() { }
 
     // ── Placeholder tint ──────────────────────────────────────────────────────

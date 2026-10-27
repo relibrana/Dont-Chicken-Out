@@ -8,159 +8,39 @@ Orden: por cuánto duele, no por cuánto cuesta.
 
 ---
 
-## 1. Los pollos no mueren, se teletransportan 🔴
+## Abierto
 
-**Qué pasa.** `GameManager.OnPlayersDeath` no desactiva al jugador: lo mueve a `deathPos` y lo deja
-ahí, vivo y simulando, hasta que acaba la ronda.
-
-```csharp
-player.gameObject.transform.position = deathPos.position;
-player.DropBlock();
-playersAlive[player.playerIndex] = null;
-```
-
-**Por qué está así.** Al apagar el GameObject (`SetActive(false)`) se rompía el vínculo del
-`PlayerInput` con su mando: el jugador muerto volvía sin controles en la ronda siguiente.
-
-**Por qué importa.**
-- El pollo muerto sigue corriendo física, raycasts de suelo, `Update` de todos sus componentes y
-  del bloque en mano. Es coste puro y, peor, es **estado vivo** que puede volver a entrar en el
-  juego por un colisionador perdido.
-- Cualquier sistema que barra `FindObjectsByType<PlayerController>()` lo encuentra. Hoy todos
-  filtran por `isOnGame`, pero es una convención, no una garantía: el día que alguien olvide el
-  filtro, el POW aturde a un muerto o el teleporte manda a alguien a la zona de muertos.
-- Con netcode (Fusion 2) esto se vuelve un problema de verdad: hay que replicar la posición de un
-  objeto que conceptualmente no existe.
-
-**Por dónde va el arreglo.** El vínculo de input no depende del GameObject estando activo, sino de
-que el `PlayerInput` no se desempareje. Las dos vías:
-1. Desactivar sólo los componentes de gameplay (`PlayerMovement`, colliders, renderers) y dejar
-   vivos el GameObject y el `PlayerInput`. Es el cambio más pequeño y resuelve casi todo.
-2. Apagar el GameObject y mover el emparejamiento de dispositivos a `PlayersManager`, que ya lleva
-   los esquemas (`FreeKeyboardScheme`), re-emparejando en `OnPrepareState`.
-
-La (1) es la que yo haría primero; la (2) es la correcta si de todas formas hay que tocar el join
-para el Lobby de Pollos.
+Nada (oct 2026). Todo lo que había está arreglado en código; falta probarlo (lista de abajo).
 
 ---
 
-## 2. Sorting layers: el HUD está por debajo del juego 🟠
+## Pendiente de probar en el editor
 
-**Qué pasa.** En `ProjectSettings/TagManager.asset` el orden es:
+Arreglos ya hechos en código que nadie ha visto funcionar en el juego. Al probar uno, tacharlo
+(`[x]`) y quitar el "pendiente de probar" de su fila en la tabla. Si algo falla, vuelve a "Abierto".
 
-```
-Bg → Default → UI → Items → Characters → Pause → LoadingUI
-```
+**Ítems**
+- [ ] **Bomba — explosión entera:** la animación de explosión se ve completa antes de desaparecer.
+- [ ] **Bomba — reutilizada:** tras varias explosiones, una bomba nueva sale con su color y su animator en reposo, se puede lanzar y vuelve a explotar.
+- [ ] **Bomba — pool:** tras varias explosiones no sale `pool is full, spawn new one` en consola.
+- [ ] **Bomba — color en mano:** en la mano se ve con el tinte translúcido de "en mano", como el moco y la llanta.
+- [ ] **POW:** el 3-2-1-JUMP! dura y se ve igual que antes, aturde a los que están en el suelo y no a los que saltan; acabar la ronda a mitad de cuenta la corta sin aturdir.
+- [ ] **Yunque — aviso:** la columna se abre, las flechas aparecen y el yunque cae justo al acabar ese aviso.
+- [ ] **Yunque — fin de ronda:** un yunque a medio aviso o a medio caer desaparece (con su columna) al acabar la ronda, y el siguiente yunque funciona normal.
+- [ ] **Súper patada:** rompe de un golpe solo el cuadrito tocado (no la pieza entera); una patada normal sigue haciendo 1.
+- [ ] **Power-ups entre rondas:** un pollo con power-up no lo conserva (ni efecto ni tinte) en la ronda siguiente; con dos estados a la vez el tinte vuelve bien; la papa caliente explota donde muere el portador.
 
-**`UI` está por debajo de `Items` (bloques) y `Characters` (pollos)**, así que cualquier cosa del
-HUD sale detrás de la torre.
+**Pollos y cámara**
+- [ ] **Muerte de pollos:** el pollo se apaga donde muere (sin física, sin verse, sin patada ni cacareo), el mando sigue emparejado, revive en su punto de inicio en la ronda siguiente y al volver al menú; el teleporte nunca elige a un muerto.
+- [ ] **Interpolación:** el movimiento se ve fluido en una TV a 60 Hz (el problema del evento); el salto es igual a cualquier framerate.
+- [ ] **Cámara `MainCamera`:** el listón de progresión aparece donde toca (no en el origen) y el paneo del sonido sigue funcionando.
+- [ ] **Bloques:** se rompen con 3 patadas normales desde la primera ronda.
 
-**Estado.** Parcheado en runtime (sep 2026): `UIManager.SetOverlayOnTop` sube el canvas al layer
-`Pause` mientras dura la pantalla de fin de ronda y lo devuelve al entrar a juego. Resuelve el
-síntoma reportado (la capa oscura del victory detrás de los bloques).
-
-**Lo correcto** es mover `UI` por encima de `Characters` en TagManager y quitar el parche. No se
-hizo en la sesión porque reordenar sorting layers afecta a todos los `SpriteRenderer` del proyecto
-(cada uno cachea además un índice `m_SortingLayer` que puede quedar desincronizado) y hay que
-verificarlo con el editor abierto, no por YAML.
-
----
-
-## 3. La bomba destruye un objeto del pool 🟠
-
-`BombItem.FuseRoutine` acaba en `Destroy(gameObject)`. Pero la bomba sale de `PoolingManager`, así
-que cada explosión **quema una plaza del pool**: el pool se queda con menos hijos y a partir de ahí
-`GetPooledItem` instancia uno nuevo cada vez (`"pool is full, spawn new one"` en consola).
-
-Arreglo: `gameObject.SetActive(false)` como el resto de items, y resetear `hasExploded` /
-`fuseRoutine` en `OnDisable`. Hay que revisar que la animación de explosión no se corte antes de
-tiempo (por eso existe `destroyDelay`).
-
----
-
-## 4. `BlockDamageable` sólo inicializa la vida en `OnDisable` 🟠
-
-`_currentLife` se pone a `maxLife` en `ResetState()`, y `ResetState()` sólo se llama desde
-`OnDisable()`. Hoy funciona **de milagro**: `PoolingManager` hace `SetActive(false)` justo después
-de instanciar y otra vez en cada entrega, así que el ciclo dispara `OnDisable`.
-
-Un bloque que se activara sin haber pasado nunca por `OnDisable` tendría `_currentLife == 0` y
-`TakeDamage` saldría por el early-return: **bloque indestructible**. Es una trampa esperando a que
-alguien cambie el pooling.
-
-Arreglo: inicializar también en `Awake`/`OnEnable`.
-
----
-
-## 5. `Camera.main` es null en todo el proyecto 🟠
-
-Ninguna cámara lleva el tag `MainCamera` — la del juego vive dentro de `CameraRig.prefab` y está
-`Untagged`. Ya mordió una vez (el listón de progresión nacía en el origen del mundo, ver
-`Docs/progression-system.md`).
-
-Sitios que hoy lo esquivan con un fallback: `ProgressionManager`, `AudioManager.PlaySoundAt`,
-`CinemachineVerticalRig2D.LensOrthoSize` (este **no** tiene fallback: peta si `cineCam` queda sin
-asignar).
-
-Arreglo: taguear esa cámara como `MainCamera` y quitar los fallbacks.
-
----
-
-## 6. `BombItem.Update` tapa el `Update` de `HoldableItem` 🟡
-
-`HoldableItem` tiene un `void Update()` privado que pinta el color de "en mano" y de "solapando".
-`BombItem` declara su propio `private void Update()`, que lo **oculta** (method hiding, no override:
-el de la base no es virtual). Resultado: la bomba nunca recibe ese feedback de color.
-
-No es visible hoy porque la bomba tiene su propio degradado de mecha, pero es una trampa del mismo
-tipo para el siguiente item que herede y declare `Update`.
-
-Arreglo: convertir el `Update` de `HoldableItem` en `protected virtual` y que las subclases hagan
-`base.Update()`.
-
----
-
-## 7. Temporizadores de items en tiempo real, no en tick 🟡
-
-Todos los `PlayerItemState` cuentan con `Time.deltaTime` en `Update`, el POW usa corrutinas y varios
-items usan `DOVirtual.DelayedCall`. Al migrar al modelo por tick de Fusion 2 hay que mover todo eso
-al tick simulado o los estados se desincronizarán entre host y clientes.
-
-Lo bueno: los hooks ya están centralizados en `PlayerMovement`/`PlayerController`, que es justo la
-frontera que se va a networkear. Ver `Docs/items-implementacion.md` §Pendientes técnicos.
-
----
-
-## 8. El yunque vive fuera del pool 🟡
-
-`AnvilPickup` instancia y destruye su `Anvil.prefab` con `Instantiate`/`Destroy` en vez de pasar por
-`PoolingManager`. Si un yunque no termina su caída antes del fin de ronda, `ResetPool` no lo ve
-(no está en `itemList`) y se queda en escena. Desde oct 2026 su columna de aviso (`AnvilZone`) va con él: se cierra cuando el yunque sale de la pantalla o se destruye, así que también sobreviviría a la ronda si el yunque lo hace.
-
-Es el mismo patrón de bug que tenían las cápsulas (arreglado en sep 2026: `GetCapsule` instanciaba
-cápsulas nuevas sin añadirlas a `capsuleList`, así que los huevos sobrevivían a la ronda).
-
----
-
-## 9. Código muerto 🟢
-
-- `Assets/Scripts/Controllers/CameraController.cs` — todo el `Update` comentado; lo que hacía lo
-  hace hoy `CinemachineVerticalRig2D`.
-- `Assets/Scripts/CameraEffects.cs` — shake viejo, sustituido por el del rig.
-- `KickCollider` — bloque grande de código comentado al final de `OnTriggerEnter2D`.
-- `PlayerUI` — `InGameBox` / `DeadBox` comentados en todos los casos del switch.
-
----
-
-## 10. Cosas menores 🟢
-
-- **Finales de línea mezclados.** Hay scripts en CRLF y otros en LF dentro de `Assets/Scripts`.
-  Con `core.autocrlf=true` no ensucia los diffs, pero conviene un `.gitattributes` que lo fije.
-- **Súper patada: el rango de `Block Damage` está tapado.** Los sub-bloques tienen 3 de vida y una
-  patada normal hace 1, así que los únicos valores distinguibles son 1 (= patada normal), 2 y 3
-  (= one-shot); de 3 en adelante da igual lo que pongas. **Pendiente de decisión de diseño**: subir
-  la vida de los bloques para que la escala tenga recorrido, o que la súper patada rompa la pieza
-  entera en vez del sub-bloque.
+**Menú**
+- [ ] **Panel de ajustes:** correr Tools > Don't Chicken Out > Crear panel de ajustes en el menú con `MainMenu.unity` abierta; probar pestañas (LB/RB, Q/E), audio y pantalla (monitor, modo, VSync, límite de FPS) y que se guarden al reiniciar.
+- [ ] **Menú de pausa con mando (playtest oct 2026):** A confirma, B y Start reanudan, la cruceta navega. Antes A/B estaban al revés: el mapa `UI` de `InputSystem.inputactions` tenía Select en `buttonEast`.
+- [ ] **Pausa en countdown y entre rondas:** Start pausa durante el 3-2-1 y en la pantalla de victoria (no en la final del match); al reanudar la cuenta / la siguiente ronda sigue donde iba; salir al menú o reiniciar desde esa pausa no deja errores en consola. Ojo: el SFX del countdown (FMOD) no se pausa.
+- [ ] **Cursor (build):** en pantalla completa se esconde a los 2 s sin mover el ratón y vuelve al moverlo; en ventana siempre se ve. No se activa en el editor.
 
 ---
 
@@ -171,10 +51,23 @@ Apuntado para que nadie pierda una tarde re-diagnosticando algo que ya tiene due
 | Qué parecía | Qué era | Arreglado |
 |---|---|---|
 | Los huevos de la ronda anterior se quedaban en pantalla | `PoolingManager.GetCapsule` miraba siempre `capsuleList[0]` y, si estaba ocupada, instanciaba una cápsula nueva **sin registrarla**. `ResetPool` recorre esa lista, así que las huérfanas no se apagaban nunca | sep 2026 |
-| La capa oscura del victory salía detrás de la torre | El sorting layer `UI` está por debajo de `Items` y `Characters` (ver §2). Parcheado en runtime desde `UIManager` | sep 2026 |
+| La capa oscura del victory salía detrás de la torre (y en general el HUD detrás de bloques y pollos) | El sorting layer `UI` estaba por debajo de `Items` y `Characters`. Parcheado en runtime en sep 2026 (`UIManager.SetOverlayOnTop`); arreglado de raíz en oct 2026 reordenando en el editor: `Bg → Default → Items → Characters → UI → Pause → LoadingUI`, y el parche se borró. Solo el canvas `StartCanvas` del HUD usa `UI`. Diseño (oct 2026): **todo el HUD siempre encima**, también la capa oscura del lobby (`dimLayerBG`) sobre los pollos. **Reordenar sorting layers siempre desde Project Settings, nunca editando `TagManager.asset` a mano** | sep 2026 (parche) · oct 2026 (probado en editor) |
 | Piezas que no volvían al pool y consola llena de `Pool is full` | `BlockOverlapCheck.DisableBlock` escondía un sub-bloque solapado apagándole collider y sprite, pero seguía contando como vivo para el `BlockScript` padre. Sin collider nadie podía matarlo, así que la pieza nunca llegaba a cero hijos. Ahora pasa por `BlockDamageable.RemoveFromPlay()` | sep 2026 |
 | Un sacudón de cámara corto se sentía flojo | `UpdateShake` normalizaba la caída de amplitud contra la duración **por defecto**, no contra la del sacudón en curso: cualquier shake más corto que el default arrancaba a una fracción de su amplitud | sep 2026 |
-| `Block Damage` de la súper patada "no hacía nada" | Sí llegaba al bloque. El valor que se probó (1) es exactamente el daño de una patada normal, así que no había diferencia que ver. Lo que sigue abierto es el rango útil, arriba en §10 | sep 2026 (diagnóstico) |
+| `Block Damage` de la súper patada "no hacía nada" | Sí llegaba al bloque. El valor que se probó (1) es exactamente el daño de una patada normal, así que no había diferencia que ver. Cerrado en oct 2026 (fila de abajo) | sep 2026 (diagnóstico) |
 | `TireProjectile.prefab` llevaba el script `SpringDisc` (la llanta se llamaba "disco" por su versión colocable) | El script se renombró a `Tire` (`Items/Tire/Tire.cs`, mismo GUID: el prefab no se tocó). El prefab sigue llamándose `TireProjectile` | oct 2026 |
 | El POW (y otros efectos con su propio reloj) seguían tras acabar la ronda: la cuenta salía al empezar la siguiente | Nada los cortaba al acabar la ronda. Ahora `GameManager.RoundEnded` (al pasar a Win o Menu) los corta: el POW se cancela y para su sonido, el yunque se destruye con su columna, la bomba lanzada se desactiva, y se cierran los power-ups de todos los pollos (la papa del ganador ya no explota en la pantalla de victoria). Además las muertes durante Win se ignoran (antes repetían la secuencia de victoria). **Efecto nuevo con temporizador → suscribirlo a `RoundEnded`** | oct 2026 |
 | Un pollo con power-up lo conservaba (efecto y tinte) en la ronda siguiente | Dos cosas: (1) el cierre de los estados dependía de que el `Update` de cada uno notara que `isOnGame` bajó; ahora `GameManager.ResetPlayer` llama a `PlayerItemState.EndAll`. (2) Con dos estados a la vez, el segundo guardaba el **tinte** del primero como color "original" y lo devolvía al acabar; ahora se copian los originales reales y, al soltar un tinte, se reaplica el del estado que siga activo. Además (diseño, oct 2026) al morir también se cierran todos, y la papa caliente explota en el acto donde murió el portador | oct 2026 (pendiente de probar en editor) |
+| En el evento (oct 2026) el juego iba a tirones en las TVs por HDMI y fluido en la laptop | La física corre a 50 Hz (`Fixed Timestep` 0.02) y nada estaba interpolado. En una pantalla de 60 Hz (casi todas las TVs) unos 10 frames por segundo repetían posición; en laptops de 120/144 Hz casi no se nota. Además `PlayerMovement` mezclaba `Update` y `FixedUpdate`, así que el salto variaba con el framerate. Ahora: **toda la simulación del pollo corre en el tick** y lee el `Rigidbody2D`; el `Transform` es la posición dibujada, interpolada entre ticks (pollo, bloques e ítems soltados, cápsulas). **Regla nueva:** reposicionar un pollo siempre con `PlayerController.TeleportTo`, nunca escribiendo `transform.position`; un `HoldableItem` desactiva la interpolación mientras está en mano. Con Fusion 2, `FixedUpdateNetwork()`/`Render()` sustituyen al tick y a la interpolación de Unity | oct 2026 (pendiente de probar en editor y en una TV a 60 Hz) |
+| Seguimiento del evento: sin forma de diagnosticar ni de elegir pantalla | **Overlay de debug** (`Utility/DebugOverlay`, tecla **F3** o **L3 + R3** en cualquier mando, también en builds): FPS, peor frame, Hz y nombre del monitor, modo de ventana, VSync, límite y tick de física. **Ajustes de pantalla** (`Manager/DisplaySettings` + `UI/DisplaySettingsPanel`): monitor, modo (sin bordes / exclusiva / ventana), VSync y límite de FPS, guardados en `PlayerPrefs`. Viven en el **panel de Ajustes con pestañas** (`UI/SettingsPanel`: pestañas Audio y Pantalla, LB/RB o Q/E para cambiar, barra que marca la opción con foco vía `SelectionHighlight`/`SettingsRow`). Se monta con **Tools > Don't Chicken Out > Crear panel de ajustes en el menú** con `MainMenu.unity` abierta; sustituye los paneles sueltos anteriores. Nueva pestaña = subclase de `SettingsSection`. En un evento: mandar el juego solo a la TV (Monitor) en vez de duplicar pantalla | oct 2026 (falta correr el builder y probar) |
+| Un bloque recién cambiado (cápsula) se podía colocar antes de tiempo | Los delays de `PlayerBlockHandler` eran `DOVirtual.DelayedCall` que no se cancelaban: un bloque que entraba a mitad de la cuenta heredaba la anterior. Ahora son temporizadores del tick que se reinician en cada cambio | oct 2026 |
+| Código muerto | Borrados `CameraController.cs` (lo hace `CinemachineVerticalRig2D`), `CameraEffects.cs` (shake viejo) y `StartGame.cs` (Input Manager antiguo), los tres sin referencias en escenas, prefabs ni código; y los bloques comentados de `KickCollider` y `PlayerUI` | oct 2026 |
+| La bomba "quemaba" una plaza del pool en cada explosión (`pool is full, spawn new one`) | `BombItem` acababa en `Destroy(gameObject)` aunque sale de `PoolingManager`. Ahora vuelve al pool con `SetActive(false)` tras `destroyDelay`, y `OnDisable` la deja como nueva (mecha apagada, colliders encendidos, colores originales) | oct 2026 (pendiente de probar en editor: que la explosión se vea entera y que una bomba reutilizada salga con el animator en reposo) |
+| Bloque indestructible "de milagro" | `BlockDamageable` solo ponía la vida en `OnDisable`; uno activado sin pasar por ahí nacía con 0. Ahora también en `Awake` | oct 2026 |
+| `Camera.main` null en todo el proyecto | La Camera de `CameraRig.prefab` no llevaba tag. Ahora es `MainCamera`; `GameplayCamera.Get()` es `Camera.main` y se quitaron los fallbacks de `AudioManager` y `ProgressionManager` | oct 2026 |
+| La bomba no recibía el color de "en mano" | Su `Update` ocultaba el de `HoldableItem` (no era virtual). Ahora es `protected virtual` y `BombItem` llama a `base.Update()`. **Ítem nuevo con `Update` → `override` + `base.Update()`** | oct 2026 |
+| Temporizadores de gameplay en tiempo real (se desincronizarían con Fusion 2) | Pasados al tick: mecha de la bomba, cuenta del POW (`PowSequence`) y aviso del yunque (lo cuenta `AnvilFall`; `AnvilZone` solo dibuja). Lo visual lee lo que queda menos el tiempo desde el último tick, como `PlayerItemState.RenderRemaining`. Siguen en tiempo real, a propósito, solo cosas de presentación: `HotPotatoVisual`, la aparición de `BlockScript`, el cierre de `AnvilZone` y la vibración del mando | oct 2026 (pendiente de probar en editor) |
+| Un yunque podía sobrevivir a la ronda | `AnvilPickup` lo instanciaba fuera del pool, así que `ResetPool` no lo veía. Ahora sale de `PoolingManager.GetPooledItem(prefab)` y vuelve con `SetActive(false)`; su columna se cierra en `OnDisable` | oct 2026 (pendiente de probar en editor) |
+| El rango de `Block Damage` de la súper patada estaba tapado (con 3 de vida, de 3 en adelante daba igual) | Decisión de diseño (oct 2026): **la súper patada rompe de un golpe el sub-bloque tocado, no la pieza entera**. Ya no es un valor tuneable: `SuperKickState.BlockDamage` es una constante que mata el sub-bloque sea cual sea su vida, así que sigue valiendo si un día se sube la vida de los bloques | oct 2026 (pendiente de probar en editor) |
+| Los pollos no morían, se teletransportaban a una "zona de muertos" con `isOnGame` en `true` (contaban como el rival más alto; el teleporte a veces "hacía desaparecer" al pollo) | `PlayerController.SetAlive(false)` apaga al pollo **donde murió**: `Rigidbody2D.simulated = false` (fuera de toda consulta), sin tick, sin renderers, sin patada, sin cacarear (diseño, oct 2026), `isOnGame = false`. El GameObject y el `PlayerInput` siguen activos, así el mando no se desempareja. `GameManager.ResetPlayer` lo revive en su punto de inicio. `deathPos`/`DeathSpot` ya no existen; el teleporte descarta a cualquier pollo con `IsAlive == false`. Con Fusion 2 el objeto sobrevive a la muerte e `IsAlive` pasa a ser un flag replicado | oct 2026 (pendiente de probar en editor) |
+| "Finales de línea mezclados" | Ya había `.gitattributes` con `* text=auto` desde el commit inicial y el índice está entero en LF: git no se ensucia. Lo mezclado era solo la copia local (3 scripts con CRLF y LF en el mismo archivo, ya normalizados) | oct 2026 |

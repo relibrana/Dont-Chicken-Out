@@ -43,17 +43,26 @@ public sealed class TeleportState : PlayerItemState
         Controller.PushMovementLock();
     }
 
+    // The jump itself is gameplay: it happens on the tick.
     protected override void OnTick()
     {
-        float elapsed = _shrinkSeconds + _growSeconds - Remaining;
+        if (_shrinkSeconds + _growSeconds - Remaining >= _shrinkSeconds)
+            Arrive();
+    }
 
-        if (elapsed < _shrinkSeconds)
+    // The shrink/grow is drawing: every frame, from the frame-accurate time.
+    protected override void OnRender()
+    {
+        float elapsed = _shrinkSeconds + _growSeconds - RenderRemaining;
+
+        // Still shrinking on screen, or the tick has not moved the body yet:
+        // growing back before arriving would show the chicken at the origin.
+        if (elapsed < _shrinkSeconds || !_arrived)
         {
-            SetVisualScale(1f - EaseIn(elapsed / _shrinkSeconds));
+            SetVisualScale(1f - EaseIn(Mathf.Clamp01(elapsed / _shrinkSeconds)));
             return;
         }
 
-        Arrive();
         SetVisualScale(EaseOut((elapsed - _shrinkSeconds) / _growSeconds));
     }
 

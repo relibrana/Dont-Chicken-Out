@@ -5,7 +5,7 @@ using UnityEngine;
 /// Handles its own HP, color feedback (white → soft red), and death.
 /// Notifies the parent BlockScript when it dies so the parent can
 /// check whether all children are gone and return itself to the pool.
-/// Reset on OnDisable ensures pool reuse is clean.
+/// Reset on Awake and OnDisable ensures pool reuse is clean.
 /// </summary>
 public sealed class BlockDamageable : MonoBehaviour, IDamageable
 {
@@ -31,6 +31,10 @@ public sealed class BlockDamageable : MonoBehaviour, IDamageable
     private void Awake()
     {
         _parentBlock    = GetComponentInParent<BlockScript>();
+
+        // Not only on OnDisable: a block activated without ever having been
+        // disabled would start at 0 HP and ignore every hit.
+        ResetState();
     }
 
     private void OnDisable()

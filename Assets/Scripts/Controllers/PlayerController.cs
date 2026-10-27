@@ -43,6 +43,12 @@ public sealed class PlayerController : MonoBehaviour, IKickable
     [NonSerialized] public bool    isOnGame;
     [NonSerialized] public Vector2 startPosition;
 
+    /// <summary>
+    /// False from death until the next round reset (see SetAlive). A dead
+    /// chicken is never a valid target: it also has isOnGame = false.
+    /// </summary>
+    public bool IsAlive { get; private set; } = true;
+
     public GameStatus GameRank    { get; private set; } = GameStatus.Neutral;
 
     /// <summary>Sprite for this player's blocks (feathers in their colour). Comes from MaterialsSO.</summary>
@@ -109,6 +115,11 @@ public sealed class PlayerController : MonoBehaviour, IKickable
     private PlayerMovement     _movement;
     private PlayerBlockHandler _blockHandler;
     private CluckSystem        _cluckSystem;
+    private Rigidbody2D        _rb;
+
+    // Renderers hidden on death and their state before it (see SetAlive).
+    private Renderer[] _renderers;
+    private bool[]     _rendererWasEnabled;
 
     private bool  _isGliding;
     private float _flapTimer;
@@ -127,6 +138,7 @@ public sealed class PlayerController : MonoBehaviour, IKickable
         _movement     = GetComponent<PlayerMovement>();
         _blockHandler = GetComponent<PlayerBlockHandler>();
         _cluckSystem  = GetComponent<CluckSystem>();
+        _rb           = GetComponent<Rigidbody2D>();
 
         _movement.SetAnimController(animController);
         _blockHandler.Initialize(valuesSO, animController);
@@ -233,6 +245,7 @@ public sealed class PlayerController : MonoBehaviour, IKickable
     private void HandleKick()
     {
         if (IsOnPause()) return;
+        if (!IsAlive) return;
 
         // Stuck in moco: the kick press becomes the struggle input.
         if (TryGetComponent(out MocoStuckState stuck) && stuck.IsActive)
@@ -292,13 +305,15 @@ public sealed class PlayerController : MonoBehaviour, IKickable
     private void HandleCluck()
     {
         if (IsOnPause()) return;
+        // Dead chickens do not cluck (design, oct 2026).
+        if (!IsAlive) return;
 
         _cluckSystem?.OnCluckPressed();
     }
 
     private void HandlePause()
     {
-        if (GameManager.instance.gameState != GameState.Game) return;
+        if (!GameManager.instance.CanPause) return;
 
         PauseManager.instance.Pause(this);
     }
@@ -411,6 +426,51 @@ public sealed class PlayerController : MonoBehaviour, IKickable
     public void OnDeath() => onDeath?.Invoke(this);
 
     /// <summary>
+    /// Takes the chicken out of play (death) or brings it back (round reset).
+    /// The GameObject stays active on purpose: deactivating it unpairs the
+    /// PlayerInput from its gamepad. Dead = no physics (colliders out of every
+    /// query), no movement tick, nothing drawn, isOnGame false. With Fusion 2
+    /// the player object also survives death, so this becomes a replicated flag.
+    /// After reviving, place the chicken with TeleportTo: it stays where it died.
+    /// </summary>
+    public void SetAlive(bool alive)
+    {
+        if (IsAlive == alive) return;
+        IsAlive = alive;
+
+        if (!alive) isOnGame = false;
+
+        _rb.simulated     = alive;
+        _movement.enabled = alive;
+        SetRenderersVisible(alive);
+    }
+
+    private void SetRenderersVisible(bool visible)
+    {
+        if (!visible)
+        {
+            // Remember what was on, so reviving does not switch on renderers
+            // that were off by design.
+            _renderers          = GetComponentsInChildren<Renderer>(includeInactive: true);
+            _rendererWasEnabled = new bool[_renderers.Length];
+            for (int i = 0; i < _renderers.Length; i++)
+            {
+                _rendererWasEnabled[i] = _renderers[i].enabled;
+                _renderers[i].enabled  = false;
+            }
+            return;
+        }
+
+        if (_renderers == null) return;
+        for (int i = 0; i < _renderers.Length; i++)
+        {
+            if (_renderers[i] != null)
+                _renderers[i].enabled = _rendererWasEnabled[i];
+        }
+        _renderers = null;
+    }
+
+    /// <summary>
     /// Applies an external impulse to the player (explosion, spring, etc.).
     /// Optionally plays hit animations if treated as a kick.
     /// </summary>
@@ -449,7 +509,10 @@ public sealed class PlayerController : MonoBehaviour, IKickable
     /// <summary>Returns the world position used to spawn/hold blocks.</summary>
     public Vector2 GetBlockPosition() => _blockHandler.GetBlockSpawnPosition();
 
-    /// <summary>Instantly moves the player (teleport item).</summary>
+    /// <summary>
+    /// Instantly moves the player (teleport item, spawn, death zone). The only
+    /// safe way to reposition a chicken: see PlayerMovement.Teleport.
+    /// </summary>
     public void TeleportTo(Vector2 position) => _movement.Teleport(position);
 
     /// <summary>

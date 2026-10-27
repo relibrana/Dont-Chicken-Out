@@ -39,8 +39,6 @@ public class AudioManager : MonoBehaviour
     private float musicVolume        = 1f;
     private float soundEffectsVolume = 1f;
 
-    private Camera _pannningCamera;
-
     // Sólo se guardan instancias de los sonidos que hay que poder parar; el
     // resto son one-shots y FMOD los libera solo.
     // Clave = (id, dueño): cada bomba controla su propia mecha. Dueño 0 = sin
@@ -431,25 +429,12 @@ public class AudioManager : MonoBehaviour
     /// </summary>
     public float ScreenSideOf(Vector3 worldPosition)
     {
-        Camera cam = ResolveCamera();
+        Camera cam = GameplayCamera.Get();
         if (cam == null) return 0f;
 
-        // Camera.main is null in this project (the play camera is inside
-        // CameraRig.prefab and is Untagged), hence ResolveCamera.
         float viewportX = cam.WorldToViewportPoint(worldPosition).x;
 
         return Mathf.Clamp((viewportX - 0.5f) * 2f, -1f, 1f);
-    }
-
-    private Camera ResolveCamera()
-    {
-        if (_pannningCamera != null) return _pannningCamera;
-
-        _pannningCamera = Camera.main != null
-            ? Camera.main
-            : FindFirstObjectByType<Camera>();
-
-        return _pannningCamera;
     }
 
     // ── Player volume (settings) ──────────────────────────────────────────────

@@ -1558,7 +1558,6 @@ MonoBehaviour:
   - {fileID: 0}
   - {fileID: 0}
   - {fileID: 0}
-  deathPos: {fileID: 401942787}
   playersCheckDelay: 2
   resultsHoldTime: 1.25
   currPlayersAlive: 0
@@ -2724,37 +2723,6 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &401942786
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 401942787}
-  m_Layer: 0
-  m_Name: DeathSpot
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &401942787
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 401942786}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: -87.6, y: 25.6, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -17285,12 +17253,12 @@ PrefabInstance:
     - target: {fileID: 7349066614403196875, guid: 1ecb7d11c58c34736a82172b84d07078,
         type: 3}
       propertyPath: spawnTime
-      value: 3
+      value: 5
       objectReference: {fileID: 0}
     - target: {fileID: 7349066614403196875, guid: 1ecb7d11c58c34736a82172b84d07078,
         type: 3}
       propertyPath: spawnTimeModifier
-      value: 0
+      value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 8272918300763466392, guid: 1ecb7d11c58c34736a82172b84d07078,
         type: 3}
@@ -17858,7 +17826,6 @@ SceneRoots:
   - {fileID: 343152408}
   - {fileID: 1278770230}
   - {fileID: 464725800}
-  - {fileID: 401942787}
   - {fileID: 202624586}
   - {fileID: 963877283}
   - {fileID: 1265900149}
