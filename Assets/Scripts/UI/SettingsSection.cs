@@ -18,4 +18,13 @@ public abstract class SettingsSection : MonoBehaviour
 
     /// <summary>Called every time the tab is shown: reload the current values.</summary>
     public virtual void OnShown() { }
+
+    /// <summary>
+    /// True while the section shows a prompt of its own (e.g. "keep this
+    /// resolution?"): the panel then leaves tabs alone and sends Cancel to
+    /// OnCancel instead of closing.
+    /// </summary>
+    public virtual bool IsModal => false;
+
+    public virtual void OnCancel() { }
 }

@@ -7,6 +7,10 @@ public sealed class MainMenuController : MonoBehaviour
     [Header("Minigame")]
     [SerializeField] private MinigameDefinition minigame;
 
+    [Header("Flow")]
+    [Tooltip("Scene opened by Play: mode → map → rules → hen house.")]
+    [SerializeField] private string lobbyScene = "Lobby";
+
     [Header("Gamepad Navigation")]
     [Tooltip("Boton/Selectable que debe quedar seleccionado al entrar al menu.")]
     [SerializeField] private GameObject firstSelected;
@@ -59,10 +63,10 @@ public sealed class MainMenuController : MonoBehaviour
 
         AudioManager.Instance.MakeButtonSelectedSound();
 
-        // The device that navigated the menu becomes Player 1 automatically.
-        // SessionData was already populated by MenuInputRouter on first press;
-        // we do not need to write anything here — just transition.
-        SceneTransitionService.Instance.LoadSpecificScene("Main_Level");
+        // The device that navigated the menu becomes Player 1 (host) in the
+        // lobby. SessionData was already populated by MenuInputRouter on first
+        // press; we do not need to write anything here — just transition.
+        SceneTransitionService.Instance.LoadSpecificScene(lobbyScene);
     }
 
     public void ExitButton()

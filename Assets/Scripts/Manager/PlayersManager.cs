@@ -1,141 +1,88 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
+using System.Collections;
 using UnityEngine;
 using UnityEngine.InputSystem;
-using UnityEngine.InputSystem.Controls;
+using UnityEngine.SceneManagement;
 
+/// <summary>
+/// Seats the players chosen in the Lobby (<see cref="MatchSetup"/>) when a
+/// level loads, each in the slot of their lobby room: same colour, same spawn,
+/// same "Player N". Then starts the first countdown.
+///
+/// A level is only playable through the Lobby: opened on its own it sends
+/// you there (joining in the arena was the old flow and is gone).
+/// </summary>
 public class PlayersManager : MonoBehaviour
 {
     [SerializeField] private Transform[]  spawnPoints;
     [SerializeField] private MaterialsSO  materialsSO;
     [SerializeField] private GameObject   playerPrefab;
 
-    [NonSerialized] public int currPlayersInGame;
+    [Tooltip("Seconds between the scene transition finishing and the 3-2-1, "
+             + "so the chickens are seen arriving before the countdown.")]
+    [SerializeField, Min(0f)] private float lobbyCountdownDelay = 0.5f;
 
-    private PlayerInputManager _playerInputManager;
-    private List<string> _usedKeyboardSchemes = new List<string>();
+    [Tooltip("Where to go when the level is opened without players (e.g. Play pressed on the level in the editor).")]
+    [SerializeField] private string lobbyScene = "Lobby";
 
-    private readonly Dictionary<Key, string> keyboardJoinKeys = new Dictionary<Key, string>
-    {
-        { Key.E,          "Keyboard1" },
-        { Key.RightShift, "Keyboard2" },
-    };
+    private const int MinPlayers = 2;
 
-    private IDisposable _anyButtonSubscription;
-
-    // ── Unity lifecycle ───────────────────────────────────────────────────────
+    private int _seated;
 
     private void Awake()
     {
-        _playerInputManager = GetComponent<PlayerInputManager>();
+        // Leftover from the old in-arena join: if a PlayerInputManager is still
+        // in the scene it would spawn extra chickens on any button press.
+        if (TryGetComponent(out PlayerInputManager legacyJoin))
+            legacyJoin.DisableJoining();
     }
 
     private void Start()
     {
-        // If a primary device was registered in the menu, auto-join it as Player 1
-        // before opening up the normal join flow.
-        if (SessionData.HasPrimaryDevice)
+        foreach (LobbySeat seat in MatchSetup.Seats)
         {
-            AttemptToJoin(SessionData.PrimaryDevice, SessionData.PrimaryScheme);
-            SessionData.Clear();
+            if (seat.Device == null || !seat.Device.added)
+            {
+                Debug.LogWarning($"[PlayersManager] P{seat.Slot + 1}'s device is gone; seat skipped.");
+                continue;
+            }
+            Seat(seat.Device, seat.Scheme, seat.Slot);
         }
-    }
+        MatchSetup.ClearSeats();
 
-    private void OnEnable()
-    {
-        _playerInputManager.DisableJoining();
-
-        _anyButtonSubscription = InputSystem.onAnyButtonPress
-            .Subscribe(new InputControlObserver(this));
-    }
-
-    private void OnDisable()
-    {
-        _anyButtonSubscription?.Dispose();
-        _anyButtonSubscription = null;
-    }
-
-    // ── Join validation ───────────────────────────────────────────────────────
-
-    private bool IsPossibleToPair(InputControl control)
-    {
-        if (GameManager.instance.gameState != GameState.Menu)
-            return false;
-
-        if (_playerInputManager.maxPlayerCount > 0
-            && currPlayersInGame >= _playerInputManager.maxPlayerCount)
-            return false;
-
-        if (control.device is Keyboard)
-            return CheckKeyboardJoin(control);
-
-        if (control.device is Gamepad gamepad)
-            return CheckGamepadJoin(control, gamepad);
-
-        return false;
-    }
-
-    private bool CheckKeyboardJoin(InputControl inputControl)
-    {
-        if (!(inputControl is KeyControl keyControl))
-            return false;
-
-        if (!keyboardJoinKeys.ContainsKey(keyControl.keyCode))
-            return false;
-
-        string scheme = keyboardJoinKeys[keyControl.keyCode];
-        return !_usedKeyboardSchemes.Contains(scheme);
-    }
-
-    private bool CheckGamepadJoin(InputControl inputControl, Gamepad gamepad)
-    {
-        if (inputControl != gamepad.startButton)
-            return false;
-
-        return !PlayerInput.all.Any(p => p.devices.Contains(inputControl.device));
-    }
-
-    // ── Button press handling ─────────────────────────────────────────────────
-
-    private void HandleButtonPress(InputControl control)
-    {
-        if (!IsPossibleToPair(control)) return;
-
-        InputDevice device = control.device;
-
-        if (device is Gamepad)
+        if (_seated < MinPlayers)
         {
-            AttemptToJoin(device, "Gamepad");
-        }
-        else if (device is Keyboard)
-        {
-            string scheme = keyboardJoinKeys[((KeyControl)control).keyCode];
-            AttemptToJoin(device, scheme);
-        }
-    }
-
-    // ── Player instantiation ──────────────────────────────────────────────────
-
-    private void AttemptToJoin(InputDevice device, string schemeName)
-    {
-        // Guard: avoid joining with an already-used keyboard scheme.
-        if (device is Keyboard && _usedKeyboardSchemes.Contains(schemeName))
-        {
-            Debug.Log($"[PlayersManager] Scheme '{schemeName}' is already in use.");
+            // Opened directly, or a pad was unplugged during the transition.
+            Debug.LogWarning($"[PlayersManager] {_seated} player(s) seated: a level needs {MinPlayers}. Going to the Lobby.");
+            SceneManager.LoadScene(lobbyScene);
             return;
         }
 
-        // Guard: avoid joining with a device already paired to another player.
-        if (device is Gamepad
-            && PlayerInput.all.Any(p => p.devices.Contains(device)))
+        StartCoroutine(StartMatchWhenVisible());
+    }
+
+    private IEnumerator StartMatchWhenVisible()
+    {
+        yield return null; // every Start() has run
+
+        // Wait for the circle transition to open fully, then give the
+        // chickens their moment on screen.
+        while (SceneTransitionService.Instance != null && SceneTransitionService.Instance.IsTransitioning)
+            yield return null;
+
+        if (lobbyCountdownDelay > 0f)
+            yield return new WaitForSeconds(lobbyCountdownDelay);
+
+        GameManager.instance.TriggerStartSequence();
+    }
+
+    /// <param name="slot">Lobby room (0..3): fixes spawn, colour and player index.</param>
+    private void Seat(InputDevice device, string schemeName, int slot)
+    {
+        if (slot < 0 || slot >= spawnPoints.Length || slot >= materialsSO.playerMaterials.Count)
         {
-            Debug.Log($"[PlayersManager] Device '{device.name}' is already paired.");
+            Debug.LogWarning($"[PlayersManager] No spawn point / material for slot {slot}.");
             return;
         }
-
-        if (device is Keyboard)
-            _usedKeyboardSchemes.Add(schemeName);
 
         PlayerInput newPlayer = PlayerInput.Instantiate(
             prefab:          playerPrefab,
@@ -145,37 +92,15 @@ public class PlayersManager : MonoBehaviour
         );
 
         PlayerController playerController = newPlayer.GetComponent<PlayerController>();
-        playerController.TeleportTo(spawnPoints[currPlayersInGame].position);
+        playerController.TeleportTo(spawnPoints[slot].position);
         GameManager.instance.AddPlayer(
             playerController,
-            spawnPoints[currPlayersInGame].position,
-            materialsSO.playerMaterials[currPlayersInGame]
+            spawnPoints[slot].position,
+            materialsSO.playerMaterials[slot],
+            slot
         );
-
-        currPlayersInGame++;
+        _seated++;
 
         newPlayer.SendMessage("OnAssignedScheme", schemeName, SendMessageOptions.DontRequireReceiver);
-        Debug.Log($"[PlayersManager] Joined '{device.name}' with scheme '{schemeName}'.");
-    }
-
-    // ── Public API ────────────────────────────────────────────────────────────
-
-    public void FreeKeyboardScheme(string schemeName)
-    {
-        if (!_usedKeyboardSchemes.Contains(schemeName)) return;
-
-        _usedKeyboardSchemes.Remove(schemeName);
-        Debug.Log($"[PlayersManager] Scheme '{schemeName}' freed.");
-    }
-
-    // ── Inner observer ────────────────────────────────────────────────────────
-
-    private sealed class InputControlObserver : IObserver<InputControl>
-    {
-        private readonly PlayersManager _manager;
-        public InputControlObserver(PlayersManager manager) => _manager = manager;
-        public void OnNext(InputControl value) => _manager.HandleButtonPress(value);
-        public void OnError(Exception error)   => Debug.LogError($"[PlayersManager] {error.Message}");
-        public void OnCompleted()              { }
     }
 }

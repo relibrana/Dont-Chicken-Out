@@ -25,6 +25,7 @@ Party game 2D (Unity 6, Built-in RP) para 2–4 jugadores: pollos trepan bloques
 | `Docs/assets-arte-audio-items-progresion.md` | Lista de assets de Arte y Audio pendientes por ítem (fuente: sesión con Mateo) |
 | `Docs/deuda-tecnica.md` | Cosas ya rotas o frágiles en el código, ordenadas por cuánto duelen. Leer antes de tocar muerte de jugadores, pooling o sorting layers |
 | `Docs/audio-fmod.md` | Migración del audio a FMOD: arquitectura, mapa id→evento, encargos pendientes para Audio y notas de netcode |
+| `Docs/lobby.md` | Lobby de Pollos: flujo Modo→Mapa→Reglas→Gallinero, controles por jugador, qué pasa al llegar al mapa, cómo añadir un mapa, pendientes |
 
 ## Estado actual (actualizar al cambiar de fase)
 
@@ -34,7 +35,8 @@ Party game 2D (Unity 6, Built-in RP) para 2–4 jugadores: pollos trepan bloques
 
 ## Mapa del código (`Assets/Scripts`, ~55 scripts)
 
-- `Manager/` — `GameManager` (state machine Menu/Prepare/Game/Win + rondas), `PlayersManager` (join local 2–4P teclado split + gamepad), `PoolingManager` (bloques por rank Winning/Neutral/Losing), `AudioManager`, `PauseManager`, `UIManager`, `DisplaySettings` (monitor/modo/VSync/límite FPS, en `PlayerPrefs`)
+- `Lobby/` + `Match/` — flujo previo a la partida en la escena `Lobby` (ver `Docs/lobby.md`): `LobbyFlow` (Modo → Mapa → Reglas → Gallinero), `CoopLobby` (un cuarto por jugador, input por jugador, P1 inicia), `MatchSetup` (estático: modo, mapa, rondas para ganar, jugadores + `PlayerLoadout`). Mapas = `MapDefinitionSO` + `MapCatalogSO`. La escena se genera con Tools > Don't Chicken Out > Crear escena Lobby. `Main_Level` es la plantilla base de nivel (solo escenario jugable); Tools > Limpiar nivel quita restos del lobby antiguo
+- `Manager/` — `GameManager` (state machine Menu/Prepare/Game/Win + rondas; `RoundsToWin` sale del lobby), `PlayersManager` (sienta a los jugadores del lobby en su cuarto y lanza la primera cuenta atrás; un nivel abierto directo manda al Lobby — ya no hay join en la arena), `UIManager` (solo la cuenta 3-2-1-GO!; el marcador de huevos entre rondas es `UI/RoundScoreboard`, que muestra/oculta `GameManager`), `PoolingManager` (bloques por rank Winning/Neutral/Losing), `AudioManager`, `PauseManager`, `UIManager`, `DisplaySettings` (monitor/modo/resolución/frecuencia/VSync/límite FPS, en `PlayerPrefs`. Por defecto: pantalla completa exclusiva en el mejor modo del monitor, 60 Hz antes que tamaño. Resolución y frecuencia solo en exclusiva, con "¿Mantener?" que revierte en 10 s; el panel avisa si la pantalla va a < 48 Hz)
 - `Player/` — `PlayerMovement` (jump buffer, coyote, glide, fall multiplier; consume `InputPayload`→`StatePayload` por tick, patrón network-ready en `PlayerPayloads.cs`), `PlayerInputHandler`, `PlayerBlockHandler`, `CluckSystem`, `HeadCollider`
 - `Controllers/` — `PlayerController`, `PlayerAnimController`, `KickCollider`/`KickResponse`, `FeatherVFXController`
 - `Camera/` — `CinemachineVerticalRig2D` (auto-rise con curva de aceleración + shake), `ScreenShake` (puerta estática: `ScreenShake.Punch(dur, amp)` desde cualquier sitio)
@@ -42,7 +44,7 @@ Party game 2D (Unity 6, Built-in RP) para 2–4 jugadores: pollos trepan bloques
 - `Objects/` — `BlockScript`, `BlockDamageable` (vida de bloques), `BlockOverlapCheck`, `PlayerKiller`, interfaces `IDamageable`/`IKickable`
 - `SOs/` — config en ScriptableObjects: `PlatformerValuesSO`, `BlocksPoolSO`, `BlocksValuesSO`, `FeatherVFXConfigSO`, `MelodySO`, `SoundData`
 - `SceneChange/` — transiciones, `MainMenuController`, `MenuInputRouter`, `SessionData`
-- `UI/` — `PlayerUI`, `UIButtonSFX`, `PlayerNameTag` (etiqueta "Player N" en el mundo, color leído del shader del pollo), `SettingsPanel` (ajustes del menú con pestañas; cada pestaña es un `SettingsSection`: `AudioSettingsPanel`, `DisplaySettingsPanel`; `SelectionHighlight` marca la opción con foco; se monta con Tools > Don't Chicken Out > Crear panel de ajustes)
+- `UI/` — `UIButtonSFX`, `PlayerNameTag` (etiqueta "Player N" en el mundo, color leído del shader del pollo), `SettingsPanel` (ajustes del menú con pestañas; cada pestaña es un `SettingsSection`: `AudioSettingsPanel`, `DisplaySettingsPanel`; `SelectionHighlight` marca la opción con foco; se monta con Tools > Don't Chicken Out > Crear panel de ajustes)
 - `Utility/` — `DebugOverlay` (F3 o L3+R3 en mando, también en builds: FPS, peor frame, Hz del monitor, VSync, tick), `CursorAutoHide` (esconde el cursor en pantalla completa tras 2 s quieto; solo builds)
 
 ## Stack y convenciones

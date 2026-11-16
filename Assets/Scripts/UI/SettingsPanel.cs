@@ -70,6 +70,13 @@ public sealed class SettingsPanel : MonoBehaviour
     {
         if (Time.frameCount == _openedFrame || tabs.Length == 0) return;
 
+        SettingsSection current = tabs[_active].section;
+        if (current != null && current.IsModal)
+        {
+            if (CancelPressed()) current.OnCancel();
+            return;
+        }
+
         if (CancelPressed())
         {
             Close();

@@ -3,8 +3,8 @@ using UnityEngine.InputSystem;
 /// <summary>
 /// Lightweight static container that carries input session data between scenes.
 /// No MonoBehaviour, no DontDestroyOnLoad — just a plain static class.
-/// Set by MenuInputRouter / MainMenuController before a scene transition,
-/// consumed and cleared by PlayersManager on scene load.
+/// Set by MenuInputRouter in the main menu; read by the Lobby's hen house
+/// (CoopLobby), which seats that device as Player 1 / host.
 /// </summary>
 public static class SessionData
 {

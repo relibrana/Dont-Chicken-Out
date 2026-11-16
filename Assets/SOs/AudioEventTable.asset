@@ -375,8 +375,63 @@ MonoBehaviour:
         Data4: -1038299578
       Path: event:/BGM/Menu
     sustained: 0
-    pitchParameter: 
-    panParameter: 
+    pitchParameter:
+    panParameter:
+  - id: lobby_join
+    eventRef:
+      Guid:
+        Data1: -1310524387
+        Data2: 1191311058
+        Data3: -1174554973
+        Data4: 147838373
+      Path: event:/SFX/Player/Spawn
+    sustained: 0
+    pitchParameter:
+    panParameter:
+  - id: lobby_ready
+    eventRef:
+      Guid:
+        Data1: -1930756512
+        Data2: 1094720920
+        Data3: -182165346
+        Data4: 1355167570
+      Path: event:/SFX/UI/Button Press
+    sustained: 0
+    pitchParameter:
+    panParameter:
+  - id: lobby_unready
+    eventRef:
+      Guid:
+        Data1: -1132985366
+        Data2: 1175203059
+        Data3: 1687672247
+        Data4: 1470056276
+      Path: event:/SFX/UI/Button Hover
+    sustained: 0
+    pitchParameter:
+    panParameter:
+  - id: lobby_leave
+    eventRef:
+      Guid:
+        Data1: -1132985366
+        Data2: 1175203059
+        Data3: 1687672247
+        Data4: 1470056276
+      Path: event:/SFX/UI/Button Hover
+    sustained: 0
+    pitchParameter:
+    panParameter:
+  - id: lobby_start
+    eventRef:
+      Guid:
+        Data1: 700978533
+        Data2: 1308073538
+        Data3: 1081932725
+        Data4: 1198024525
+      Path: event:/SFX/UI/Start Round
+    sustained: 0
+    pitchParameter:
+    panParameter:
   musicVca: vca:/MUSIC
   sfxVca: vca:/SFX
   musicTempoParameter: 

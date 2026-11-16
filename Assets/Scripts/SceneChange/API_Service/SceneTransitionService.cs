@@ -27,6 +27,9 @@ public sealed class SceneTransitionService : MonoBehaviour
     private bool isTransitioning;
     private Coroutine transitionRoutine;
 
+    /// <summary>True from the circle closing until it has fully opened on the new scene.</summary>
+    public bool IsTransitioning => isTransitioning;
+
     private void Awake()
     {
         if (instance != null && instance != this)

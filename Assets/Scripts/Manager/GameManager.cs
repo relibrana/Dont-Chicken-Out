@@ -21,6 +21,8 @@ public class GameManager : MonoBehaviour
 
     [Header("UI")]
     [SerializeField] private UIManager uiManager;
+    [Tooltip("Between-rounds egg score. Optional: found in the scene if left empty.")]
+    [SerializeField] private RoundScoreboard scoreboard;
     public CinemachineVerticalRig2D cameraRig;
 
     [Header("Camera Auto-Move")]
@@ -46,9 +48,6 @@ public class GameManager : MonoBehaviour
     public Action OnGameEnd;
     /// <summary>Fired when the game enters Prepare state (countdown started).</summary>
     public Action OnPrepare;
-    public Action OnGameStarting;
-    /// <summary>Fired whenever the number of joined players changes.</summary>
-    public Action<int> OnPlayersCountChanged;
 
     public List<float> playersPosX;
     private Coroutine checkerCoroutine;
@@ -59,9 +58,11 @@ public class GameManager : MonoBehaviour
     [Header("End Game")]
     [SerializeField, Min(0f)] private float resultsHoldTime = 1.25f;
 
+    [Tooltip("Seconds on the round winner (camera on them) before the next round or the match result.")]
+    [SerializeField, Min(0f)] private float betweenRoundsTime = 2f;
+
     private PlayerController winner    = null;
     private bool matchWon              = false;
-    private bool needsAReset           = false;
     private bool triggerStartGame      = false;
     private bool _repositionOnReset    = false;
     private const float tieThresHold   = 0.5f;
@@ -104,6 +105,9 @@ public class GameManager : MonoBehaviour
             instance = this;
         else
             Destroy(gameObject);
+
+        if (scoreboard == null)
+            scoreboard = FindFirstObjectByType<RoundScoreboard>(FindObjectsInactive.Include);
     }
 
     private void OnDestroy()
@@ -179,32 +183,9 @@ public class GameManager : MonoBehaviour
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
     private static void ResetRoundEvents() => RoundEnded = null;
 
-    private void OnMenuState()
-    {
-        if (needsAReset) ResetValues();
-        cameraRig.canMove = false;
-    }
-
-    private void ResetValues()
-    {
-        poolManager.ResetPool();
-
-        foreach (var player in inGamePlayers)
-        {
-            if (player == null) continue;
-            player.roundsWon = 0;
-            ResetPlayer(player);
-        }
-
-        for (int i = 0; i < playersAlive.Length; i++)
-            playersAlive[i] = null;
-
-        cameraRig.ResetToGameplay();
-        progression?.ResetForRound();
-        needsAReset = false;
-
-        OnPlayersCountChanged?.Invoke(CountJoinedPlayers());
-    }
+    // Menu = the short wait between the level loading and the first countdown.
+    // A won match goes back to the main menu, so the level never comes back here.
+    private void OnMenuState() => cameraRig.canMove = false;
 
     private void OnPrepareState()
     {
@@ -238,9 +219,8 @@ public class GameManager : MonoBehaviour
             ChangeGameState(GameState.Game);
             checkerCoroutine = StartCoroutine(CheckPlayersInGame());
             AudioManager.Instance.PlayMusic("Game");
-            uiManager.OnGamePlayersUI();
             AudioManager.Instance.PlaySound("game_start");
-        }, () => OnGameStarting.Invoke());
+        }, prevCallback: null);
 
         triggerStartGame   = false;
         _repositionOnReset = false;
@@ -307,23 +287,35 @@ public class GameManager : MonoBehaviour
 
     // ── Player management ─────────────────────────────────────────────────────
 
-    public void AddPlayer(PlayerController player, Vector2 startPos, PlayerMaterial playerMat)
+    /// <summary>
+    /// First-to-N of this match: what the host picked in the lobby. A map
+    /// opened directly in the editor uses the default.
+    /// </summary>
+    public int RoundsToWin => Mathf.Max(1, MatchSetup.RoundsToWin);
+
+    /// <param name="slot">Player index to take (lobby room). -1 = first free.</param>
+    public void AddPlayer(PlayerController player, Vector2 startPos, PlayerMaterial playerMat, int slot = -1)
     {
         player.onDeath       = OnPlayersDeath;
         player.startPosition = startPos;
         player.SetMaterials(playerMat);
-        AddInGamePlayer(player);
+        AddInGamePlayer(player, slot);
 
         SimEvents.Raise(SimEvent.PlayerJoined, startPos, player);
-
-        uiManager.UpdateJoinedPlayers(inGamePlayers);
-
-        int count = CountJoinedPlayers();
-        OnPlayersCountChanged?.Invoke(count);
     }
 
-    private void AddInGamePlayer(PlayerController player)
+    private void AddInGamePlayer(PlayerController player, int slot = -1)
     {
+        // The lobby room decides the index, so "Player 3" stays Player 3 even
+        // if room 2 was left empty.
+        if (slot >= 0 && slot < inGamePlayers.Length && inGamePlayers[slot] == null)
+        {
+            inGamePlayers[slot] = player;
+            player.playerIndex  = slot;
+            player.OnPlayerIndexAssigned();
+            return;
+        }
+
         for (int i = 0; i < inGamePlayers.Length; i++)
         {
             if (inGamePlayers[i] != null) continue;
@@ -379,7 +371,6 @@ public class GameManager : MonoBehaviour
         playersAlive[player.playerIndex] = null;
 
         SimEvents.Raise(SimEvent.PlayerDied, deathPosition, player);
-        uiManager.UpdateDeadPlayer(player.playerIndex);
         cameraRig.DoDeathShake();
 
         FeatherVFXController.Instance?.EmitDeath(deathPosition);
@@ -390,24 +381,13 @@ public class GameManager : MonoBehaviour
     // ── Start sequence ────────────────────────────────────────────────────────
 
     /// <summary>
-    /// Called by StartGameButton when pressed with ≥2 players in Menu state.
+    /// First countdown of the match. Called by PlayersManager once the lobby's
+    /// players are seated (needs ≥ 2). Later rounds start on their own.
     /// </summary>
     public void TriggerStartSequence()
     {
         if (gameState != GameState.Menu) return;
         BeginStartSequence();
-    }
-
-    /// <summary>
-    /// Called by StartGameButton to cancel the countdown.
-    /// </summary>
-    public void CancelStartSequence()
-    {
-        if (gameState != GameState.Prepare) return;
-
-        triggerStartGame = false;
-        uiManager.StopInitialGameSequence();
-        ChangeGameState(GameState.Menu);
     }
 
     /// <summary>
@@ -448,12 +428,18 @@ public class GameManager : MonoBehaviour
 
             playersPosX.Clear();
 
+            // playersAlive has holes (a dead chicken, or an empty lobby room
+            // between two players): collect the live ones, not the first N slots.
             PlayerController[] remainingPlayers = new PlayerController[currPlayersAlive];
-            for (int i = 0; i < remainingPlayers.Length; i++)
+            int found = 0;
+            for (int i = 0; i < playersAlive.Length && found < remainingPlayers.Length; i++)
             {
-                remainingPlayers[i] = playersAlive[i];
-                playersPosX.Add(remainingPlayers[i].transform.position.x);
+                if (playersAlive[i] == null) continue;
+                remainingPlayers[found++] = playersAlive[i];
+                playersPosX.Add(playersAlive[i].transform.position.x);
             }
+            if (found < remainingPlayers.Length)
+                Array.Resize(ref remainingPlayers, found);
 
             OrderPlayers(remainingPlayers);
 
@@ -517,12 +503,11 @@ public class GameManager : MonoBehaviour
             cameraRig.StopFocusWinner();
             ChangeGameState(GameState.Win);
 
-            uiManager.OnWinRound(inGamePlayers, wonGame =>
-            {
-                matchWon = wonGame;
-                winSequence?.Kill();
-                winSequence = DOVirtual.DelayedCall(2f, () => CheckGameWon(wonGame), false);
-            });
+            // Tie: nobody scores, next round.
+            matchWon = false;
+            if (scoreboard != null) scoreboard.Show(inGamePlayers, RoundsToWin);
+            winSequence?.Kill();
+            winSequence = DOVirtual.DelayedCall(betweenRoundsTime, () => CheckGameWon(false), false);
         }
     }
 
@@ -535,34 +520,30 @@ public class GameManager : MonoBehaviour
         cameraRig.FocusWinner(winner.transform);
         winSequence?.Kill();
 
-        uiManager.OnWinRound(inGamePlayers, wonGame =>
-        {
-            matchWon = wonGame;
+        // First-to-N, N picked in the lobby. No score UI in the level any more:
+        // the match result is decided here, from the chickens' own round count.
+        bool wonGame = winner.roundsWon >= RoundsToWin;
+        matchWon = wonGame;
+        if (scoreboard != null) scoreboard.Show(inGamePlayers, RoundsToWin);
 
-            // Match won: menu music entering at "Victory C" (GameState 1 in
-            // event:/BGM/Menu) instead of from the top of the track.
-            if (wonGame)
-                AudioManager.Instance.PlayMusic("BGM_Menu_B", gameState: 1);
-            else
-                AudioManager.Instance.PlaySound("win_round");
+        // Match won: menu music entering at "Victory C" (GameState 1 in
+        // event:/BGM/Menu) instead of from the top of the track.
+        if (wonGame)
+            AudioManager.Instance.PlayMusic("BGM_Menu_B", gameState: 1);
+        else
+            AudioManager.Instance.PlaySound("win_round");
 
-            winSequence = DOVirtual.DelayedCall(2f, () => CheckGameWon(wonGame), false);
-        });
+        winSequence = DOVirtual.DelayedCall(betweenRoundsTime, () => CheckGameWon(wonGame), false);
     }
 
     private void CheckGameWon(bool wonGame)
     {
         if (wonGame)
         {
-            uiManager.ResetPlayers(inGamePlayers);
-
             DOVirtual.DelayedCall(resultsHoldTime, () =>
             {
-                uiManager.HidePointsPanel();
-                needsAReset = true;
-
                 // The transition service is a DontDestroyOnLoad singleton that only
-                // spawns in the MainMenu scene. Playing Main_Level directly in the
+                // spawns in the MainMenu scene. Playing a level directly in the
                 // editor skips it, so fall back to a plain load instead of dying
                 // on a null Instance inside this tween callback.
                 if (SceneTransitionService.Instance != null)
@@ -574,9 +555,9 @@ public class GameManager : MonoBehaviour
             return;
         }
 
-        // New round — start automatically without going through the button again.
+        // New round — starts on its own.
+        if (scoreboard != null) scoreboard.Hide();
         cameraRig.ResetToGameplay();
-        uiManager.HidePointsPanel();
         BeginStartSequence(repositionPlayers: true);
     }
 
@@ -588,9 +569,6 @@ public class GameManager : MonoBehaviour
         StopCoroutine(checkerCoroutine);
         checkerCoroutine = null;
     }
-
-    public void FreeKeyboardScheme(string schemeName) =>
-        playersManager.FreeKeyboardScheme(schemeName);
 }
 
 /// <summary>

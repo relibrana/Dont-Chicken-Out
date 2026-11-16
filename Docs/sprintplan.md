@@ -52,7 +52,7 @@ Plan biweekly desde el cierre de **Vertical Slice** (hoy) hasta **Launch en July
 ### Sistemas ya en código (verificado a 2026-10-05)
 
 - ✅ `GameManager` con state machine (Menu / Prepare / Game / Win) y round flow
-- ✅ `PlayersManager` con join por teclado split + gamepad (2–4P local)
+- ✅ Join local 2–4P (teclado split + gamepad) en el Lobby de Pollos; `PlayersManager` sienta a esos jugadores en el nivel (nov 2026, ver `Docs/lobby.md`)
 - ✅ `PlayerMovement` pulido (jump buffer, coyote, glide, head-stomp, fall multiplier, gravedad de caída separada de la de subida)
 - ✅ `CinemachineVerticalRig2D` con auto-rise + acceleration curve + shake (`ScreenShake.Punch` como puerta estática)
 - ✅ Block pooling escalado por rank (Winning/Neutral/Losing)

@@ -70,7 +70,7 @@ public sealed class PlayerController : MonoBehaviour, IKickable
     /// Colour priority: lo que Arte haya puesto a mano en MaterialsSO, si no el
     /// color del cuerpo en el shader del pollo, y si no la paleta por defecto.
     /// </summary>
-    private static Color ResolveLabelColor(PlayerMaterial mats)
+    public static Color ResolveLabelColor(PlayerMaterial mats)
     {
         if (mats.labelColor.a > 0f) return mats.labelColor;
 
@@ -571,12 +571,6 @@ public sealed class PlayerController : MonoBehaviour, IKickable
         _assignedScheme = schemeName;
         playerInput.SwitchCurrentControlScheme(_assignedScheme, playerInput.devices.ToArray());
         playerInput.SwitchCurrentActionMap("Player");
-    }
-
-    public void OnPlayerLeft(PlayerInput input)
-    {
-        if (_assignedScheme != "Gamepad")
-            GameManager.instance.FreeKeyboardScheme(_assignedScheme);
     }
 
     // ── Step sound (called by animation event) ────────────────────────────────

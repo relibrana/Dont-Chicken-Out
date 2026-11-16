@@ -6,8 +6,8 @@ using UnityEngine.InputSystem.UI;
 
 /// <summary>
 /// Listens for the first input on any device in the main menu scene and
-/// records it in SessionData so PlayersManager can auto-join that device
-/// as Player 1 when the game scene loads.
+/// records it in SessionData so the Lobby can seat that device as Player 1
+/// (host) in the hen house.
 ///
 /// Also assigns the MenuInputActions asset to the InputSystemUIInputModule
 /// so the EventSystem responds to all devices from frame 1, before any
@@ -26,6 +26,10 @@ public sealed class MenuInputRouter : MonoBehaviour
     [Tooltip("InputActionAsset used exclusively for menu navigation. " +
              "Must contain a 'UI' action map with Navigate, Submit and Cancel.")]
     [SerializeField] private InputActionAsset menuActions;
+
+    [Tooltip("On: if a device was already recorded (by the main menu), keep it. "
+             + "Used in the Lobby so whoever touches a pad first there does not steal Player 1.")]
+    [SerializeField] private bool keepExistingPrimary;
 
     // ── Keyboard scheme key sets ──────────────────────────────────────────────
 
@@ -61,7 +65,9 @@ public sealed class MenuInputRouter : MonoBehaviour
 
     private void OnEnable()
     {
-        _routed = false;
+        _routed = keepExistingPrimary && SessionData.HasPrimaryDevice;
+        if (_routed) return;
+
         _subscription = InputSystem.onAnyButtonPress.Subscribe(new InputObserver(this));
     }
 
