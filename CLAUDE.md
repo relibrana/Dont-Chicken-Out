@@ -25,6 +25,7 @@ Party game 2D (Unity 6, Built-in RP) para 2–4 jugadores: pollos trepan bloques
 | `Docs/assets-arte-audio-items-progresion.md` | Lista de assets de Arte y Audio pendientes por ítem (fuente: sesión con Mateo) |
 | `Docs/deuda-tecnica.md` | Cosas ya rotas o frágiles en el código, ordenadas por cuánto duelen. Leer antes de tocar muerte de jugadores, pooling o sorting layers |
 | `Docs/audio-fmod.md` | Migración del audio a FMOD: arquitectura, mapa id→evento, encargos pendientes para Audio y notas de netcode |
+| `Docs/steam-upload.md` | Subir builds a Steam con SteamPipe: depot/build/branch/package, setup único, pasos por versión (Tools > Don't Chicken Out > Steam), Remote Play Together |
 | `Docs/lobby.md` | Lobby de Pollos: flujo Modo→Mapa→Reglas→Gallinero, controles por jugador, qué pasa al llegar al mapa, cómo añadir un mapa, pendientes |
 
 ## Estado actual (actualizar al cambiar de fase)
