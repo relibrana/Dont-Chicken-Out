@@ -3151,6 +3151,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   minigame: {fileID: 11400000, guid: d40520355bb60114ba26dcba13fa56c9, type: 2}
+  lobbyScene: Lobby
   firstSelected: {fileID: 1877921875}
   selectDelay: 0
 --- !u!1 &610950387
@@ -7887,7 +7888,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 21300000, guid: 1e3cd95ffb9f3904e8dac9541dec6fd1, type: 3}
+  m_Sprite: {fileID: 21300000, guid: 2b9fe5b0aedc59049b15d9935a252dcc, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -9716,7 +9717,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 21300000, guid: 8e2a3e8c701fc4540a14c35c1125c05f, type: 3}
+  m_Sprite: {fileID: 21300000, guid: e80bf8c083119ed4aa91a23b6b6a5229, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -10390,6 +10391,7 @@ MonoBehaviour:
   uiInputModule: {fileID: 1999173782}
   menuActions: {fileID: -944628639613478452, guid: 1b55a7cbc1ce04346a4814297a356861,
     type: 3}
+  keepExistingPrimary: 0
 --- !u!1 &2008964376
 GameObject:
   m_ObjectHideFlags: 0
