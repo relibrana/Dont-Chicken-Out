@@ -358,7 +358,9 @@ public sealed class CoopLobby : LobbyScreen
     {
         PlayerMaterial mats = materials != null && slot < materials.playerMaterials.Count
             ? materials.playerMaterials[slot] : null;
-        Color authored = mats != null ? PlayerController.ResolveLabelColor(mats) : new Color(1f, 1f, 1f, 0f);
+        bool usesSkin  = chickenVisualSource != null
+                         && chickenVisualSource.GetComponentInChildren<ChickenSkin>(true) != null;
+        Color authored = PlayerController.ResolveLabelColor(mats, slot, usesSkin);
         return PlayerNameTag.ResolveColor(authored, slot);
     }
 
@@ -381,13 +383,15 @@ public sealed class CoopLobby : LobbyScreen
 
         System.Reflection.Assembly ours = typeof(CoopLobby).Assembly;
         foreach (MonoBehaviour mb in chicken.GetComponentsInChildren<MonoBehaviour>(true))
-            if (mb != null && mb.GetType().Assembly == ours) DestroyImmediate(mb);
+            if (mb != null && mb.GetType().Assembly == ours && mb is not ChickenSkin) DestroyImmediate(mb);
+        // ChickenSkin stays: it only draws (colour, hidden wear) and has no owner here.
+        ChickenSkin skin = chicken.GetComponentInChildren<ChickenSkin>(true);
 
         // The clips' animation events need a receiver next to each Animator.
         foreach (Animator animator in chicken.GetComponentsInChildren<Animator>(true))
             animator.gameObject.AddComponent<LobbyAnimEventSink>();
 
-        if (materials != null && slot < materials.playerMaterials.Count)
+        if (skin == null && materials != null && slot < materials.playerMaterials.Count)
         {
             Material mat = materials.playerMaterials[slot].playerMat;
             if (mat != null)
@@ -402,6 +406,8 @@ public sealed class CoopLobby : LobbyScreen
         t.localScale    = chickenVisualSource.transform.localScale;
         Destroy(holder);
 
+        if (skin != null) skin.SetColor(slot);
+
         // The anchor marks the floor: size the chicken and stand it on it,
         // whatever pivot and scale the rig has in the prefab.
         if (TryGetBounds(chicken, out Bounds b))
@@ -411,7 +417,10 @@ public sealed class CoopLobby : LobbyScreen
                 t.localScale *= chickenHeight / b.size.y;
                 TryGetBounds(chicken, out b);
             }
-            t.position += new Vector3(anchor.position.x - b.center.x, anchor.position.y - b.min.y, 0f);
+            // The new rig draws through its bones, which Arte raised so the rig
+            // root sits at the feet; sprite bounds only know the import pose.
+            float feetY = skin != null ? skin.FeetPosition.y : b.min.y;
+            t.position += new Vector3(anchor.position.x - b.center.x, anchor.position.y - feetY, 0f);
         }
         return chicken;
     }
@@ -422,7 +431,7 @@ public sealed class CoopLobby : LobbyScreen
         bool any = false;
         foreach (SpriteRenderer sr in go.GetComponentsInChildren<SpriteRenderer>())
         {
-            if (sr.sprite == null) continue;
+            if (sr.sprite == null || sr.forceRenderingOff) continue;
             // From the sprite and transform, not sr.bounds: skinned sprites
             // only update their bounds after the first render.
             Bounds local = sr.sprite.bounds;

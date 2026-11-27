@@ -49,6 +49,13 @@ MonoBehaviour:
   column: {fileID: 6160000000000000013}
   arrows: {fileID: 6160000000000000023}
   closeSeconds: 0.2
+  warningIcon: {fileID: 21300000, guid: 96be9570982ca6d4a9aa776940c52f91, type: 3}
+  iconSortingLayer: Items
+  iconSortingOrder: 100
+  iconMarginTop: 0.9
+  iconScale: 1
+  iconPulseSpeed: 9
+  iconPulseAmount: 0.12
 --- !u!1 &6160000000000000011
 GameObject:
   m_ObjectHideFlags: 0

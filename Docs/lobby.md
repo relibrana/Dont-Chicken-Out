@@ -79,6 +79,7 @@ Para limpiar una escena que aún los tenga y conectar el marcador: **Tools > Don
 | Escena | `Assets/Scenes/Lobby.unity`, se genera con **Tools > Don't Chicken Out > Crear escena Lobby** (la reemplaza entera) |
 | Rondas para ganar | Opciones 1 · 3 · 5 (por defecto 3). `GameManager.RoundsToWin` ← `MatchSetup.RoundsToWin` |
 | The Barn | `Map_TheBarn.asset` → escena `Main_Level` (el archivo de escena no se renombró). Preview = captura del inicio del nivel en `Assets/Sprites/Maps/Preview_TheBarn.png`; se rehace con **Tools > Don't Chicken Out > Actualizar preview de The Barn** |
+| Estilo (nov 2026) | Ventanas, botones, tarjetas, insignias, pistas y sello = tablas de madera del menú (`Sprites/NewArt/UIButton_Play` grande y `UIButton_Exit` pequeña, 9-slice; mitad izquierda lisa, derecha con plumas = foco). Fuente `DontChickenOutFont SDF` con CalSans de respaldo. Vive en `MenuPanelBuilderKit` (`PlankImage`, `PlankButton`, `GameFont`): cambiarlo ahí y regenerar la escena |
 | Sonidos | ids `lobby_join`, `lobby_ready`, `lobby_unready`, `lobby_leave`, `lobby_start` en `AudioEventTable.asset`, provisionalmente apuntando a eventos existentes (Spawn, Button Press/Hover, Start Round). Cuaac los cambia en FMOD sin tocar código |
 
 **Añadir un mapa:** crear su escena (en Build Settings) → crear un `MapDefinitionSO` → añadirlo a `MapCatalog`
@@ -90,8 +91,9 @@ personalización está bloqueada y el color lo da el cuarto.
 
 ## Pendiente / abierto
 
-- **Arte:** badge P1–P4, sello "¡LISTO!", candado, glifos de botones, card de mapa y "?" (hoy son placeholders de UI
-  por defecto). Puerta que se abre con animación (hoy fade).
+- **Arte:** ya no hay cuadros por defecto (nov 2026, tablas del menú). Falta un sprite de panel propio para las ventanas
+  (hoy una tabla estirada), candado, glifos de botones y "?". Puerta que se abre con animación (hoy fade).
+- **Fuente:** `DontChickenOutFont` no tiene á é í ó ú ñ; salen en CalSans (respaldo) hasta que Arte las añada.
 - **Huevos a 5 rondas:** caben encogidos (~50 px) en la fila de 250 px; si Arte quiere otro layout, añadir los huevos
   en la escena (`PlayerNPoints`) y la herramienta de limpieza los conecta.
 - **SFX propios** para unirse (cacareo), listo (golpe seco), cancelar/salir y navegación (matriz de la demo).

@@ -74,7 +74,7 @@ exactamente como antes.
 2. En `Main_Level`, crear un GameObject vacío **ProgressionManager** en el origen.
    *No debe ser hijo de la cámara ni de nada que se mueva.*
 3. Añadirle el componente `ProgressionManager` y asignar **Values** → `Assets/SOs/ProgressionValues.asset`.
-   Dejar **Ribbon Prefab** vacío: mientras no haya arte, genera un listón placeholder amarillo funcional.
+   **Ribbon Prefab** = `Prefabs/Progression/ProgressionRibbon.prefab` (arte `Item_Meta`, nov 2026; ya asignado en `Main_Level`). El sprite se escala a ancho × alto de `ProgressionValues`, y al romperse se desvanece en `despawnDelay` mientras no haya animación de rotura. Vacío = placeholder runtime.
 4. En el componente **GameManager**, sección *Progression*, arrastrar ese objeto al campo **Progression**.
 5. *(Opcional)* Añadir `ProgressionUI` al canvas de gameplay y asignarle un TMP para el "FASTER!"
    y otro para la lectura de fase/tiempo durante los tests.

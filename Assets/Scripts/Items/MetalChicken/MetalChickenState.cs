@@ -5,10 +5,15 @@ using UnityEngine;
 /// the fall is heavier and the glide is off, so descents are fast and precise.
 /// Immune to pushes, stronger kick. The only defensive item in the catalog.
 /// Queried by KickCollider for the kick impulse multiplier.
+///
+/// Look (nov 2026): the new rig puts on its "Metal" pieces (helmet, armour,
+/// wing guards, boots) instead of the grey tint; the old rig keeps the tint.
 /// </summary>
 public sealed class MetalChickenState : PlayerItemState
 {
     protected override string Label => "Metal Body";
+
+    protected override bool UsesTint => Controller == null || Controller.Skin == null;
 
     public float KickMultiplier { get; private set; } = 1f;
 
@@ -42,6 +47,8 @@ public sealed class MetalChickenState : PlayerItemState
         Movement.FallGravityMultiplier = _fallGravityMultiplier;
         Movement.GlideEnabled          = !_disableGlide;
         Controller.ImpulseImmune       = true;
+        ChickenSkin skin = Controller.Skin;
+        if (skin != null) skin.SetMetal(true);
     }
 
     protected override void OnStateEnded()
@@ -51,5 +58,7 @@ public sealed class MetalChickenState : PlayerItemState
         Movement.FallGravityMultiplier = 1f;
         Movement.GlideEnabled          = true;
         Controller.ImpulseImmune       = false;
+        ChickenSkin skin = Controller.Skin;
+        if (skin != null) skin.SetMetal(false);
     }
 }

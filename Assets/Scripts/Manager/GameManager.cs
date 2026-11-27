@@ -298,10 +298,18 @@ public class GameManager : MonoBehaviour
     {
         player.onDeath       = OnPlayersDeath;
         player.startPosition = startPos;
-        player.SetMaterials(playerMat);
+        player.SetMaterials(playerMat, slot >= 0 ? slot : FirstFreeSlotIndex());
         AddInGamePlayer(player, slot);
 
         SimEvents.Raise(SimEvent.PlayerJoined, startPos, player);
+    }
+
+    /// <summary>The slot AddInGamePlayer will hand out to a player with no lobby room.</summary>
+    private int FirstFreeSlotIndex()
+    {
+        for (int i = 0; i < inGamePlayers.Length; i++)
+            if (inGamePlayers[i] == null) return i;
+        return 0;
     }
 
     private void AddInGamePlayer(PlayerController player, int slot = -1)

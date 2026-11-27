@@ -94,7 +94,7 @@ internal static class LobbySceneBuilder
         Camera cam = BuildCamera();
         LobbyRoom[] rooms = BuildHenHouse();
 
-        TMP_FontAsset font = FindFont("CalSans-Regular SDF");
+        TMP_FontAsset font = GameFont();
         TMP_DefaultControls.Resources r = DefaultResources();
 
         Canvas canvas = BuildCanvas(cam);
@@ -371,8 +371,6 @@ internal static class LobbySceneBuilder
         Label(window, "Hint", "Online llegará más adelante", font, 24f, new Vector2(0f, -190f),
               new Vector2(640f, 40f), TextAlignmentOptions.Center).color = new Color(1f, 1f, 1f, 0.55f);
 
-        AddFocusBar(window, r);
-
         ModeSelectScreen screen = panel.AddComponent<ModeSelectScreen>();
         Assign(screen, ("firstSelected", local.gameObject), ("localButton", local),
                        ("onlineButton", online), ("onlineLockedBadge", badge.gameObject));
@@ -412,9 +410,7 @@ internal static class LobbySceneBuilder
     {
         GameObject card = NewRect("MapCardTemplate", grid);
         Image bg = card.AddComponent<Image>();
-        bg.sprite = r.standard;
-        bg.type   = Image.Type.Sliced;
-        bg.color  = new Color(0.25f, 0.21f, 0.33f, 1f);
+        PlankImage(bg, new Vector2(360f, 240f), small: false);
         Button button = card.AddComponent<Button>();
         button.targetGraphic = bg;
         Emphasize(button, Accent); // focused card tints accent, plus the SelectionBar behind it
@@ -433,15 +429,17 @@ internal static class LobbySceneBuilder
         stripRt.offsetMin = new Vector2(10f, 10f);
         stripRt.offsetMax = new Vector2(-10f, 66f);
         Image stripImage = strip.AddComponent<Image>();
-        stripImage.color = new Color(0f, 0f, 0f, 0.6f);
+        PlankImage(stripImage, new Vector2(340f, 56f), small: true);
         stripImage.raycastTarget = false;
         TextMeshProUGUI name = Label(strip, "Name", "Mapa", font, 32f, Vector2.zero, new Vector2(320f, 56f),
                                      TextAlignmentOptions.Center);
+        name.color = PlankText;
 
         GameObject locked = NewRect("LockedOverlay", card.transform);
         Inset(locked, 10f);
         Image lockedImage = locked.AddComponent<Image>();
-        lockedImage.color = new Color(0.10f, 0.08f, 0.14f, 1f);
+        PlankImage(lockedImage, new Vector2(340f, 220f), small: false);
+        lockedImage.color = new Color(0.45f, 0.40f, 0.38f, 1f); // a dark board over the preview
         lockedImage.raycastTarget = false;
         TextMeshProUGUI q = Label(locked, "QuestionMark", "?", font, 150f, Vector2.zero, new Vector2(300f, 200f),
                                   TextAlignmentOptions.Center);
@@ -474,11 +472,7 @@ internal static class LobbySceneBuilder
             buttons[i] = NewButton(row, $"Rounds_{values[i]}", values[i].ToString(), font, r,
                                    new Vector2((i - 1) * 160f, 0f), new Vector2(130f, 100f));
             buttons[i].GetComponentInChildren<TextMeshProUGUI>().fontSize = 52f;
-            // Chosen/idle colour lives on the Image; focus only brightens the hover.
-            ColorBlock colors = buttons[i].colors;
-            colors.normalColor = colors.selectedColor = colors.pressedColor = Color.white;
-            colors.highlightedColor = new Color(0.9f, 0.9f, 0.9f, 1f);
-            buttons[i].colors = colors;
+            // Chosen colour tints the plank (OptionGroup); focus shows the feathers.
         }
 
         Button cont = NewButton(window, "ContinueButton", "Continuar", font, r, new Vector2(0f, -185f),
@@ -503,9 +497,10 @@ internal static class LobbySceneBuilder
             valuesProp.GetArrayElementAtIndex(i).intValue = values[i];
         }
         so.FindProperty("chosenColor").colorValue = Accent;
+        so.FindProperty("idleColor").colorValue   = Color.white;   // the plank as drawn
+        so.FindProperty("chosenText").colorValue  = DarkWood;
+        so.FindProperty("idleText").colorValue    = PlankText;
         so.ApplyModifiedPropertiesWithoutUndo();
-
-        AddFocusBar(window, r);
 
         MatchConfigScreen screen = panel.AddComponent<MatchConfigScreen>();
         Assign(screen, ("firstSelected", cont.gameObject), ("roundsToWin", group), ("continueButton", cont),
@@ -562,8 +557,7 @@ internal static class LobbySceneBuilder
         GameObject badgeGo = NewRect("Badge", hud.transform);
         Place(badgeGo, new Vector2(0f, 120f), new Vector2(120f, 60f));
         Image badge = badgeGo.AddComponent<Image>();
-        badge.sprite = AssetDatabase.GetBuiltinExtraResource<Sprite>("UI/Skin/UISprite.psd");
-        badge.type   = Image.Type.Sliced;
+        PlankImage(badge, new Vector2(120f, 60f), small: true); // tinted with the player colour at runtime
         badge.raycastTarget = false;
         TextMeshProUGUI badgeLabel = Label(badgeGo, "Label", $"P{slot + 1}", font, 40f, Vector2.zero,
                                            new Vector2(120f, 60f), TextAlignmentOptions.Center);
@@ -571,24 +565,22 @@ internal static class LobbySceneBuilder
                                      new Vector2(200f, 32f), TextAlignmentOptions.Center);
         host.color = DarkWood;
 
-        // Hint on the right half, on a dark backdrop so it reads on wall and door.
+        // Hint on the right half, on a plank so it reads on wall and door.
         GameObject hintRoot = NewRect("Hint", hud.transform);
         Place(hintRoot, new Vector2(250f, -20f), new Vector2(300f, 150f));
         Image hintBg = hintRoot.AddComponent<Image>();
-        hintBg.sprite = AssetDatabase.GetBuiltinExtraResource<Sprite>("UI/Skin/UISprite.psd");
-        hintBg.type   = Image.Type.Sliced;
-        hintBg.color  = new Color(0f, 0f, 0f, 0.55f);
+        PlankImage(hintBg, new Vector2(300f, 150f), small: false);
         hintBg.raycastTarget = false;
-        TextMeshProUGUI hint = Label(hintRoot, "Label", "", font, 28f, Vector2.zero, new Vector2(285f, 140f),
+        TextMeshProUGUI hint = Label(hintRoot, "Label", "", font, 28f, Vector2.zero, new Vector2(250f, 120f),
                                      TextAlignmentOptions.Center);
+        hint.color = PlankText;
 
         // Ready stamp on the left half.
         GameObject stamp = NewRect("ReadyStamp", hud.transform);
         Place(stamp, new Vector2(-235f, 40f), new Vector2(240f, 84f));
         stamp.transform.localRotation = Quaternion.Euler(0f, 0f, 8f);
         Image stampImage = stamp.AddComponent<Image>();
-        stampImage.sprite = AssetDatabase.GetBuiltinExtraResource<Sprite>("UI/Skin/UISprite.psd");
-        stampImage.type   = Image.Type.Sliced;
+        PlankImage(stampImage, new Vector2(240f, 84f), small: true, focusedLook: true); // feathers = celebration; tinted at runtime
         stampImage.raycastTarget = false;
         Label(stamp, "Label", "¡LISTO!", font, 46f, Vector2.zero, new Vector2(240f, 84f),
               TextAlignmentOptions.Center);
@@ -597,9 +589,8 @@ internal static class LobbySceneBuilder
         GameObject customize = NewRect("CustomizeLocked", hud.transform);
         Place(customize, new Vector2(-235f, -110f), new Vector2(260f, 76f));
         Image customizeBg = customize.AddComponent<Image>();
-        customizeBg.sprite = AssetDatabase.GetBuiltinExtraResource<Sprite>("UI/Skin/UISprite.psd");
-        customizeBg.type   = Image.Type.Sliced;
-        customizeBg.color  = new Color(0.3f, 0.3f, 0.3f, 0.8f);
+        PlankImage(customizeBg, new Vector2(260f, 76f), small: true);
+        customizeBg.color  = new Color(0.6f, 0.6f, 0.6f, 1f); // greyed: locked
         customizeBg.raycastTarget = false;
         Label(customize, "Label", "Personalizar", font, 28f, new Vector2(0f, 12f), new Vector2(250f, 40f),
               TextAlignmentOptions.Center).color = new Color(1f, 1f, 1f, 0.6f);
@@ -649,8 +640,7 @@ internal static class LobbySceneBuilder
         barGo.transform.SetAsFirstSibling(); // behind every control of the window
         Place(barGo, Vector2.zero, new Vector2(100f, 60f));
         Image barImage = barGo.AddComponent<Image>();
-        barImage.sprite = r.standard;
-        barImage.type   = Image.Type.Sliced;
+        PlankImage(barImage, new Vector2(420f, 300f), small: false, focusedLook: true);
         barImage.color  = new Color(Accent.r, Accent.g, Accent.b, 0.5f);
         barImage.raycastTarget = false;
 
@@ -680,6 +670,7 @@ internal static class LobbySceneBuilder
         ColorBlock colors = s.colors;
         colors.normalColor = new Color(0.55f, 0.55f, 0.55f, 1f);
         s.colors = colors;
+        if (s.targetGraphic != null) s.targetGraphic.color = new Color(0.55f, 0.55f, 0.55f, 1f); // plank buttons swap sprites, not colours
     }
 
     private static Transform FindDeep(Transform root, string name)

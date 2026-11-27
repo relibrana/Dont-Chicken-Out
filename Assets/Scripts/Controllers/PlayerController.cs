@@ -20,6 +20,9 @@ public sealed class PlayerController : MonoBehaviour, IKickable
     [SerializeField] private PlayerAnimController animController;
     [SerializeField] private Transform glideFlapOrigin;
 
+    [SerializeField, Tooltip("Contenedor del dibujo del pollo ('Rig'). Lo que escalan/sacuden los ítems; vacío = el objeto del Animator (rig viejo).")]
+    private Transform visualRoot;
+
     [Header("Etiqueta de jugador")]
     [SerializeField, Tooltip("Muestra la etiqueta 'Player N' flotando sobre el pollo.")]
     private bool showNameTag = true;
@@ -67,14 +70,18 @@ public sealed class PlayerController : MonoBehaviour, IKickable
     private PlayerNameTag _nameTag;
 
     /// <summary>
-    /// Colour priority: lo que Arte haya puesto a mano en MaterialsSO, si no el
-    /// color del cuerpo en el shader del pollo, y si no la paleta por defecto.
+    /// Colour priority: lo que Arte haya puesto a mano en MaterialsSO; si no, con
+    /// el pollo nuevo (nov 2026), el color de su etiqueta de la Sprite Library
+    /// (P1 amarillo, P2 azul, P3 verde, P4 rosa); si no, el color del cuerpo en
+    /// el shader del pollo viejo, y si no la paleta por defecto.
     /// </summary>
-    public static Color ResolveLabelColor(PlayerMaterial mats)
+    public static Color ResolveLabelColor(PlayerMaterial mats, int slot, bool usesSkin)
     {
-        if (mats.labelColor.a > 0f) return mats.labelColor;
+        if (mats != null && mats.labelColor.a > 0f) return mats.labelColor;
 
-        if (mats.playerMat != null && mats.playerMat.HasProperty(BodyColorId))
+        if (usesSkin) return ChickenSkin.DisplayColor(slot);
+
+        if (mats != null && mats.playerMat != null && mats.playerMat.HasProperty(BodyColorId))
         {
             Color fromShader = mats.playerMat.GetColor(BodyColorId);
             fromShader.a = 1f;
@@ -285,8 +292,14 @@ public sealed class PlayerController : MonoBehaviour, IKickable
     /// chicken (moco, teleport) touch THIS and not the body: the body is driven
     /// by the Rigidbody2D (frozen on purpose while stuck in moco), its X scale is
     /// the facing sign and it carries the colliders.
+    /// The new rig animates its own root (squash, hop), so the visual root is
+    /// the "Rig" holder above it, set in the prefab; the old rig falls back to
+    /// the Animator's object as before.
     /// </summary>
-    public Transform VisualRoot => animController != null ? animController.transform : transform;
+    public Transform VisualRoot =>
+        visualRoot != null ? visualRoot
+        : animController != null ? animController.transform
+        : transform;
 
     private void HandlePlaceBlock()
     {
@@ -488,20 +501,50 @@ public sealed class PlayerController : MonoBehaviour, IKickable
             animController.PlayHitFront();
     }
 
-    /// <summary>Sets the player material on all sprite renderers and this player's block sprite.</summary>
-    public void SetMaterials(PlayerMaterial mats)
+    /// <summary>
+    /// Applies this player's look: block sprite, chicken colour and name-tag colour.
+    /// With the new rig (ChickenSkin) the chicken is coloured by Sprite Library
+    /// label and keeps the default sprite material; the old colour-swap material
+    /// only goes on renderers outside the rig (and on the old rig if still mounted).
+    /// </summary>
+    public void SetMaterials(PlayerMaterial mats, int slot)
     {
+        ChickenSkin skin = Skin;
+
         BlockSprite = mats.blockSprite;
-        LabelColor  = ResolveLabelColor(mats);
+        LabelColor  = ResolveLabelColor(mats, slot, skin != null);
         if (_blockHandler.CurrentBlock is BlockScript block)
             block.SetBlockSprite(BlockSprite);
 
+        if (skin != null) skin.SetColor(slot);
+
         var renderers = GetComponentsInChildren<SpriteRenderer>();
         foreach (var sr in renderers)
+        {
+            if (skin != null && sr.transform.IsChildOf(skin.transform)) continue;
             sr.material = mats.playerMat;
+        }
 
         playerMat = mats.playerMat;
     }
+
+    /// <summary>Look of the new chicken rig (colour, metal, death copy). Null on the old rig.</summary>
+    public ChickenSkin Skin
+    {
+        get
+        {
+            if (_skin == null && animController != null)
+            {
+                _skin = animController.GetComponentInParent<ChickenSkin>();
+                if (_skin == null) _skin = animController.GetComponentInChildren<ChickenSkin>(true);
+            }
+            return _skin != null ? _skin : null;
+        }
+    }
+    private ChickenSkin _skin;
+
+    /// <summary>Animation driver, for item states that play their own clips (Stun).</summary>
+    public PlayerAnimController AnimController => animController;
 
     /// <summary>Updates the player's rank in the current game session.</summary>
     public void SetGameRank(GameStatus rank) => GameRank = rank;

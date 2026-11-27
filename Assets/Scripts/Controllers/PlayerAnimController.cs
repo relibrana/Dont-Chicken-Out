@@ -24,6 +24,12 @@ public sealed class PlayerAnimController : MonoBehaviour
     private static readonly int HashIsGliding   = Animator.StringToHash("IsGliding");
     private static readonly int HashIsTouching  = Animator.StringToHash("IsTouchingBlock");
 
+    // ── Animator states ───────────────────────────────────────────────────────
+    // The new rig (Con_Player, nov 2026) names its states "Anim_X"; the old one
+    // used "X". Each state resolves to whichever the controller has.
+
+    private int _stateKick, _statePlace, _stateHitBack, _stateHitFront, _stateIdle, _stateStun;
+
     // ── Private refs ──────────────────────────────────────────────────────────
 
     private Animator _animator;
@@ -33,6 +39,29 @@ public sealed class PlayerAnimController : MonoBehaviour
     private void Awake()
     {
         _animator = GetComponent<Animator>();
+
+        _stateKick     = ResolveState("Kick");
+        _statePlace    = ResolveState("Place");
+        _stateHitBack  = ResolveState("HitBack");
+        _stateHitFront = ResolveState("HitFront");
+        _stateIdle     = ResolveState("Idle");
+        _stateStun     = ResolveState("Stun");
+    }
+
+    private int ResolveState(string baseName)
+    {
+        int newHash = Animator.StringToHash("Anim_" + baseName);
+        int oldHash = Animator.StringToHash(baseName);
+
+        if (_animator == null || _animator.runtimeAnimatorController == null) return newHash;
+        if (_animator.HasState(0, newHash)) return newHash;
+        if (_animator.HasState(0, oldHash)) return oldHash;
+        return 0; // the controller has no such state: Play calls are skipped
+    }
+
+    private void PlayState(int hash)
+    {
+        if (hash != 0) _animator.Play(hash);
     }
 
     // ── Movement state setters (called by PlayerMovement) ─────────────────────
@@ -60,20 +89,39 @@ public sealed class PlayerAnimController : MonoBehaviour
     // ── Action triggers (called by PlayerController) ──────────────────────────
 
     /// <summary>Plays the Kick animation state directly.</summary>
-    public void PlayKick() =>
-        _animator.Play("Kick");
+    public void PlayKick() => PlayState(_stateKick);
 
     /// <summary>Plays the Block placement animation state directly.</summary>
-    public void PlayPlace() =>
-        _animator.Play("Place");
+    public void PlayPlace() => PlayState(_statePlace);
 
-    /// <summary>Plays the HitBack animation state (kicked from behind).</summary>
-    public void PlayHitBack() =>
-        _animator.Play("HitBack");
+    /// <summary>Plays the HitBack animation state (kicked from behind). The clip shows the Hurt face.</summary>
+    public void PlayHitBack() => PlayState(_stateHitBack);
 
-    /// <summary>Plays the HitFront animation state (kicked from the front).</summary>
-    public void PlayHitFront() =>
-        _animator.Play("HitFront");
+    /// <summary>Plays the HitFront animation state (kicked from the front). The clip shows the Hurt face.</summary>
+    public void PlayHitFront() => PlayState(_stateHitFront);
+
+    /// <summary>
+    /// Keeps the Stun loop on (stars over the head, dizzy face). Stun has no
+    /// exit transition, so StunState calls this every frame and ends it with
+    /// <see cref="EndStun"/>. A hit while stunned plays out first.
+    /// </summary>
+    public void KeepStunned()
+    {
+        if (_stateStun == 0 || _animator.IsInTransition(0)) return;
+
+        int current = _animator.GetCurrentAnimatorStateInfo(0).shortNameHash;
+        if (current == _stateStun || current == _stateHitBack || current == _stateHitFront) return;
+
+        PlayState(_stateStun);
+    }
+
+    /// <summary>Leaves the Stun loop back to Idle; movement takes it from there.</summary>
+    public void EndStun()
+    {
+        if (_stateStun == 0) return;
+        if (_animator.GetCurrentAnimatorStateInfo(0).shortNameHash == _stateStun)
+            PlayState(_stateIdle);
+    }
 
     // ── Animation event receivers (called by Animation clips) ─────────────────
 

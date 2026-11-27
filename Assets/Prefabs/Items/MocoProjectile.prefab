@@ -47,7 +47,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 35bd582fedfc717449350afbc08c719e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  holdColor: {r: 0.54901963, g: 0.90196085, b: 0.3019608, a: 0.25}
+  holdColor: {r: 1, g: 1, b: 1, a: 0.25}
   overlappingColor: {r: 1, g: 0, b: 0, a: 0.25}
   colliders:
   - {fileID: 4100000000000000004}
@@ -76,6 +76,20 @@ MonoBehaviour:
   stuckTint: {r: 0.55, g: 0.9, b: 0.3, a: 1}
   trapColor: {r: 0.55, g: 0.9, b: 0.3, a: 0.85}
   trapSingleUse: 1
+  splatFrames:
+  - {fileID: -1631678599, guid: 14ba2bf74511a1c4d9a09b5b37cb2366, type: 3}
+  - {fileID: -1498490229, guid: 14ba2bf74511a1c4d9a09b5b37cb2366, type: 3}
+  - {fileID: 1244475100, guid: 14ba2bf74511a1c4d9a09b5b37cb2366, type: 3}
+  - {fileID: -758746088, guid: 14ba2bf74511a1c4d9a09b5b37cb2366, type: 3}
+  - {fileID: -2000965197, guid: 14ba2bf74511a1c4d9a09b5b37cb2366, type: 3}
+  - {fileID: 1125387479, guid: 14ba2bf74511a1c4d9a09b5b37cb2366, type: 3}
+  - {fileID: -1914085615, guid: 14ba2bf74511a1c4d9a09b5b37cb2366, type: 3}
+  - {fileID: 623068937, guid: 14ba2bf74511a1c4d9a09b5b37cb2366, type: 3}
+  - {fileID: 1002765650, guid: 14ba2bf74511a1c4d9a09b5b37cb2366, type: 3}
+  - {fileID: -1384732209, guid: 14ba2bf74511a1c4d9a09b5b37cb2366, type: 3}
+  splatLoopFrom: 5
+  splatFps: 12
+  splatLift: 0.6
 --- !u!50 &4000000000000000004
 Rigidbody2D:
   serializedVersion: 5
@@ -197,9 +211,8 @@ SpriteRenderer:
   m_SortingLayer: 2
   m_SortingOrder: 0
   m_MaskInteraction: 0
-  m_Sprite: {fileID: -2413806693520163455, guid: a86470a33a6bf42c4b3595704624658b,
-    type: 3}
-  m_Color: {r: 0.55, g: 0.9, b: 0.3, a: 1}
+  m_Sprite: {fileID: 21300000, guid: 329f084bd98ff4f46b9b7d1a98b95f47, type: 3}
+  m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
   m_FlipY: 0
   m_DrawMode: 0

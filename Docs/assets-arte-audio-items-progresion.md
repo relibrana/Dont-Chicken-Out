@@ -46,10 +46,10 @@ El sonido de lanzarlo no se repite acá: está en *Audio compartido entre items*
 
 | # | Tipo | Asset | Descripción | Estado |
 |---|---|---|---|---|
-| 1 | Sprite | Proyectil de moco | Bola de moco viscosa, tal como se ve en la mano del jugador y durante el vuelo. | ⬜ Pendiente |
+| 1 | Sprite | Proyectil de moco | Bola de moco viscosa, tal como se ve en la mano del jugador y durante el vuelo. | ✅ `Item-Moco.png` (nov 2026, 80 px/u) |
 | 2 | Animación | Estela de vuelo | Rastro que acompaña al moco mientras viaja, estirado en sentido contrario al desplazamiento para que se lea hacia dónde va. | ⬜ Pendiente |
-| 3 | Sprite | Splat | Mancha de moco aplastada y pegada, tal como aparece al impactar contra pared o bloque. | ⬜ Pendiente |
-| 4 | Animación | Idle del splat | Burbujas que suben y revientan en la mancha mientras sigue pegada, para que se lea viscosa y sucia. | ⬜ Pendiente |
+| 3 | Sprite | Splat | Mancha de moco aplastada y pegada, tal como aparece al impactar contra pared o bloque. | ✅ `Item_MocoSplash.png` frames 0-4 (impacto), se tumba sobre la superficie que golpea (`MocoProjectile`) |
+| 4 | Animación | Idle del splat | Burbujas que suben y revientan en la mancha mientras sigue pegada, para que se lea viscosa y sucia. | ✅ `Item_MocoSplash.png` frames 5-9 en bucle (`SpriteFlipbook`) |
 | 5 | Animación | Jugador atrapado | El pollo queda adherido al moco y mueve el cuerpo intentando despegarse, sin lograrlo. | ⬜ Pendiente |
 | 6 | Código | Forcejeo por movimiento | Sacudida corta del pollo hacia el lado al que empuja el jugador. Se resuelve por programación moviendo el sprite, sin asset de Arte. | ✅ Hecho (sep 2026) — 0.08 u, `MocoStuckState` |
 | 7 | Código | Forcejeo por patada | Misma sacudida pero más amplia y marcada que la de movimiento. También por programación. | ✅ Hecho (sep 2026) — 0.18 u |
@@ -92,7 +92,7 @@ El sonido de lanzarlo no se repite acá: está en *Audio compartido entre items*
 | 2 | Animación | Impacto y activación | El POW choca contra la superficie con un golpe fuerte y queda activado, arrancando la cuenta atrás. | ⬜ Pendiente (la lógica ya está: se clava al impactar) |
 | 3 | Sprite | Cuenta atrás y cartel | Arte de los números 3-2-1 y del cartel final, que dice `JUMP!`. **Van centrados en pantalla**: el POW es un efecto global, así que el aviso no cuelga del proyectil (decisión de sep 2026, se probó colgado y se descartó). | ⬜ Pendiente (placeholder de texto ya funcionando) |
 | 4 | Código | Detonación | Sacudida de cámara en el momento en que la cuenta llega a cero. | ✅ Hecho (sep 2026) — corta y fuerte, 0.22 s / 0.9 u |
-| 5 | Animación | Jugador aturdido | Pollo mareado y sin control mientras dura el aturdimiento (2.5 s, quieto en el sitio). | ⬜ Pendiente |
+| 5 | Animación | Jugador aturdido | Pollo mareado y sin control mientras dura el aturdimiento (2.5 s, quieto en el sitio). | ✅ `Anim_Stun` del pollo nuevo: estrellas + ojos/pico Stunned (`StunState`, sin tinte) |
 | 9 | Código | Plumas al recibir el POW | Estallido de plumas en los aturdidos, como al recibir una patada. | ✅ Hecho (sep 2026) |
 | 10 | Código | Vibración de mando | Leve al esquivarlo saltando, fuerte al recibirlo. Sin efecto en teclado. | ✅ Hecho (sep 2026) — `PlayerController.Rumble` |
 | 6 | Audio | Cuenta atrás | Pitido corto por cada número, ganando intensidad y profundidad a medida que la cuenta baja. | ✅ `event:/SFX/Items/Pow` cubre cuenta y detonación (un disparo) |
@@ -106,8 +106,8 @@ El sonido de lanzarlo no se repite acá: está en *Audio compartido entre items*
 | # | Tipo | Asset | Descripción | Estado |
 |---|---|---|---|---|
 | 1 | Sprite | Item de teleporte | Cómo se ve el item en la mano del jugador mientras lo lleva encima. | ⬜ Pendiente |
-| 2 | Animación | Desaparición | El pollo se esfuma del sitio donde estaba al activar el item. Podría resolverse como un VFX; el traslado en sí lo hace el código. | 🟡 Por código: el pollo se encoge hasta desaparecer (`TeleportState`), dentro del sonido |
-| 3 | Animación | Aparición | El pollo se materializa encima del rival que va más alto. Podría resolverse como un VFX. | 🟡 Por código: reaparece creciendo hasta su tamaño (`TeleportState`) |
+| 2 | Animación | Desaparición | El pollo se esfuma del sitio donde estaba al activar el item. Podría resolverse como un VFX; el traslado en sí lo hace el código. | ✅ Se abre `Item_TeleportHueco` a sus pies mientras se encoge (`TeleportPickup`, nov 2026) |
+| 3 | Animación | Aparición | El pollo se materializa encima del rival que va más alto. Podría resolverse como un VFX. | ✅ `Item_TeleportPoof` (5 frames) al llegar, y el pollo crece con rebote |
 | 4 | Audio | Desaparición | Golpe de succión corto al desvanecerse. | ⬜ Pendiente |
 | 5 | Audio | Aparición | Golpe seco al materializarse en el destino. | ✅ `event:/SFX/Items/Teleport` (al llegar) |
 
@@ -117,7 +117,7 @@ El sonido de lanzarlo no se repite acá: está en *Audio compartido entre items*
 
 | # | Tipo | Asset | Descripción | Estado |
 |---|---|---|---|---|
-| 1 | Sprite | Aspecto metálico | El pollo recubierto de metal mientras dura el efecto. Podría resolverse como un VFX; el cambio en sí lo hace el código. | ⬜ Pendiente |
+| 1 | Sprite | Aspecto metálico | El pollo recubierto de metal mientras dura el efecto. Podría resolverse como un VFX; el cambio en sí lo hace el código. | ✅ Piezas `Metal` del pollo nuevo (casco, armadura, alas, botas) vía `ChickenSkin`, sin tinte |
 | 2 | Animación | Aterrizaje pesado | Aterrizaje distinto al normal: el choque contra el suelo es más contundente porque la caída es mucho más pesada. | ⬜ Pendiente |
 | 3 | Código | Aviso de expiración | Parpadeo durante el último segundo, avisando que el efecto se acaba. | ⬜ Pendiente |
 | 4 | Audio | Transformación | Golpe metálico al activarse. | ⬜ Pendiente |
@@ -132,7 +132,7 @@ El sonido de lanzarlo no se repite acá: está en *Audio compartido entre items*
 | # | Tipo | Asset | Descripción | Estado |
 |---|---|---|---|---|
 | 1 | Sprite | Yunque | El yunque tal como se ve durante la caída. | ✅ `Sprites/NewArt/Item-YunqueFall.png` (oct 2026) |
-| 2 | Sprite | Icono de aviso | Icono que aparece en la parte superior de la pantalla, alineado con la vertical por donde va a caer el yunque. | ✅ Cambiado por una columna de pantalla completa: `Zona-Yunque` + `Zona-YunqueFlecha` (`AnvilZone`) |
+| 2 | Sprite | Icono de aviso | Icono que aparece en la parte superior de la pantalla, alineado con la vertical por donde va a caer el yunque. | ✅ Cambiado por una columna de pantalla completa: `Zona-Yunque` + `Zona-YunqueFlecha` (`AnvilZone`) + icono `Aviso-YunqueFall` arriba de la columna, con pulso (nov 2026) |
 | 3 | Código | Parpadeo del aviso | El icono parpadea antes de que el yunque empiece a caer. | ✅ La columna se abre y las flechas entran con fundido; después cae |
 | 4 | Audio | Aviso | Sonido de alerta mientras el icono parpadea. | ⬜ Pendiente |
 | 5 | Audio | Caída | Silbido que acompaña la caída. | ✅ `AnvilFall` (+ `AnvilHit` al romper bloques y aplastar) |

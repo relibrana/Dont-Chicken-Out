@@ -5,6 +5,10 @@ using UnityEngine;
 /// hit a player → they get stuck in place and must mash to escape;
 /// hit anything else → becomes a sticky trap that stays for the round and
 /// applies the same effect to whoever touches it.
+///
+/// Art (nov 2026): Item-Moco in hand and in flight; on a wall or block it
+/// plays Item_MocoSplash (impact frames, then the bubbling loop), lying flat
+/// on the surface it hit.
 /// </summary>
 public sealed class MocoProjectile : ThrowableItem
 {
@@ -42,7 +46,38 @@ public sealed class MocoProjectile : ThrowableItem
     [SerializeField, Tooltip("La trampa se consume con la primera víctima. Si no, dura toda la ronda (doc) — ojo con el stunlock al lado de la mancha.")]
     private bool trapSingleUse = true;
 
+    [Header("Arte")]
+    [SerializeField, Tooltip("Frames de Item_MocoSplash: impacto y luego burbujeo en bucle.")]
+    private Sprite[] splatFrames;
+
+    [SerializeField, Min(0), Tooltip("Primer frame del bucle de burbujas (los anteriores son el impacto, una vez).")]
+    private int splatLoopFrom = 5;
+
+    [SerializeField, Min(1f)]
+    private float splatFps = 12f;
+
+    [SerializeField, Tooltip("Distancia del centro del frame a la superficie: el charco está dibujado en la parte baja del frame.")]
+    private float splatLift = 0.6f;
+
     private bool _isTrap;
+
+    // The flight look, restored when the pooled moco comes back.
+    private Transform _visual;
+    private Sprite    _flightSprite;
+    private Vector3   _visualLocalPos;
+    private Quaternion _visualLocalRot;
+
+    private bool HasSplatArt => splatFrames != null && splatFrames.Length > 0;
+
+    private void Awake()
+    {
+        SpriteRenderer sr = spriteRenderers.Count > 0 ? spriteRenderers[0] : null;
+        if (sr == null) return;
+        _visual         = sr.transform;
+        _flightSprite   = sr.sprite;
+        _visualLocalPos = _visual.localPosition;
+        _visualLocalRot = _visual.localRotation;
+    }
 
     protected override void OnProjectileHit(Collision2D collision)
     {
@@ -55,10 +90,10 @@ public sealed class MocoProjectile : ThrowableItem
             return;
         }
 
-        BecomeTrap();
+        BecomeTrap(collision);
     }
 
-    private void BecomeTrap()
+    private void BecomeTrap(Collision2D collision)
     {
         _isTrap = true;
 
@@ -68,7 +103,23 @@ public sealed class MocoProjectile : ThrowableItem
         foreach (Collider2D col in colliders)
             col.isTrigger = true;
 
-        SetColor(trapColor);
+        if (!HasSplatArt || _visual == null)
+        {
+            SetColor(trapColor);
+            return;
+        }
+
+        // Lie flat on whatever was hit: floor, wall or the underside of a block.
+        SetColor(Color.white);
+        if (collision.contactCount > 0)
+        {
+            ContactPoint2D contact = collision.GetContact(0);
+            Vector2 normal = contact.normal;
+            _visual.SetPositionAndRotation(
+                contact.point + normal * splatLift,
+                Quaternion.FromToRotation(Vector3.up, normal));
+        }
+        SpriteFlipbook.Play(spriteRenderers[0], splatFrames, splatFps, splatLoopFrom);
     }
 
     private void OnTriggerEnter2D(Collider2D other)
@@ -110,5 +161,11 @@ public sealed class MocoProjectile : ThrowableItem
     {
         base.OnDisable();
         _isTrap = false;
+
+        if (_visual == null) return;
+        if (_visual.TryGetComponent(out SpriteFlipbook book)) book.Stop();
+        _visual.localPosition = _visualLocalPos;
+        _visual.localRotation = _visualLocalRot;
+        if (spriteRenderers.Count > 0 && spriteRenderers[0] != null) spriteRenderers[0].sprite = _flightSprite;
     }
 }

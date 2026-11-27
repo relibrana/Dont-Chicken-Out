@@ -52,11 +52,140 @@ internal static class MenuPanelBuilderKit
         window = NewRect("Window", panel.transform);
         Place(window, Vector2.zero, windowSize);
         var windowImage = window.AddComponent<UnityEngine.UI.Image>();
-        windowImage.sprite = r.standard;
-        windowImage.type   = UnityEngine.UI.Image.Type.Sliced;
-        windowImage.color  = new Color(0.12f, 0.10f, 0.18f, 0.95f);
+        PlankImage(windowImage, windowSize);
         windowImage.raycastTarget = false;
         return panel;
+    }
+
+    // ── Game skin (nov 2026) ──────────────────────────────────────────────────
+    // Wooden planks of the main menu (Sprites/NewArt/UIButton_*: left half plain,
+    // right half with feathers = focused) and the game font, instead of Unity's
+    // grey default sprites. The planks are 9-sliced (borders set in their .meta),
+    // so they stretch to any button or window without bending the ends.
+
+    private const string PlankBigPath     = "Assets/Sprites/NewArt/UIButton_Play.png";
+    private const string PlankSmallPath   = "Assets/Sprites/NewArt/UIButton_Exit.png";
+    private const string GameFontName     = "DontChickenOutFont SDF";
+    private const string GameFontTtfPath  = "Assets/Sprites/NewArt/DontChickenOutFont.ttf";
+    private const string FallbackFontName = "CalSans-Regular SDF";
+
+    /// <summary>Text on a plank: warm cream, reads on the brown wood.</summary>
+    public static readonly Color PlankText = new(1f, 0.95f, 0.82f, 1f);
+
+    /// <summary>Buttons narrower than this use the small plank (its ends are shorter).</summary>
+    private const float SmallPlankWidth = 260f;
+
+    /// <summary>Plain plank and the same plank with feathers (focused), big or small.</summary>
+    public static void Plank(bool small, out Sprite normal, out Sprite focused)
+    {
+        normal = focused = null;
+        foreach (Object asset in AssetDatabase.LoadAllAssetsAtPath(small ? PlankSmallPath : PlankBigPath))
+        {
+            if (asset is not Sprite sprite) continue;
+            if (sprite.name.EndsWith("_0")) normal  = sprite;
+            if (sprite.name.EndsWith("_1")) focused = sprite;
+        }
+        if (focused == null) focused = normal;
+        if (normal == null) Debug.LogWarning($"[MenuPanelBuilderKit] No plank sprites in {(small ? PlankSmallPath : PlankBigPath)}.");
+    }
+
+    /// <summary>Wooden board behind a window, badge or hint, sized <paramref name="size"/>.</summary>
+    public static void PlankImage(UnityEngine.UI.Image image, Vector2 size, bool? small = null, bool focusedLook = false)
+    {
+        Plank(small ?? size.x < SmallPlankWidth, out Sprite normal, out Sprite focused);
+        image.sprite = focusedLook ? focused : normal;
+        image.type   = UnityEngine.UI.Image.Type.Sliced;
+        image.color  = Color.white;
+        image.pixelsPerUnitMultiplier = BorderScale(image.sprite, size);
+    }
+
+    /// <summary>
+    /// A button on a plank: plain when idle, with feathers when focused or
+    /// pressed (sprite swap, like the main menu). Colour tints set elsewhere
+    /// (OptionGroup's chosen colour, a dimmed locked option) still apply on top.
+    /// </summary>
+    public static void PlankButton(UnityEngine.UI.Button button, Vector2 size)
+    {
+        bool small = size.x < SmallPlankWidth;
+        var image = button.targetGraphic as UnityEngine.UI.Image;
+        if (image == null) return;
+
+        PlankImage(image, size, small);
+        Plank(small, out Sprite normal, out Sprite focused);
+
+        button.transition  = UnityEngine.UI.Selectable.Transition.SpriteSwap;
+        button.spriteState = new UnityEngine.UI.SpriteState
+        {
+            highlightedSprite = focused,
+            selectedSprite    = focused,
+            pressedSprite     = focused,
+            disabledSprite    = normal,
+        };
+
+        foreach (TextMeshProUGUI label in button.GetComponentsInChildren<TextMeshProUGUI>(true))
+            label.color = PlankText;
+    }
+
+    /// <summary>
+    /// Shrinks the plank's ends and edges (Image pixels-per-unit multiplier)
+    /// when the box is too small to fit them at full size.
+    /// </summary>
+    private static float BorderScale(Sprite sprite, Vector2 size)
+    {
+        if (sprite == null) return 1f;
+        Vector4 b = sprite.border; // x left, y bottom, z right, w top (pixels)
+        float k = 1f;
+        if (b.x + b.z > 0f && size.x > 0f) k = Mathf.Max(k, (b.x + b.z) / (size.x * 0.6f));
+        if (b.y + b.w > 0f && size.y > 0f) k = Mathf.Max(k, (b.y + b.w) / (size.y * 0.8f));
+        return k;
+    }
+
+    /// <summary>
+    /// The game font (Arte, nov 2026). It only has ASCII plus ¡ ¿: no á é í ó ú ñ.
+    /// So it is made dynamic (pulls ¡ ¿ from its .ttf) and falls back to CalSans
+    /// for the missing letters until Arte adds them. Falls back to CalSans
+    /// entirely if the asset is missing.
+    /// </summary>
+    public static TMP_FontAsset GameFont()
+    {
+        TMP_FontAsset font     = FindFont(GameFontName);
+        TMP_FontAsset fallback = FindFont(FallbackFontName);
+        if (font == null) return fallback;
+
+        var so = new SerializedObject(font);
+        bool changed = false;
+
+        var ttf = AssetDatabase.LoadAssetAtPath<Font>(GameFontTtfPath);
+        SerializedProperty source = so.FindProperty("m_SourceFontFile");
+        SerializedProperty mode   = so.FindProperty("m_AtlasPopulationMode");
+        if (ttf != null && source != null && source.objectReferenceValue == null)
+        {
+            source.objectReferenceValue = ttf;
+            changed = true;
+        }
+        if (ttf != null && mode != null && mode.intValue != (int)AtlasPopulationMode.Dynamic)
+        {
+            mode.intValue = (int)AtlasPopulationMode.Dynamic;
+            changed = true;
+        }
+        if (changed) so.ApplyModifiedPropertiesWithoutUndo();
+
+        if (fallback != null && fallback != font)
+        {
+            font.fallbackFontAssetTable ??= new System.Collections.Generic.List<TMP_FontAsset>();
+            if (!font.fallbackFontAssetTable.Contains(fallback))
+            {
+                font.fallbackFontAssetTable.Add(fallback);
+                changed = true;
+            }
+        }
+
+        if (changed)
+        {
+            EditorUtility.SetDirty(font);
+            AssetDatabase.SaveAssetIfDirty(font);
+        }
+        return font;
     }
 
     public static TextMeshProUGUI Label(GameObject parent, string name, string text, TMP_FontAsset font, float size,
@@ -110,7 +239,9 @@ internal static class MenuPanelBuilderKit
         if (font != null) label.font = font;
 
         go.AddComponent<UIButtonSFX>();
-        return go.GetComponent<UnityEngine.UI.Button>();
+        var button = go.GetComponent<UnityEngine.UI.Button>();
+        PlankButton(button, size);
+        return button;
     }
 
     public static void SetNavigation(UnityEngine.UI.Selectable s, UnityEngine.UI.Selectable up, UnityEngine.UI.Selectable down,

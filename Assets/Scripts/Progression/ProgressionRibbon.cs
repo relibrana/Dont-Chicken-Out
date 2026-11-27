@@ -12,6 +12,11 @@ using UnityEngine;
 /// Expected hierarchy (both for the art prefab and the runtime placeholder):
 ///   root      — BoxCollider2D (trigger) + this component. Scale stays at 1.
 ///     └ visual — the sprite / animated art. Scaled to the requested size.
+///
+/// Art (nov 2026): Prefabs/Progression/ProgressionRibbon.prefab with the
+/// checkered strip Item_Meta. The visual is scaled from the sprite size, so
+/// any sprite fills exactly width x height. With no break animation yet, a
+/// broken ribbon fades out over despawnDelay.
 /// </summary>
 [DisallowMultipleComponent]
 public sealed class ProgressionRibbon : MonoBehaviour
@@ -41,6 +46,8 @@ public sealed class ProgressionRibbon : MonoBehaviour
 
     private Action<PlayerController> _onBroken;
     private float _despawnTimer;
+    private SpriteRenderer[] _sprites;
+    private float[] _spriteAlpha;
 
     // ── Unity lifecycle ───────────────────────────────────────────────────────
 
@@ -49,6 +56,7 @@ public sealed class ProgressionRibbon : MonoBehaviour
         if (IsLive || _despawnTimer <= 0f) return;
 
         _despawnTimer -= Time.deltaTime;
+        if (animator == null) SetAlpha(Mathf.Clamp01(_despawnTimer / Mathf.Max(0.01f, despawnDelay)));
         if (_despawnTimer <= 0f) Despawn();
     }
 
@@ -79,7 +87,14 @@ public sealed class ProgressionRibbon : MonoBehaviour
         transform.localScale = Vector3.one;
 
         if (visualRoot != null)
-            visualRoot.localScale = new Vector3(width, height, 1f);
+        {
+            // Sprite size at scale 1 (the placeholder is 1 x 1, the art is not).
+            SpriteRenderer sr = visualRoot.GetComponentInChildren<SpriteRenderer>(true);
+            Vector2 size = sr != null && sr.sprite != null ? (Vector2)sr.sprite.bounds.size : Vector2.one;
+            visualRoot.localScale = new Vector3(width / Mathf.Max(0.0001f, size.x), height / Mathf.Max(0.0001f, size.y), 1f);
+        }
+
+        SetAlpha(1f);
 
         if (triggerCollider != null)
         {
@@ -131,6 +146,24 @@ public sealed class ProgressionRibbon : MonoBehaviour
         Action<PlayerController> callback = _onBroken;
         _onBroken = null;
         callback?.Invoke(breaker);
+    }
+
+    private void SetAlpha(float k)
+    {
+        if (_sprites == null)
+        {
+            _sprites     = GetComponentsInChildren<SpriteRenderer>(true);
+            _spriteAlpha = new float[_sprites.Length];
+            for (int i = 0; i < _sprites.Length; i++) _spriteAlpha[i] = _sprites[i].color.a;
+        }
+
+        for (int i = 0; i < _sprites.Length; i++)
+        {
+            if (_sprites[i] == null) continue;
+            Color c = _sprites[i].color;
+            c.a = _spriteAlpha[i] * k;
+            _sprites[i].color = c;
+        }
     }
 
     // ── Placeholder factory ───────────────────────────────────────────────────

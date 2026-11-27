@@ -1,3 +1,4 @@
+using DG.Tweening;
 using UnityEngine;
 
 /// <summary>
@@ -8,6 +9,8 @@ using UnityEngine;
 /// · Apareces por encima de él y recibes un salto aéreo de un solo uso, para
 ///   que la reaparición dé opción a reaccionar en vez de ser una caída seca.
 /// Si el hueco de arriba está ocupado, sube hasta encontrar sitio libre.
+/// Arte (nov 2026): se abre un hueco (Item_TeleportHueco) a los pies del pollo
+/// mientras se encoge, y en el destino sale el poof (Item_TeleportPoof).
 /// </summary>
 public sealed class TeleportPickup : HoldableItem
 {
@@ -37,6 +40,25 @@ public sealed class TeleportPickup : HoldableItem
     [SerializeField, Min(0.05f), Tooltip("Reaparece en el destino creciendo hasta su tamaño, con un pequeño rebote.")]
     private float growSeconds = 0.2f;
 
+    [Header("Arte")]
+    [SerializeField, Tooltip("Hueco que se abre a los pies del pollo al irse.")]
+    private Sprite holeSprite;
+
+    [SerializeField, Min(0.01f), Tooltip("Lo que tarda el hueco en abrirse y en cerrarse.")]
+    private float holeOpenSeconds = 0.08f;
+
+    [SerializeField, Min(0.01f)]
+    private float holeCloseSeconds = 0.15f;
+
+    [SerializeField, Tooltip("Frames del poof con el que aparece en el destino.")]
+    private Sprite[] poofFrames;
+
+    [SerializeField, Min(1f)]
+    private float poofFps = 16f;
+
+    [SerializeField, Tooltip("Desplazamiento del poof respecto al punto de llegada.")]
+    private Vector2 poofOffset = new Vector2(0f, 0.3f);
+
     /// <summary>Nunca se coloca: se consume al activarlo, desde el suelo o en el aire.</summary>
     public override bool BypassPlacementChecks => true;
 
@@ -65,11 +87,53 @@ public sealed class TeleportPickup : HoldableItem
         if (!user.TryGetComponent(out TeleportState state))
             state = user.gameObject.AddComponent<TeleportState>();
 
+        var sorting = SpriteFlipbook.SortingOf(user.VisualRoot);
+        OpenHole(user, sorting.layerId, sorting.minOrder - 1);
+
+        Sprite[] poof = poofFrames; float fps = poofFps; Vector2 offset = poofOffset;
+
         state.Activate(
             shrinkSeconds,
             growSeconds,
             () => FindDestination(user, height, blocked, clearance, step, nudges),
-            () => { if (airJumps > 0) user.GrantAirJump(airJumps); });
+            () =>
+            {
+                if (airJumps > 0) user.GrantAirJump(airJumps);
+                SpriteFlipbook.SpawnOnce("TeleportPoof", poof, fps,
+                    (Vector2)user.transform.position + offset, 1f, sorting.layerId, sorting.maxOrder + 1);
+            });
+    }
+
+    /// <summary>
+    /// The hole the chicken sinks into: opens at its feet, stays while it
+    /// shrinks and closes behind it. Drawn behind the chicken. Presentation only.
+    /// </summary>
+    private void OpenHole(PlayerController user, int sortingLayerId, int sortingOrder)
+    {
+        if (holeSprite == null) return;
+
+        Vector3 feet = user.transform.position;
+        bool any = false;
+        Bounds bounds = default;
+        foreach (SpriteRenderer sr in user.VisualRoot.GetComponentsInChildren<SpriteRenderer>())
+        {
+            if (sr.forceRenderingOff || !sr.enabled) continue;
+            if (!any) { bounds = sr.bounds; any = true; }
+            else bounds.Encapsulate(sr.bounds);
+        }
+        if (any) feet = new Vector3(bounds.center.x, bounds.min.y, 0f);
+
+        SpriteRenderer hole = SpriteFlipbook.SpawnSprite("TeleportHole", holeSprite, feet, 1f, sortingLayerId, sortingOrder);
+        Transform t = hole.transform;
+        t.localScale = new Vector3(0f, 1f, 1f);
+
+        GameObject go = hole.gameObject;
+        DOTween.Sequence()
+            .Append(t.DOScaleX(1f, holeOpenSeconds).SetEase(Ease.OutBack))
+            .AppendInterval(shrinkSeconds)
+            .Append(t.DOScaleX(0f, holeCloseSeconds).SetEase(Ease.InBack))
+            .OnComplete(() => { if (go != null) Destroy(go); })
+            .SetLink(go);
     }
 
     /// <summary>
