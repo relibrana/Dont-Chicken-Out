@@ -1,6 +1,16 @@
 ﻿using System.Collections.Generic;
 using UnityEngine;
 
+/// <summary>
+/// Bomba (GDD, nov 2026). Thrown in the common arc; it bounces off chickens
+/// and tires and gets stuck (fixed in the air, solid, a platform) on the
+/// first piece, capsule or wall it hits. There it charges and then blows up:
+/// every piece it touches breaks whole, every chicken inside dies (except the
+/// metal one), and capsules, tires and other charging bombs break.
+/// A kick slides it (it bounces off walls and pieces and keeps charging) and
+/// it sticks again where it stops. Thrown off-camera without hitting
+/// anything, it goes off on its own after a few seconds.
+/// </summary>
 [DisallowMultipleComponent]
 public sealed class BombItem : ThrowableItem
 {
@@ -34,6 +44,22 @@ public sealed class BombItem : ThrowableItem
     [Header("Throw")]
     [SerializeField, Tooltip("La mecha arranca al lanzarla. Si se desmarca, arranca al primer impacto.")]
     private bool fuseStartsOnThrow = true;
+
+    [Header("Fijarse, patada y fuera de cámara (GDD)")]
+    [SerializeField, Min(0.5f), Tooltip("Si sale por debajo de la cámara sin haber chocado, explota sola a los X segundos.")]
+    private float offCameraSeconds = 3.5f;
+
+    [SerializeField, Min(0f), Tooltip("Fracción de la patada que la desliza. Corta: patearla es una apuesta, no una salida.")]
+    private float kickPushScale = 0.45f;
+
+    [SerializeField, Min(0f), Tooltip("Rozamiento mientras se desliza tras una patada.")]
+    private float slideDamping = 3f;
+
+    [SerializeField, Min(0.01f), Tooltip("Por debajo de esta velocidad deja de deslizarse y vuelve a quedarse fija.")]
+    private float refixSpeed = 0.35f;
+
+    [SerializeField, Range(0f, 1f), Tooltip("Cuánto rebota en paredes y piezas mientras se desliza.")]
+    private float slideBounciness = 0.6f;
 
     [Header("Feedback: respiración")]
     [SerializeField, Tooltip("Transform que se infla y desinfla. Vacío = el sprite de la bomba.")]
@@ -98,6 +124,14 @@ public sealed class BombItem : ThrowableItem
 
     private readonly HashSet<Rigidbody2D> uniqueBodies = new HashSet<Rigidbody2D>();
 
+    // Fixed in place / sliding after a kick / seconds off-camera untouched.
+    private bool    _fixed;
+    private bool    _sliding;
+    private float   _offCameraTime;
+    private Vector2 _lastVelocity;
+    private PhysicsMaterial2D   _slideMaterial;
+    private PhysicsMaterial2D[] _restMaterials;
+
     private static readonly int PrepareHash = Animator.StringToHash("Prepare");
     private static readonly int BoomHash = Animator.StringToHash("Boom");
 
@@ -124,10 +158,37 @@ public sealed class BombItem : ThrowableItem
             : (cachedSpriteRenderers.Length > 0 ? cachedSpriteRenderers[0].transform : transform);
 
         _breathBaseScale = _breathTarget.localScale;
+
+        if (TryGetComponent(out KickResponse kick))
+            kick.KickOverride = OnKicked;
+
+        _slideMaterial = new PhysicsMaterial2D("BombSlide") { bounciness = slideBounciness, friction = 0f };
+        _restMaterials = new PhysicsMaterial2D[colliders.Count];
+        for (int i = 0; i < colliders.Count; i++)
+            _restMaterials[i] = colliders[i] != null ? colliders[i].sharedMaterial : null;
     }
 
     private void FixedUpdate()
     {
+        if (rb2d != null) _lastVelocity = rb2d.linearVelocity;
+
+        if (_sliding && !hasExploded && rb2d.linearVelocity.magnitude < refixSpeed)
+            Fix();
+
+        // Thrown below the view without touching anything: it does not charge,
+        // it just goes off after a while wherever it is (nobody may see it).
+        if (Launched && !_fixed && !_sliding && !fuseLit && !hasExploded
+            && transform.position.y < GameplayCamera.BottomY(float.NegativeInfinity))
+        {
+            _offCameraTime += Time.fixedDeltaTime;
+            if (_offCameraTime >= offCameraSeconds)
+            {
+                Explosion();
+                despawnRemaining = destroyDelay;
+                return;
+            }
+        }
+
         if (hasExploded)
         {
             despawnRemaining -= Time.fixedDeltaTime;
@@ -187,11 +248,68 @@ public sealed class BombItem : ThrowableItem
 
     protected override void OnProjectileHit(Collision2D collision)
     {
-        rb2d.gravityScale  = landedGravityScale;
-        rb2d.linearDamping = landedLinearDamping;
+        if (_fixed || _sliding || hasExploded) return;
 
+        // In flight it goes through nothing: chickens and tires send it
+        // bouncing on (it keeps flying); anything else fixes it.
+        Rigidbody2D body = collision.rigidbody;
+        if (body != null && (body.TryGetComponent(out PlayerController _) || body.TryGetComponent(out Tire _)))
+        {
+            Vector2 normal = collision.contactCount > 0 ? collision.GetContact(0).normal : Vector2.up;
+            rb2d.linearVelocity = Vector2.Reflect(_lastVelocity, normal);
+            return;
+        }
+
+        Fix();
         if (!fuseStartsOnThrow)
             TryStartFuse();
+    }
+
+    /// <summary>Suspended and fixed where it is, not hanging on what it hit: solid, a platform.</summary>
+    private void Fix()
+    {
+        _fixed   = true;
+        _sliding = false;
+
+        rb2d.linearVelocity  = Vector2.zero;
+        rb2d.angularVelocity = 0f;
+        rb2d.bodyType        = RigidbodyType2D.Kinematic;
+        rb2d.gravityScale    = 0f;
+        rb2d.linearDamping   = landedLinearDamping;
+
+        for (int i = 0; i < colliders.Count; i++)
+            if (colliders[i] != null) colliders[i].sharedMaterial = _restMaterials[i];
+    }
+
+    /// <summary>
+    /// A kick slides the fixed bomb along the kick (bouncing off walls and
+    /// pieces, pushing chickens) and the charge goes on. What sat on top does
+    /// not ride along: it loses its support. In flight a kick acts as usual.
+    /// </summary>
+    private bool OnKicked(Vector2 impulse)
+    {
+        if (hasExploded) return true;
+        if (!_fixed && !_sliding) return false;
+
+        _fixed   = false;
+        _sliding = true;
+
+        rb2d.bodyType      = RigidbodyType2D.Dynamic;
+        rb2d.gravityScale  = 0f;
+        rb2d.linearDamping = slideDamping;
+        foreach (Collider2D col in colliders)
+            if (col != null) col.sharedMaterial = _slideMaterial;
+
+        rb2d.linearVelocity = new Vector2(impulse.x * kickPushScale, 0f);
+        return true;
+    }
+
+    /// <summary>Broken by another blast or by the anvil while charging: no explosion (GDD).</summary>
+    public void Defuse()
+    {
+        if (hasExploded || !gameObject.activeInHierarchy) return;
+        if (!Launched) return; // still waiting in a slot: not in the world
+        gameObject.SetActive(false);
     }
 
     private void TryStartFuse()
@@ -264,6 +382,8 @@ public sealed class BombItem : ThrowableItem
                 colliders[i].enabled = false;
         }
 
+        BreakItemsInBlast();
+
         Collider2D[] hits = Physics2D.OverlapCircleAll(
             (Vector2)explosionPoint.position,
             explosionRadius,
@@ -298,7 +418,9 @@ public sealed class BombItem : ThrowableItem
 
             if (col.TryGetComponent<PlayerController>(out var player))
             {
-                player.OnDeath();
+                // The metal chicken survives the blast (GDD).
+                if (!ExplosionBlast.IsMetal(player))
+                    player.OnDeath();
             }
             else
             {
@@ -307,8 +429,20 @@ public sealed class BombItem : ThrowableItem
         }
     }
 
+    /// <summary>Capsules (item lost), tires and charging bombs in the blast break too (GDD).</summary>
+    private void BreakItemsInBlast() =>
+        ExplosionBlast.BreakItems(explosionPoint.position, explosionRadius, this);
+
     private static void DisableBlock(Collider2D col)
     {
+        // GDD: the blast breaks every piece it touches whole, whatever its
+        // life. Through the piece, so it also goes back to the pool.
+        if (col.TryGetComponent(out BlockDamageable block))
+        {
+            block.TakeDamage(int.MaxValue, null);
+            return;
+        }
+
         Collider2D[] colliders2D = col.GetComponentsInChildren<Collider2D>(includeInactive: true);
         for (int i = 0; i < colliders2D.Length; i++)
             colliders2D[i].enabled = false;
@@ -361,8 +495,14 @@ public sealed class BombItem : ThrowableItem
         SimEvents.Raise(SimEvent.BombFuseOut, transform.position, this);
 
         // Back to the pool: a pooled bomb must come out unlit and whole.
-        fuseLit     = false;
-        hasExploded = false;
+        fuseLit        = false;
+        hasExploded    = false;
+        _fixed         = false;
+        _sliding       = false;
+        _offCameraTime = 0f;
+        if (_restMaterials != null)
+            for (int i = 0; i < colliders.Count && i < _restMaterials.Length; i++)
+                if (colliders[i] != null) colliders[i].sharedMaterial = _restMaterials[i];
 
         for (int i = 0; i < colliders.Count; i++)
         {

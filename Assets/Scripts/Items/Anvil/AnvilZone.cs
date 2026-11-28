@@ -14,11 +14,27 @@ using UnityEngine;
 /// Warning icon (Aviso-YunqueFall, nov 2026): at the top edge of the screen
 /// over the column, fades in with the arrows and pulses while it is up. Drawn
 /// on the Items layer so blocks at the top of the view never hide it.
+///
+/// Arrows scroll down (nov 2026): standing still on screen while the camera
+/// climbs, they read as rising against the level. They loop by one chevron
+/// (the strip repeats every ~0.6 u), with a copy stacked on top to cover the
+/// gap the shift leaves at the upper edge.
 /// </summary>
 public sealed class AnvilZone : MonoBehaviour
 {
     [SerializeField] private SpriteRenderer column;
     [SerializeField] private SpriteRenderer arrows;
+
+    [SerializeField, Min(0f), Tooltip("Velocidad a la que bajan las flechas en pantalla (u/s). Más que la cámara, para que se lea la caída.")]
+    private float arrowsScrollSpeed = 3.5f;
+
+    [SerializeField, Min(0.01f), Tooltip("Distancia entre flechas en la tira (u). Zona-YunqueFlecha: ~60 px a 100 PPU.")]
+    private float arrowsPeriod = 0.6f;
+
+    private SpriteRenderer _arrowsCopy;
+    private Vector3 _arrowsBase;
+    private float   _arrowsHeight;
+    private float   _scroll;
 
     [SerializeField, Min(0f), Tooltip("Fundido de salida cuando el yunque ya pasó.")]
     private float closeSeconds = 0.2f;
@@ -65,9 +81,21 @@ public sealed class AnvilZone : MonoBehaviour
         StartCoroutine(CloseRoutine());
     }
 
+    private void Awake()
+    {
+        if (arrows == null || arrows.sprite == null) return;
+
+        _arrowsBase   = arrows.transform.localPosition;
+        _arrowsHeight = arrows.sprite.bounds.size.y * arrows.transform.localScale.y;
+
+        _arrowsCopy      = Instantiate(arrows, arrows.transform.parent);
+        _arrowsCopy.name = arrows.name + "_Loop";
+    }
+
     private void LateUpdate()
     {
         FollowCamera();
+        ScrollArrows();
 
         if (_icon != null)
         {
@@ -86,6 +114,17 @@ public sealed class AnvilZone : MonoBehaviour
 
         if (_icon != null && cam.orthographic)
             _icon.transform.localPosition = new Vector3(0f, cam.orthographicSize - iconMarginTop, 0f);
+    }
+
+    private void ScrollArrows()
+    {
+        if (arrows == null || _arrowsCopy == null) return;
+
+        _scroll = Mathf.Repeat(_scroll + arrowsScrollSpeed * Time.deltaTime, arrowsPeriod);
+
+        arrows.transform.localPosition      = _arrowsBase + Vector3.down * _scroll;
+        _arrowsCopy.transform.localPosition = _arrowsBase + Vector3.up * (_arrowsHeight - _scroll);
+        _arrowsCopy.color = arrows.color; // fades in and out with the original
     }
 
     private void CreateIcon()

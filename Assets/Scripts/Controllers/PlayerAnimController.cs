@@ -119,8 +119,29 @@ public sealed class PlayerAnimController : MonoBehaviour
     public void EndStun()
     {
         if (_stateStun == 0) return;
-        if (_animator.GetCurrentAnimatorStateInfo(0).shortNameHash == _stateStun)
-            PlayState(_stateIdle);
+        bool inStun = _animator.GetCurrentAnimatorStateInfo(0).shortNameHash == _stateStun
+                   || (_animator.IsInTransition(0) && _animator.GetNextAnimatorStateInfo(0).shortNameHash == _stateStun);
+        if (inStun) PlayState(_stateIdle);
+    }
+
+    /// <summary>
+    /// Back to Idle from whatever the chicken was doing (stun, die, a kick
+    /// mid-air): bones, face and parameters return to their defaults. Called
+    /// when the round resets and the chickens are placed again.
+    /// </summary>
+    public void ResetToIdle()
+    {
+        if (_animator == null || _animator.runtimeAnimatorController == null) return;
+
+        // Not Rebind(): it would take the current pose (stun stars included)
+        // as the new defaults. Forcing Idle lets write-defaults restore the rest.
+        _animator.SetFloat(HashSpeed, 0f);
+        _animator.SetFloat(HashVelocityY, 0f);
+        _animator.SetBool(HashOnGround, true);
+        _animator.SetBool(HashIsGliding, false);
+        _animator.SetBool(HashIsTouching, false);
+        if (_stateIdle != 0) _animator.Play(_stateIdle, 0, 0f);
+        _animator.Update(0f);
     }
 
     // ── Animation event receivers (called by Animation clips) ─────────────────

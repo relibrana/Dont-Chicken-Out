@@ -2,10 +2,12 @@ using System;
 using UnityEngine;
 
 /// <summary>
-/// The teleport as you see it (design, oct 2026): the chicken shrinks to
-/// nothing where it stands, reappears at the destination and grows back to its
-/// size, all inside the teleport sound. Only the drawing scales (VisualRoot);
-/// the colliders keep their size so the chicken does not drop while shrinking.
+/// The teleport as you see it (design, oct 2026; pause added nov 2026): the
+/// chicken shrinks to nothing where it stands, stays gone a moment, reappears
+/// at the destination and grows back to its size, all inside the teleport
+/// sound. Only the drawing scales (VisualRoot); the colliders keep their size
+/// so the chicken does not drop while shrinking. While gone it is out of the
+/// world (PlayerController.SetInTransit): nothing can touch or kill it.
 /// No control while it lasts.
 ///
 /// A PlayerItemState so death and the round reset end it cleanly: the scale
@@ -14,56 +16,71 @@ using UnityEngine;
 public sealed class TeleportState : PlayerItemState
 {
     private float _shrinkSeconds;
+    private float _goneSeconds;
     private float _growSeconds;
     private Func<Vector2?> _destination;
     private Action _onArrived;
 
     private Transform _visual;
     private Vector3   _visualScale;
+    private bool      _inTransit;
     private bool      _arrived;
 
     protected override bool UsesTint => false;
 
+    private float Total => _shrinkSeconds + _goneSeconds + _growSeconds;
+
     /// <param name="destination">Asked at the moment of arrival, so it follows a moving target. Null = stay.</param>
-    public void Activate(float shrinkSeconds, float growSeconds, Func<Vector2?> destination, Action onArrived)
+    public void Activate(float shrinkSeconds, float goneSeconds, float growSeconds, Func<Vector2?> destination, Action onArrived)
     {
         _shrinkSeconds = Mathf.Max(0.01f, shrinkSeconds);
+        _goneSeconds   = Mathf.Max(0f, goneSeconds);
         _growSeconds   = Mathf.Max(0.01f, growSeconds);
         _destination   = destination;
         _onArrived     = onArrived;
 
-        BeginState(_shrinkSeconds + _growSeconds, Color.white);
+        BeginState(Total, Color.white);
     }
 
     protected override void OnStateStarted()
     {
         _visual      = Controller.VisualRoot;
         _visualScale = _visual.localScale;
+        _inTransit   = false;
         _arrived     = false;
         Controller.PushMovementLock();
     }
 
-    // The jump itself is gameplay: it happens on the tick.
+    // Leaving and arriving are gameplay: they happen on the tick.
     protected override void OnTick()
     {
-        if (_shrinkSeconds + _growSeconds - Remaining >= _shrinkSeconds)
+        float elapsed = Total - Remaining;
+
+        if (elapsed >= _shrinkSeconds && !_inTransit && !_arrived)
+        {
+            _inTransit = true;
+            Controller.SetInTransit(true);
+        }
+
+        if (elapsed >= _shrinkSeconds + _goneSeconds)
             Arrive();
     }
 
     // The shrink/grow is drawing: every frame, from the frame-accurate time.
     protected override void OnRender()
     {
-        float elapsed = _shrinkSeconds + _growSeconds - RenderRemaining;
+        float elapsed = Total - RenderRemaining;
+        float growAt  = _shrinkSeconds + _goneSeconds;
 
-        // Still shrinking on screen, or the tick has not moved the body yet:
-        // growing back before arriving would show the chicken at the origin.
-        if (elapsed < _shrinkSeconds || !_arrived)
+        // Still shrinking or gone on screen, or the tick has not moved the body
+        // yet: growing back before arriving would show the chicken at the origin.
+        if (elapsed < growAt || !_arrived)
         {
             SetVisualScale(1f - EaseIn(Mathf.Clamp01(elapsed / _shrinkSeconds)));
             return;
         }
 
-        SetVisualScale(EaseOut((elapsed - _shrinkSeconds) / _growSeconds));
+        SetVisualScale(EaseOut((elapsed - growAt) / _growSeconds));
     }
 
     protected override void OnStateExpired()
@@ -75,6 +92,7 @@ public sealed class TeleportState : PlayerItemState
     protected override void OnStateEnded()
     {
         if (_visual != null) _visual.localScale = _visualScale;
+        LeaveTransit();
         Controller.PopMovementLock();
     }
 
@@ -83,10 +101,19 @@ public sealed class TeleportState : PlayerItemState
         if (_arrived) return;
         _arrived = true;
 
+        LeaveTransit();
+
         Vector2? destination = _destination?.Invoke();
         if (destination.HasValue) Controller.TeleportTo(destination.Value);
 
         _onArrived?.Invoke();
+    }
+
+    private void LeaveTransit()
+    {
+        if (!_inTransit) return;
+        _inTransit = false;
+        Controller.SetInTransit(false);
     }
 
     private void SetVisualScale(float k)

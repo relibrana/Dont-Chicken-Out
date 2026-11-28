@@ -348,6 +348,7 @@ public class GameManager : MonoBehaviour
         // so it always goes back to its start point, also on the way to the menu.
         bool wasDead = !player.IsAlive;
         player.SetAlive(true);
+        player.ResetVisuals(); // a stunned or kicked chicken must not start the round in that pose
 
         if (repositionPlayer || wasDead)
             player.TeleportTo(player.startPosition);

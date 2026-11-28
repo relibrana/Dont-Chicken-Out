@@ -16,30 +16,60 @@ MonoBehaviour:
   - prefab: {fileID: 7813419518495331685, guid: 96e68a523af779e4caa7fc06d9bb9091,
       type: 3}
     chance: 18
+    bottomChance: 10
+    middleChance: 15
+    topChance: 10
   - prefab: {fileID: 1000000000000000001, guid: 58f2260789df4cd6a183c11efaf3386e,
       type: 3}
     chance: 15
+    bottomChance: 20
+    middleChance: 15
+    topChance: 0
   - prefab: {fileID: 8723323982620638141, guid: e9f0d56f280e4ad4ca88cdf415d08ed7,
       type: 3}
     chance: 13
+    bottomChance: 15
+    middleChance: 10
+    topChance: 5
   - prefab: {fileID: 1000000000000000001, guid: 8d3793c5462d4dbca53c473ab7d840df,
       type: 3}
     chance: 11
+    bottomChance: 10
+    middleChance: 10
+    topChance: 5
   - prefab: {fileID: 1000000000000000001, guid: 31366d7fb11040adbe451958b0bfcf12,
       type: 3}
     chance: 10
+    bottomChance: 0
+    middleChance: 5
+    topChance: 20
   - prefab: {fileID: 4000000000000000001, guid: 883919a2938d48dd8dd416546a3eafb4,
       type: 3}
     chance: 0
+    bottomChance: 5
+    middleChance: 5
+    topChance: 20
   - prefab: {fileID: 1000000000000000001, guid: 1be7ed2be974463e8577fdbf74f87cb7,
       type: 3}
     chance: 0
+    bottomChance: 10
+    middleChance: 5
+    topChance: 5
   - prefab: {fileID: 1000000000000000001, guid: 27ed885b774d49168dc1122dc711ebb5,
       type: 3}
     chance: 7
+    bottomChance: 5
+    middleChance: 15
+    topChance: 5
   - prefab: {fileID: 1000000000000000001, guid: 4b4631afaad14a5bae26bf8ba1b66be6,
       type: 3}
     chance: 5
+    bottomChance: 10
+    middleChance: 15
+    topChance: 15
   - prefab: {fileID: 1000000000000000001, guid: fedc1c53f84c47d4a6602f187167d245,
       type: 3}
     chance: 4
+    bottomChance: 15
+    middleChance: 5
+    topChance: 15

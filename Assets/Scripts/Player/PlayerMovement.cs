@@ -66,6 +66,21 @@ public sealed class PlayerMovement : MonoBehaviour
     /// <summary>While false, holding jump no longer glides (pollo metálico).</summary>
     public bool GlideEnabled { get; set; } = true;
 
+    /// <summary>
+    /// States that forbid gliding for a while (stun: "no puede planear mientras
+    /// siga aturdido"). A counter so two states never re-enable each other.
+    /// </summary>
+    public int GlideLocks { get; set; }
+
+    /// <summary>Glide speed multiplier (pollo metálico: the metal weighs, the wings brake less).</summary>
+    public float GlideSpeedMultiplier { get; set; } = 1f;
+
+    /// <summary>
+    /// Grounded only on other chickens (no block or floor under the feet).
+    /// POW does not count a rival's head as ground (GDD).
+    /// </summary>
+    public bool IsOnPlayer { get; private set; }
+
     /// <summary>Air jumps left (doble salto). Consumed by HandleJump when airborne past coyote.</summary>
     public int AirJumpsRemaining { get; set; }
 
@@ -82,6 +97,12 @@ public sealed class PlayerMovement : MonoBehaviour
     private const float JumpLockSeconds = 0.5f;
 
     private Rigidbody2D          _rb;
+    private CapsuleCollider2D    _capsule;
+    private int                  _solidMask;     // groundLayer without chickens (corner correction)
+    private float                _descentTime;   // seconds falling this time (glide entry delay)
+    private Rigidbody2D          _groundBody;    // what the feet stand on (a pushed piece carries the chicken)
+    private readonly RaycastHit2D[] _castHits    = new RaycastHit2D[4];
+    private readonly Collider2D[]   _overlapHits = new Collider2D[4];
     private PlayerAnimController _animController;
 
     private Vector2 _currentVelocity;
@@ -116,6 +137,8 @@ public sealed class PlayerMovement : MonoBehaviour
     private void Awake()
     {
         _rb = GetComponent<Rigidbody2D>();
+        _capsule   = GetComponent<CapsuleCollider2D>();
+        _solidMask = groundLayer.value & ~(1 << LayerMask.NameToLayer("Player"));
 
         _rb.gravityScale   = 0f;
         _rb.freezeRotation = true;
@@ -175,6 +198,7 @@ public sealed class PlayerMovement : MonoBehaviour
         _animController?.SetVelocityY(_currentVelocity.y);
 
         _currentVelocity.y = Mathf.Min(_currentVelocity.y, valuesSO.maxJumpSpeed);
+        ApplyCornerCorrection(dt);
         ApplyVelocityToRigidbody();
 
         CurrentState = new StatePayload
@@ -343,9 +367,12 @@ public sealed class PlayerMovement : MonoBehaviour
 
         _currentVelocity.y += gravity * dt;
 
+        _descentTime = _currentVelocity.y < 0f ? _descentTime + dt : 0f;
+
         if (_currentVelocity.y < 0f)
         {
-            bool  isGliding       = _isHoldingJump && GlideEnabled;
+            bool  isGliding       = _isHoldingJump && GlideEnabled && GlideLocks <= 0
+                                 && _descentTime >= valuesSO.glideEntryDelay;
             float glideMultiplier = isGliding ? valuesSO.glideResistance : 0f;
             // El tope de caída también escala con el peso: si no, un pollo pesado
             // solo llegaría antes al mismo límite en vez de caer más rápido.
@@ -360,10 +387,21 @@ public sealed class PlayerMovement : MonoBehaviour
 
             _animController?.SetGliding(isGliding);
 
-            float nextY = _currentVelocity.y
-                        + gravity * (valuesSO.fallMultiplier - 1f - glideMultiplier) * dt;
+            if (isGliding)
+            {
+                // GDD: a fixed glide speed. The fall brakes at once (no slow
+                // ease into it) and then holds; heavier states glide faster.
+                float target = -valuesSO.glideFallSpeed * GlideSpeedMultiplier;
+                _currentVelocity.y = Mathf.Max(_currentVelocity.y, target);
+                _currentVelocity.y = Mathf.MoveTowards(_currentVelocity.y, target, Mathf.Abs(gravity) * dt);
+            }
+            else
+            {
+                float nextY = _currentVelocity.y
+                            + gravity * (valuesSO.fallMultiplier - 1f - glideMultiplier) * dt;
 
-            _currentVelocity.y = Mathf.Clamp(nextY, fallLimit, 50f);
+                _currentVelocity.y = Mathf.Clamp(nextY, fallLimit, 50f);
+            }
         }
         else if (_currentVelocity.y > 0f && !_isHoldingJump)
         {
@@ -373,8 +411,60 @@ public sealed class PlayerMovement : MonoBehaviour
 
     private void ApplyVelocityToRigidbody()
     {
-        _rb.linearVelocity = _currentVelocity;
+        // GDD (empujar): a chicken standing on a piece that is being pushed
+        // travels with it. Not on another chicken (that one never drags you).
+        Vector2 velocity = _currentVelocity;
+        if (_isGrounded && _groundBody != null)
+            velocity.x += _groundBody.linearVelocity.x;
+
+        _rb.linearVelocity = velocity;
     }
+
+    private static Rigidbody2D PickGroundBody(Collider2D col)
+    {
+        if (col == null || IsPlayerCollider(col)) return null;
+        Rigidbody2D body = col.attachedRigidbody;
+        return body != null && body.bodyType == RigidbodyType2D.Dynamic ? body : null;
+    }
+
+    // ── Corner correction ─────────────────────────────────────────────────────
+
+    /// <summary>
+    /// GDD (colisionar): rising into the corner of a block, the chicken is
+    /// slid sideways just enough to pass instead of bonking. Only when the way
+    /// straight up is blocked and a small side step clears it; the smaller
+    /// step wins. Chickens are not corners (they are excluded from the mask).
+    /// </summary>
+    private void ApplyCornerCorrection(float dt)
+    {
+        if (_capsule == null || _currentVelocity.y <= 0f || valuesSO.cornerCorrection <= 0f) return;
+
+        var filter = new ContactFilter2D { useTriggers = false };
+        filter.SetLayerMask(_solidMask);
+
+        Vector2 centre   = _rb.position + _capsule.offset;
+        Vector2 size     = _capsule.size;
+        float   distance = _currentVelocity.y * dt + 0.02f;
+
+        if (!CapsuleBlocked(centre, size, filter, distance)) return;
+
+        const float step = 0.03f;
+        for (float shift = step; shift <= valuesSO.cornerCorrection + 0.0001f; shift += step)
+        {
+            foreach (float side in new[] { -1f, 1f })
+            {
+                Vector2 moved = centre + new Vector2(side * shift, 0f);
+                if (Physics2D.OverlapCapsule(moved, size, _capsule.direction, 0f, filter, _overlapHits) > 0) continue;
+                if (CapsuleBlocked(moved, size, filter, distance)) continue;
+
+                _rb.position += new Vector2(side * shift, 0f);
+                return;
+            }
+        }
+    }
+
+    private bool CapsuleBlocked(Vector2 centre, Vector2 size, ContactFilter2D filter, float distance) =>
+        Physics2D.CapsuleCast(centre, size, _capsule.direction, 0f, Vector2.up, filter, _castHits, distance) > 0;
 
     // ── Ground detection ──────────────────────────────────────────────────────
 
@@ -384,10 +474,16 @@ public sealed class PlayerMovement : MonoBehaviour
         // (drawn) position and lags up to one tick behind.
         Vector2 pos = _rb.position;
 
-        _isGrounded =
-            RaycastNonTrigger(new Vector2(pos.x - checkSpacing, pos.y - spacingY), Vector2.down) != null
-         || RaycastNonTrigger(new Vector2(pos.x, pos.y - spacingY - 0.07f), Vector2.down) != null
-         || RaycastNonTrigger(new Vector2(pos.x + checkSpacing, pos.y - spacingY), Vector2.down) != null;
+        Collider2D footL = RaycastNonTrigger(new Vector2(pos.x - checkSpacing, pos.y - spacingY), Vector2.down);
+        Collider2D footC = RaycastNonTrigger(new Vector2(pos.x, pos.y - spacingY - 0.07f), Vector2.down);
+        Collider2D footR = RaycastNonTrigger(new Vector2(pos.x + checkSpacing, pos.y - spacingY), Vector2.down);
+
+        _isGrounded = footL != null || footC != null || footR != null;
+        _groundBody = PickGroundBody(footC) ?? PickGroundBody(footL) ?? PickGroundBody(footR);
+        IsOnPlayer  = _isGrounded
+                   && (footL == null || IsPlayerCollider(footL))
+                   && (footC == null || IsPlayerCollider(footC))
+                   && (footR == null || IsPlayerCollider(footR));
 
         RaycastHit2D headL = Physics2D.Raycast(new Vector2(pos.x - checkSpacing, pos.y + headCheckOffset),         Vector2.up, raycastDistance, groundLayer);
         RaycastHit2D headC = Physics2D.Raycast(new Vector2(pos.x,                pos.y + headCheckOffset + 0.07f), Vector2.up, raycastDistance, groundLayer);

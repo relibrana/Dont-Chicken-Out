@@ -31,9 +31,12 @@ internal static class ChickenRigInstaller
     private const string PlayerPrefab    = "Assets/Prefabs/PlayerPrefab.prefab";
     private const string RigName         = "Rig";
 
-    private static readonly HashSet<string> WearCategories = new()
+    // Arte renamed them in nov 2026 (Wing_wear → WingWear, Footwear → FootWear):
+    // both spellings count, case aside, so an older rig still works.
+    private static readonly HashSet<string> WearCategories = new(System.StringComparer.OrdinalIgnoreCase)
     {
-        "Headwear", "Clothing", "Wing_wear_R", "Wing_wear_L", "Footwear_R", "Footwear_L",
+        "Headwear", "Clothing", "WingWear_R", "WingWear_L", "FootWear_R", "FootWear_L",
+        "Wing_wear_R", "Wing_wear_L",
     };
 
     [MenuItem("Tools/Don't Chicken Out/Arte nuevo/Montar pollo nuevo en PlayerPrefab")]

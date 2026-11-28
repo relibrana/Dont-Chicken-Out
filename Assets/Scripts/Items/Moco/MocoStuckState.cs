@@ -91,6 +91,12 @@ public sealed class MocoStuckState : PlayerItemState
             EndState();
     }
 
+    /// <summary>Freed at once from outside: another chicken kicked them (GDD). The kick does not move them.</summary>
+    public void Release()
+    {
+        if (IsActive) EndState();
+    }
+
     protected override void OnStateStarted()
     {
         Movement.HoldPosition = true;

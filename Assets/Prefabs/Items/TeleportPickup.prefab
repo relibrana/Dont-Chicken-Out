@@ -46,7 +46,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 49ff363deb6f93942ac95e3ba4ba5ad2, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  holdColor: {r: 0.6509804, g: 0.4509804, b: 1, a: 0.2509804}
+  holdColor: {r: 1, g: 1, b: 1, a: 0.2509804}
   overlappingColor: {r: 1, g: 0, b: 0, a: 0.25}
   colliders:
   - {fileID: 1100000000000000004}
@@ -190,9 +190,8 @@ SpriteRenderer:
   m_SortingLayer: 2
   m_SortingOrder: 0
   m_MaskInteraction: 0
-  m_Sprite: {fileID: -2413806693520163455, guid: a86470a33a6bf42c4b3595704624658b,
-    type: 3}
-  m_Color: {r: 0.65, g: 0.45, b: 1, a: 1}
+  m_Sprite: {fileID: 917384225, guid: 6519d1819a4bc2f4783614a40ebc5b6c, type: 3}
+  m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
   m_FlipY: 0
   m_DrawMode: 0

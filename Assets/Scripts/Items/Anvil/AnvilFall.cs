@@ -127,6 +127,19 @@ public sealed class AnvilFall : MonoBehaviour
     {
         if (!_falling) return;
 
+        // Below the view it no longer breaks anything (GDD): what was left
+        // down there stays.
+        if (transform.position.y < GameplayCamera.BottomY(float.NegativeInfinity)) return;
+
+        // Capsules (item lost), tires and bombs in its path break, the bombs
+        // without going off (GDD).
+        ItemCapsule capsule = other.GetComponentInParent<ItemCapsule>();
+        if (capsule != null) { capsule.BreakLost(); return; }
+        Tire tire = other.GetComponentInParent<Tire>();
+        if (tire != null) { tire.Break(); return; }
+        BombItem bomb = other.GetComponentInParent<BombItem>();
+        if (bomb != null) { bomb.Defuse(); return; }
+
         // AnvilHit sounds both when it smashes a block and when it crushes a
         // chicken (design, oct 2026).
         if (other.TryGetComponent(out BlockDamageable block))
@@ -139,6 +152,17 @@ public sealed class AnvilFall : MonoBehaviour
         Rigidbody2D body = other.attachedRigidbody;
         if (body == null || !body.TryGetComponent(out PlayerController player)) return;
         if (!player.isOnGame) return;
+
+        // The metal chicken is not crushed: it bounces out of the column with
+        // the tire’s rule (its velocity reversed), and the anvil keeps falling.
+        if (ExplosionBlast.IsMetal(player))
+        {
+            Vector2 back = -player.Velocity;
+            if (back.sqrMagnitude < 1f)
+                back = new Vector2(player.transform.position.x >= transform.position.x ? 8f : -8f, 6f);
+            player.AddImpulse(back, resetSpeed: true, ignoreImmunity: true);
+            return;
+        }
 
         player.OnDeath();
         SimEvents.Raise(SimEvent.AnvilHit, player.transform.position, this);

@@ -30,6 +30,12 @@ public sealed class PlayerInputHandler : MonoBehaviour
     /// <summary>Fired when the player presses PlaceBlock.</summary>
     public event Action OnPlaceBlockPressed;
 
+    /// <summary>Fired on a fresh Jump press (the moco struggle counts jumps).</summary>
+    public event Action OnJumpPressed;
+
+    /// <summary>Fired when the player presses UseItem (own button, GDD).</summary>
+    public event Action OnUseItemPressed;
+
     /// <summary>
     /// Fired on a *fresh* directional press: the axis leaving neutral or
     /// flipping side. Holding a key does not re-fire — the struggle mechanics
@@ -37,6 +43,24 @@ public sealed class PlayerInputHandler : MonoBehaviour
     /// so a struggle can shake the chicken towards it.
     /// </summary>
     public event Action<float> OnMovePressed;
+
+    // ── Stick (mando) ─────────────────────────────────────────────────────────
+    // Nov 2026: a stick let go fast springs past the centre for a frame or two;
+    // with the default deadzone (0.125) that was enough to turn the chicken
+    // round. Keyboards never go through this.
+
+    [Header("Stick del mando")]
+    [SerializeField, Range(0f, 0.9f), Tooltip("Por debajo de esto el stick cuenta como suelto. El resto se reescala a 0-1.")]
+    private float stickDeadzone = 0.3f;
+
+    [SerializeField, Range(0f, 1f), Tooltip("Justo después de soltar, ir al lado contrario solo cuenta si se empuja al menos esto (filtra el rebote del stick).")]
+    private float stickReverseThreshold = 0.6f;
+
+    [SerializeField, Min(0f), Tooltip("Cuánto dura esa protección contra el rebote tras soltar.")]
+    private float stickReverseWindow = 0.12f;
+
+    private float _stickHeldSign;
+    private float _stickHeldTime = float.NegativeInfinity;
 
     // ── Private state ─────────────────────────────────────────────────────────
 
@@ -46,6 +70,7 @@ public sealed class PlayerInputHandler : MonoBehaviour
     private InputAction _jumpAction;
     private InputAction _placeBlockAction;
     private InputAction _kickAction;
+    private InputAction _useItemAction;
     private InputAction _cluckAction;
     private InputAction _pauseAction;
     private InputAction _backUIAction;
@@ -111,6 +136,7 @@ public sealed class PlayerInputHandler : MonoBehaviour
         _jumpAction       = actions.FindAction("Jump");
         _placeBlockAction = actions.FindAction("PlaceBlock");
         _kickAction       = actions.FindAction("Kick");
+        _useItemAction    = actions.FindAction("UseItem");
         _cluckAction      = actions.FindAction("Cluck");
         _pauseAction      = actions.FindAction("Pause");
         _backUIAction     = actions.FindActionMap("UI")?.FindAction("Back");
@@ -122,6 +148,8 @@ public sealed class PlayerInputHandler : MonoBehaviour
         _jumpAction.canceled        += OnJumpCanceled;
         _placeBlockAction.started   += OnPlaceBlockStarted;
         _kickAction.started         += OnKickStarted;
+        if (_useItemAction != null)
+            _useItemAction.started  += OnUseItemStarted;
         _cluckAction.started        += OnCluckStarted;
         _pauseAction.started        += OnPauseStarted;
 
@@ -144,6 +172,7 @@ public sealed class PlayerInputHandler : MonoBehaviour
         }
         if (_placeBlockAction != null) _placeBlockAction.started -= OnPlaceBlockStarted;
         if (_kickAction != null)       _kickAction.started       -= OnKickStarted;
+        if (_useItemAction != null)    _useItemAction.started    -= OnUseItemStarted;
         if (_cluckAction != null)      _cluckAction.started      -= OnCluckStarted;
         if (_pauseAction != null)      _pauseAction.started      -= OnPauseStarted;
         if (_backUIAction != null)     _backUIAction.started     -= OnBackUIStarted;
@@ -155,6 +184,7 @@ public sealed class PlayerInputHandler : MonoBehaviour
         _jumpAction?.Enable();
         _placeBlockAction?.Enable();
         _kickAction?.Enable();
+        _useItemAction?.Enable();
         _cluckAction?.Enable();
         _pauseAction?.Enable();
         _backUIAction?.Enable();
@@ -166,6 +196,7 @@ public sealed class PlayerInputHandler : MonoBehaviour
         _jumpAction?.Disable();
         _placeBlockAction?.Disable();
         _kickAction?.Disable();
+        _useItemAction?.Disable();
         _cluckAction?.Disable();
         _pauseAction?.Disable();
         _backUIAction?.Disable();
@@ -176,7 +207,8 @@ public sealed class PlayerInputHandler : MonoBehaviour
     private void OnMovePerformed(InputAction.CallbackContext ctx)
     {
         float previous = _moveDirection;
-        _moveDirection = ctx.ReadValue<float>();
+        float raw      = ctx.ReadValue<float>();
+        _moveDirection = ctx.control?.device is Gamepad ? FilterStick(raw, previous) : raw;
 
         if (_moveDirection != 0f && (previous == 0f || Mathf.Sign(previous) != Mathf.Sign(_moveDirection)))
             OnMovePressed?.Invoke(_moveDirection);
@@ -185,8 +217,36 @@ public sealed class PlayerInputHandler : MonoBehaviour
     private void OnMoveCanceled(InputAction.CallbackContext ctx) =>
         _moveDirection = 0f;
 
-    private void OnJumpStarted(InputAction.CallbackContext ctx) =>
+    /// <summary>
+    /// Bigger deadzone, rescaled so a gentle tilt still walks slowly, and the
+    /// release snapback ignored: right after holding one side, the other side
+    /// only counts when pushed for real (a genuine quick turn goes far past it).
+    /// </summary>
+    private float FilterStick(float raw, float previous)
+    {
+        float abs = Mathf.Abs(raw);
+        if (abs < stickDeadzone) return 0f;
+
+        float sign = Mathf.Sign(raw);
+        float now  = Time.unscaledTime;
+
+        // Still holding the old side at the previous reading: "just released" is now.
+        bool  heldUntilNow = previous != 0f && Mathf.Sign(previous) == _stickHeldSign;
+        float sinceHeld    = heldUntilNow ? 0f : now - _stickHeldTime;
+
+        if (_stickHeldSign != 0f && sign != _stickHeldSign && sinceHeld < stickReverseWindow && abs < stickReverseThreshold)
+            return 0f;
+
+        _stickHeldSign = sign;
+        _stickHeldTime = now;
+        return sign * Mathf.InverseLerp(stickDeadzone, 1f, abs);
+    }
+
+    private void OnJumpStarted(InputAction.CallbackContext ctx)
+    {
         _jumpPressed = true;
+        OnJumpPressed?.Invoke();
+    }
 
     private void OnJumpPerformed(InputAction.CallbackContext ctx) =>
         _jumpHeld = true;
@@ -205,6 +265,9 @@ public sealed class PlayerInputHandler : MonoBehaviour
         _kickPressed = true;
         OnKickPressed?.Invoke();
     }
+
+    private void OnUseItemStarted(InputAction.CallbackContext ctx) =>
+        OnUseItemPressed?.Invoke();
 
     private void OnCluckStarted(InputAction.CallbackContext ctx)
     {

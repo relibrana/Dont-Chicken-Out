@@ -49,9 +49,12 @@ public sealed class ChickenSkin : MonoBehaviour
     private const string StunnedLabel     = "Stunned";
     private const string MetalLabel       = "Metal";
 
-    private static readonly HashSet<string> WearCategories = new()
+    // Arte renamed them in nov 2026 (Wing_wear → WingWear, Footwear → FootWear):
+    // both spellings count, case aside, so an older rig still works.
+    private static readonly HashSet<string> WearCategories = new(System.StringComparer.OrdinalIgnoreCase)
     {
-        "Headwear", "Clothing", "Wing_wear_R", "Wing_wear_L", "Footwear_R", "Footwear_L",
+        "Headwear", "Clothing", "WingWear_R", "WingWear_L", "FootWear_R", "FootWear_L",
+        "Wing_wear_R", "Wing_wear_L",
     };
 
     private static readonly HashSet<string> ColorLabelSet = new(ColorLabels);
@@ -317,7 +320,35 @@ public sealed class ChickenSkin : MonoBehaviour
 
         if (_library != null) _headwearMetal = _library.GetSprite(HeadwearCategory, MetalLabel);
 
+        HideStrayVariants(resolved);
         HideAllWear();
+    }
+
+    /// <summary>
+    /// A part animated through its resolver (Eyes, Beak, Body_Base…) is drawn by
+    /// that one object; the other variant layers of the same category must stay
+    /// off. The prefab switches them off by override, but those overrides point
+    /// at import IDs that change when Arte renames layers: in nov 2026 headwear
+    /// "Stunnet" became "Stunned", same name as the dizzy eyes, and the dizzy eyes
+    /// came back on under the animated ones (seen with the closed "Hurt" eyes).
+    /// So hide any leftover here, whatever the prefab says. Wear is not touched:
+    /// its plain pieces are the metal parts, handled by SetMetal.
+    /// </summary>
+    private void HideStrayVariants(HashSet<SpriteRenderer> resolved)
+    {
+        var animated = new HashSet<string>();
+        foreach (SpriteResolver resolver in _resolvers)
+        {
+            string category = resolver.GetCategory();
+            if (!string.IsNullOrEmpty(category) && resolver.gameObject.activeSelf) animated.Add(category);
+        }
+
+        foreach (SpriteRenderer sr in _plainRenderers)
+        {
+            if (sr == null || resolved.Contains(sr) || !_spriteKeys.TryGetValue(sr.sprite, out var key)) continue;
+            if (WearCategories.Contains(key.category) || !animated.Contains(key.category)) continue;
+            sr.forceRenderingOff = true;
+        }
     }
 
     private void HideAllWear()

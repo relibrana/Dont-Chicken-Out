@@ -48,7 +48,7 @@ MonoBehaviour:
   speedMultiplier: 1.3
   explosionRadius: 2
   explosionImpulse: 60
-  explosionBlockDamage: 3
+  explosionBlockDamage: 999
   explosionLayers:
     serializedVersion: 2
     m_Bits: 1152

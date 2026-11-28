@@ -5,8 +5,23 @@ public class KickCollider : MonoBehaviour
     public Vector2 forceDirection;
     public PlayerController playerController;
 
+    // A kick damages a piece once, however many of its blocks it touches (GDD).
+    // The collider is switched on per kick by the animation, so this resets then.
+    private readonly System.Collections.Generic.HashSet<Object> _damagedThisKick = new();
+
+    private void OnEnable() => _damagedThisKick.Clear();
+
     private void OnTriggerEnter2D(Collider2D other)
     {
+        // A mucous piece catches whoever kicks it and absorbs that kick: no
+        // damage, no push (GDD). Once per kick.
+        if (other.attachedRigidbody != null
+            && other.attachedRigidbody.TryGetComponent(out MocoPiece moco) && moco.IsActive)
+        {
+            if (_damagedThisKick.Add(moco)) moco.Catch(playerController);
+            return;
+        }
+
         SuperKickState superKick = null;
         bool superActive = playerController != null
             && playerController.TryGetComponent(out superKick)
@@ -21,6 +36,13 @@ public class KickCollider : MonoBehaviour
         {
             PlayerController victim = kickable as PlayerController;
             bool validVictim = victim != null && victim != playerController && victim.isOnGame;
+
+            // Stuck in moco: another chicken’s kick frees them without moving them (GDD).
+            if (validVictim && victim.TryGetComponent(out MocoStuckState stuck) && stuck.IsActive)
+            {
+                stuck.Release();
+                return;
+            }
 
             if (superActive && validVictim)
             {
@@ -52,6 +74,11 @@ public class KickCollider : MonoBehaviour
         }
         if(other.TryGetComponent(out IDamageable damageable))
         {
+            Object target = damageable is BlockDamageable block && block.Piece != null
+                ? block.Piece
+                : damageable as Object;
+            if (target != null && !_damagedThisKick.Add(target)) return;
+
             damageable.TakeDamage(superActive ? SuperKickState.BlockDamage : 1, playerController);
         }
     }

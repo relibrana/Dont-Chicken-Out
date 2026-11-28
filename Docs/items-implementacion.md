@@ -5,6 +5,18 @@
 > Falta: playtest de valores, sprites/VFX/SFX finales (todos los visuales son el sprite de la bomba tintado).
 > Fuente de diseño: doc del GD "Sistema de Ítems — Investigación y Candidatos".
 
+## Cambios de nov 2026 (alineado con el GDD de Obsidian)
+
+- **Hueco de ítem y botón propio** (`Player/PlayerItemSlot`): los ítems manuales (bomba, llanta, moco, POW, teleporte) ya **no sustituyen la pieza en la mano**: van a un hueco aparte y se usan con `UseItem` (RB/RT en mando, Q en Teclado1, / en Teclado2). Un solo ítem: si ya llevas uno y rompes otra caja, el nuevo se pierde. Se pierde al morir. El **icono** flota sobre la cabeza (`HoldableItem.Icon`, por defecto su sprite). Los automáticos siguen aplicándose al romper la caja.
+- **Asignación por tercios**: `ItemsPool.asset` tiene pesos por tercio de la cámara (tabla del GDD); el ítem se decide al romper la caja según el tercio de quien la rompe. El peso plano queda de respaldo.
+- **Bomba**: se queda **fija** donde choca (pieza, caja o pared) y carga ahí; rebota en pollitos y llantas en vuelo; la patada la **desliza** (rebota) y sigue cargando; fuera de cámara sin chocar explota a los 3,5 s. La explosión rompe piezas enteras, cajas (ítem perdido), llantas y bombas cargando (sin explotar); el metálico sobrevive (`Items/Throwing/ExplosionBlast`).
+- **Llanta**: collider ~2 bloques; rebote = **velocidad invertida** de quien llega; **se patea** (se desliza y se vuelve a fijar); solo la rompen explosión o yunque.
+- **Moco**: frames de `Item_MocoSplash`: 0 ítem, 1 en vuelo, 2-3 se llena, 4-9 bucle. Rebota en paredes, la patada lo **desvía**. Contra una pieza la vuelve **mocosa** (`MocoPiece`, overlay por bloque): atrapa al primero que la toca o la patea y absorbe esa patada. Liberarse: **salto o patada**, 5 pulsaciones, sin descarga; la patada de otro te suelta.
+- **Pollo metálico**: planea (cae ×2 más rápido), se le puede empujar (masa ×3), empuja piezas ×1,5, inmune a bomba/papa/yunque (el yunque lo rebota), parpadea el último segundo.
+- **Yunque**: rompe cajas, llantas y bombas a su paso; deja de afectar por debajo de la cámara.
+- **POW**: quien está sobre otro pollito se salva; el aturdido no planea.
+- **Teleporte**: sprite/icono = recorte `Item_TeleportPoof_Icon` (frame 1 del poof). Se encoge, **desaparece 0,6 s** (`goneSeconds`: sin física, nada lo toca ni lo mata, etiqueta e icono ocultos) y reaparece en el destino calculado al llegar.
+
 ## Arquitectura (resumen para el equipo)
 
 - **`ItemsPoolSO`** — pool con pesos por ítem (palanca "Distribución" del doc). La cápsula tira de aquí; sin asset asignado cae al azar uniforme viejo.
@@ -59,7 +71,7 @@ POW crea su propio canvas en runtime (placeholder hasta integrarlo a UIManager).
 
 ## Decisiones v1 — validar con los design leads
 
-1. **Activación al recoger**: no hay inventario ni botón de "usar ítem"; los estados/globales se activan al romper la cápsula (el timing = cuándo la pateas). **Teleporte y POW ya son la excepción (sep 2026): van a la mano y los activa el jugador.** Pendiente: ¿se lleva el mismo patrón al resto de instantáneos?
+1. **Resuelto (nov 2026):** hay hueco de ítem y botón propio (ver arriba). Los automáticos (súper patada, papa, metálico, doble salto, yunque) siguen activándose al romper la caja; teleporte y POW se guardan y se usan con el botón.
 2. **Apuntado v1 = dirección + ángulo fijo**: no existe input de apuntar (Move es 1D). ¿Se añade apuntado real (stick/8-way) al esquema de controles?
 3. **Resuelto (sep 2026): la bomba es lanzable**, como pedía el doc original y confirmó diseño. Se lanza igual que el moco y la mecha arranca en el lanzamiento, no al impactar (toggle `fuseStartsOnThrow` para probar la otra variante). No se queda clavada al chocar: sigue siendo un cuerpo físico pateable, que era su counterplay.
 4. Los ítems instantáneos **no sustituyen el bloque en mano** (antes la cápsula siempre lo sustituía).

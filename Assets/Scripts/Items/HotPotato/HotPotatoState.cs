@@ -35,6 +35,13 @@ public sealed class HotPotatoState : PlayerItemState
 
     private const float TransferImmunitySeconds = 0.5f;
 
+    // Kick pressed → hitbox open (animation event at 0.083 s) plus margin. If the
+    // fuse runs out inside it, the potato waits for that kick to land: a pass
+    // made in the last instant must count (bug report, nov 2026: the passer
+    // exploded although the kick had gone out in time).
+    private const float KickResolveWindow = 0.2f;
+    private bool _kickGraceUsed;
+
     protected override bool UsesTint => false;
 
     /// <summary>Seconds left on the shared timer. For the HUD once real UI exists.</summary>
@@ -83,6 +90,7 @@ public sealed class HotPotatoState : PlayerItemState
         _visualPrefab         = visualPrefab;
         _visualOffset         = visualOffset;
         _noTransferUntil      = Time.time + TransferImmunitySeconds;
+        _kickGraceUsed        = false;
 
         BeginState(remaining, Color.white);
     }
@@ -116,10 +124,23 @@ public sealed class HotPotatoState : PlayerItemState
     // get detonated a second time.
     protected override void OnStateExpired()
     {
+        // A kick already pressed but whose hitbox has not opened yet: give it
+        // the time to land. If it passes the potato, this state ends there and
+        // the receiver gets the (almost spent) clock; if not, it blows up after.
+        float sinceKick = Time.time - Controller.LastKickTime;
+        if (!_kickGraceUsed && sinceKick >= 0f && sinceKick < KickResolveWindow)
+        {
+            _kickGraceUsed = true;
+            Remaining      = KickResolveWindow - sinceKick;
+            return;
+        }
+
         HotPotatoVisual visual = TakeVisual();
         EndState();
         Explode(visual);
-        Controller.OnDeath();
+        // The metal chicken survives its own potato: it goes off around it (GDD).
+        if (!ExplosionBlast.IsMetal(Controller))
+            Controller.OnDeath();
     }
 
     /// <summary>
@@ -187,6 +208,9 @@ public sealed class HotPotatoState : PlayerItemState
 
         if (visual != null) visual.Detonate(origin);
         SimEvents.Raise(SimEvent.HotPotatoExploded, origin, this);
+
+        // Capsules (item lost), tires and charging bombs break too (GDD).
+        ExplosionBlast.BreakItems(origin, _explosionRadius, this);
 
         Collider2D[] hits = Physics2D.OverlapCircleAll(origin, _explosionRadius, _explosionLayers);
 

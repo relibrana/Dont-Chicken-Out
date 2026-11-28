@@ -311,7 +311,17 @@ PrefabInstance:
     - target: {fileID: 790791584509895225, guid: 081cb0f6fdce628449992c1748653f3d,
         type: 3}
       propertyPath: m_Name
-      value: Head
+      value: Headwear
+      objectReference: {fileID: 0}
+    - target: {fileID: -7473727035811138378, guid: 081cb0f6fdce628449992c1748653f3d,
+        type: 3}
+      propertyPath: m_Name
+      value: Eyes
+      objectReference: {fileID: 0}
+    - target: {fileID: -6979048337306774261, guid: 081cb0f6fdce628449992c1748653f3d,
+        type: 3}
+      propertyPath: m_Name
+      value: Beak
       objectReference: {fileID: 0}
     - target: {fileID: 790791584509895225, guid: 081cb0f6fdce628449992c1748653f3d,
         type: 3}
@@ -626,7 +636,7 @@ MonoBehaviour:
   m_CategoryHash: 7.1858105e-32
   m_labelHash: 1.091573e-24
   m_SpriteKey: 0
-  m_SpriteHash: 483417660
+  m_SpriteHash: 565767445
 --- !u!1 &1768509174322857352 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 5012702681050719525, guid: 081cb0f6fdce628449992c1748653f3d,
@@ -670,7 +680,7 @@ MonoBehaviour:
   m_CategoryHash: 0.00021001935
   m_labelHash: 1.091573e-24
   m_SpriteKey: 0
-  m_SpriteHash: 869992304
+  m_SpriteHash: 246658137
 --- !u!1 &2942891705827552203 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: -734945093249741978, guid: 081cb0f6fdce628449992c1748653f3d,
@@ -736,7 +746,7 @@ MonoBehaviour:
   m_CategoryHash: 6.201396e-37
   m_labelHash: 1.091573e-24
   m_SpriteKey: 0
-  m_SpriteHash: 451552361
+  m_SpriteHash: 662869824
 --- !u!1 &4773467873616672166 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: -6979048337306774261, guid: 081cb0f6fdce628449992c1748653f3d,
@@ -824,7 +834,7 @@ MonoBehaviour:
   m_CategoryHash: 0.000000005287861
   m_labelHash: 1.091573e-24
   m_SpriteKey: 0
-  m_SpriteHash: 903970085
+  m_SpriteHash: 143248908
 --- !u!1 &6332843925932409492 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 790791584509895225, guid: 081cb0f6fdce628449992c1748653f3d,

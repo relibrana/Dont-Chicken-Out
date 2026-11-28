@@ -5,9 +5,12 @@ public class PoolingManager : MonoBehaviour
 {
 
     public BlocksValuesSO blocksSO;
-    [SerializeField] private BlocksPoolSO easyBlocks;
-    [SerializeField] private BlocksPoolSO mediumBlocks;
-    [SerializeField] private BlocksPoolSO hardBlocks;
+    // Piece weights per third of the view (GDD, asignación de pieza, nov 2026):
+    // bottom = easy (T and I to climb, never a Dot), top = hard (mostly Dots,
+    // never an I). The field names are older than the thirds.
+    [SerializeField, Tooltip("Tercio inferior de la cámara.")] private BlocksPoolSO easyBlocks;
+    [SerializeField, Tooltip("Tercio medio de la cámara.")]    private BlocksPoolSO mediumBlocks;
+    [SerializeField, Tooltip("Tercio superior de la cámara.")] private BlocksPoolSO hardBlocks;
     [Tooltip("Pesos de aparición de cada ítem al romper una cápsula (palanca de Distribución). Si está vacío, la cápsula usa el azar uniforme sobre pooledItems.")]
     public ItemsPoolSO itemsPool;
     public List<PooledObject> pooledBlocks = new List<PooledObject>();
@@ -105,11 +108,10 @@ public class PoolingManager : MonoBehaviour
     }
 
 
-    public GameObject GetPooledBlock(Vector3 _spawnPosition, GameStatus playerGameRank)
+    /// <param name="viewThird">Third of the view the player is in: 0 bottom, 1 middle, 2 top (GameplayCamera.ViewThird).</param>
+    public GameObject GetPooledBlock(Vector3 _spawnPosition, int viewThird)
     {
-
-        BlocksPoolSO blocksPool = (playerGameRank == GameStatus.Winning) ? hardBlocks :
-                        (playerGameRank == GameStatus.Losing) ? easyBlocks : mediumBlocks;
+        BlocksPoolSO blocksPool = viewThird >= 2 ? hardBlocks : viewThird <= 0 ? easyBlocks : mediumBlocks;
         
         float totalPercentage = 0;
 
@@ -156,6 +158,16 @@ public class PoolingManager : MonoBehaviour
                 }
                 break;
             }
+        }
+
+        // A piece in a pool SO but not pre-pooled in the scene: give it a parent
+        // on the fly instead of a null ref mid-round (same as GetPooledItem).
+        if (pObject == null)
+        {
+            var parent = new GameObject(blockPrefab.ToString());
+            parent.transform.SetParent(transform, false);
+            blockList.Add(parent);
+            pObject = Instantiate(blockPrefab, parent.transform);
         }
 
 		pObject.SetActive(false);

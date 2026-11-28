@@ -41,12 +41,20 @@ public class ItemCapsule : MonoBehaviour, IDamageable
         Break(player);
     }
 
+    /// <summary>Broken by a blast or the anvil: nobody gets the item (GDD).</summary>
+    public void BreakLost()
+    {
+        if (!gameObject.activeInHierarchy) return;
+        SimEvents.Raise(SimEvent.CapsuleHit, transform.position, this);
+        gameObject.SetActive(false);
+    }
+
     private void Break(PlayerController player)
     {
         PoolingManager poolManager = GameManager.instance.poolManager;
 
         GameObject rolledPrefab = poolManager.itemsPool != null
-            ? poolManager.itemsPool.GetWeightedPrefab()
+            ? poolManager.itemsPool.GetWeightedPrefab(GameplayCamera.ViewThird(player.transform.position.y))
             : null;
 
         GameObject randomItem = rolledPrefab != null
@@ -60,8 +68,11 @@ public class ItemCapsule : MonoBehaviour, IDamageable
         }
         else
         {
-            HoldableItem newBlock = randomItem.GetComponent<HoldableItem>();
-            player.SwapBlock(newBlock);
+            // GDD: manual items go to the item slot, apart from the piece in
+            // hand. With the slot taken the capsule still breaks and the new
+            // item is lost.
+            HoldableItem item = randomItem.GetComponent<HoldableItem>();
+            player.StoreItem(item);
         }
 
         gameObject.SetActive(false);

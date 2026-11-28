@@ -2287,21 +2287,25 @@ MonoBehaviour:
     - {fileID: 745493794}
     - {fileID: 1724988153}
     - {fileID: 31294783}
+    portrait: {fileID: 0}
   - root: {fileID: 45978613}
     eggs:
     - {fileID: 884311979}
     - {fileID: 437045354}
     - {fileID: 441595182}
+    portrait: {fileID: 0}
   - root: {fileID: 558635229}
     eggs:
     - {fileID: 583220422}
     - {fileID: 128451924}
     - {fileID: 1876584090}
+    portrait: {fileID: 0}
   - root: {fileID: 1981925434}
     eggs:
     - {fileID: 108261942}
     - {fileID: 193841137}
     - {fileID: 1679798681}
+    portrait: {fileID: 0}
   filledEgg: {fileID: 21300000, guid: d9bdadbfc3a40ac4cb41d85ff2895657, type: 3}
   fade: 0.5
 --- !u!1 &401772970
@@ -13794,6 +13798,11 @@ PrefabInstance:
         type: 3}
       propertyPath: m_LocalPosition.x
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8689128232163335665, guid: 1ecb7d11c58c34736a82172b84d07078,
+        type: 3}
+      propertyPath: m_LocalPosition.y
+      value: -9.25
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []

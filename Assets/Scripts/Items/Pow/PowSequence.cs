@@ -232,7 +232,8 @@ public sealed class PowSequence : MonoBehaviour
         {
             if (!player.isOnGame) continue;
 
-            if (!player.IsGrounded)
+            // In the air, or standing on another chicken (a rival's head is not ground, GDD).
+            if (!player.IsGrounded || player.IsOnPlayer)
             {
                 // Esquivó saltando: sólo un toque de vibración para que note
                 // que la onda pasó por debajo.

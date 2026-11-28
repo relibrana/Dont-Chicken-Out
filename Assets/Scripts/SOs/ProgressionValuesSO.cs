@@ -135,6 +135,14 @@ public class ProgressionValuesSO : ScriptableObject
              + "Player follow is unaffected — a player above the view is never left behind.")]
     public float cameraPauseDuration = 1.2f;
 
+    [Header("Camera slow-down while the ribbon is up (GDD, nov 2026)")]
+    [Tooltip("Mientras el listón está a la vista la cámara se frena hasta este factor de su velocidad. Nunca 0: "
+             + "da tiempo a los de atrás sin que esperar bajo el listón sea más cómodo que romperlo.")]
+    [Range(0.05f, 1f)] public float ribbonCameraMinFactor = 0.3f;
+
+    [Tooltip("Segundos que tarda la cámara en frenarse hasta ese factor desde que aparece el listón.")]
+    [Min(0f)] public float ribbonCameraSlowdownSeconds = 2f;
+
     // ── Feedback ──────────────────────────────────────────────────────────────
 
     [Header("Audio (ids from AudioManager)")]

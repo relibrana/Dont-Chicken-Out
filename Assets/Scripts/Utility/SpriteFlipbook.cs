@@ -74,6 +74,9 @@ public sealed class SpriteFlipbook : MonoBehaviour
         bool any = false;
         foreach (SpriteRenderer sr in root.GetComponentsInChildren<SpriteRenderer>())
         {
+            // Only what is actually drawn: hidden parts (forceRenderingOff on the
+            // new rig, switched-off renderers) may sit on another layer.
+            if (!sr.enabled || sr.forceRenderingOff) continue;
             if (!any) { layer = sr.sortingLayerID; any = true; }
             if (sr.sortingLayerID != layer) continue;
             min = Mathf.Min(min, sr.sortingOrder);

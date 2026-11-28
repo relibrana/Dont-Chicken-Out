@@ -129,6 +129,14 @@ public sealed class PlayerController : MonoBehaviour, IKickable
     private bool[]     _rendererWasEnabled;
 
     private bool  _isGliding;
+    private float _nextKickTime;
+
+    /// <summary>
+    /// When the last kick was pressed. The hitbox opens later, on an animation
+    /// event (Anim_Kick, 0.083 s), so a kick can be "in the air" for a moment:
+    /// the hot potato waits for it before going off.
+    /// </summary>
+    public float LastKickTime { get; private set; } = float.NegativeInfinity;
     private float _flapTimer;
 
     // ── Input / scheme ────────────────────────────────────────────────────────
@@ -218,6 +226,8 @@ public sealed class PlayerController : MonoBehaviour, IKickable
         _inputHandler.OnKickPressed       += HandleKick;
         _inputHandler.OnMovePressed       += HandleMovePress;
         _inputHandler.OnPlaceBlockPressed += HandlePlaceBlock;
+        _inputHandler.OnUseItemPressed    += HandleUseItem;
+        _inputHandler.OnJumpPressed       += HandleJumpPress;
         _inputHandler.OnCluckPressed      += HandleCluck;
         _inputHandler.OnPausePressed      += HandlePause;
         _inputHandler.OnBackUIPressed     += HandleBackUI;
@@ -230,6 +240,8 @@ public sealed class PlayerController : MonoBehaviour, IKickable
         _inputHandler.OnKickPressed       -= HandleKick;
         _inputHandler.OnMovePressed       -= HandleMovePress;
         _inputHandler.OnPlaceBlockPressed -= HandlePlaceBlock;
+        _inputHandler.OnUseItemPressed    -= HandleUseItem;
+        _inputHandler.OnJumpPressed       -= HandleJumpPress;
         _inputHandler.OnCluckPressed      -= HandleCluck;
         _inputHandler.OnPausePressed      -= HandlePause;
         _inputHandler.OnBackUIPressed     -= HandleBackUI;
@@ -262,6 +274,11 @@ public sealed class PlayerController : MonoBehaviour, IKickable
         }
 
         if (IsMovementLocked) return;
+
+        // GDD (patear): a minimum time between two kicks of the same chicken.
+        if (Time.time < _nextKickTime) return;
+        _nextKickTime = Time.time + valuesSO.kickCooldown;
+        LastKickTime  = Time.time;
 
         animController.PlayKick();
 
@@ -314,6 +331,55 @@ public sealed class PlayerController : MonoBehaviour, IKickable
 
         _blockHandler.TryPlaceBlock();
     }
+
+    /// <summary>Stuck in moco, a jump press is a struggle press like a kick (GDD: salto o patada).</summary>
+    private void HandleJumpPress()
+    {
+        if (IsOnPause() || !IsAlive) return;
+        if (TryGetComponent(out MocoStuckState stuck) && stuck.IsActive)
+            stuck.OnStrugglePress(fromKick: true, FacingSign);
+    }
+
+    /// <summary>
+    /// Own item button (GDD): uses the item in the slot, whenever the player
+    /// wants, unless something stops them acting (stunned, stuck in moco).
+    /// </summary>
+    private void HandleUseItem()
+    {
+        if (IsOnPause()) return;
+        if (!isOnGame || !IsAlive) return;
+        if (IsMovementLocked) return;
+        if (GameManager.instance != null && !GameManager.instance.IsRoundLive) return;
+
+        ItemSlot.TryUse(GetBlockPosition(), FacingSign);
+    }
+
+    /// <summary>
+    /// Round reset: the drawing goes back to a clean idle chicken (no stun
+    /// stars, no metal, normal size), whatever state the last round left.
+    /// </summary>
+    public void ResetVisuals()
+    {
+        if (animController != null) animController.ResetToIdle();
+
+        ChickenSkin skin = Skin;
+        if (skin != null) skin.SetMetal(false);
+    }
+
+    /// <summary>The manual item the chicken carries (one at a time).</summary>
+    public PlayerItemSlot ItemSlot
+    {
+        get
+        {
+            if (_itemSlot == null && !TryGetComponent(out _itemSlot))
+                _itemSlot = gameObject.AddComponent<PlayerItemSlot>();
+            return _itemSlot;
+        }
+    }
+    private PlayerItemSlot _itemSlot;
+
+    /// <summary>Called by ItemCapsule: a manual item goes to the slot. False if the slot was taken (item lost).</summary>
+    public bool StoreItem(HoldableItem item) => ItemSlot.TryStore(item);
 
     private void HandleCluck()
     {
@@ -458,6 +524,19 @@ public sealed class PlayerController : MonoBehaviour, IKickable
         SetRenderersVisible(alive);
     }
 
+    /// <summary>
+    /// Between leaving and arriving in a teleport (nov 2026): still alive, but
+    /// out of the world — no physics, so nothing can kick, hit or kill it, and
+    /// its tag and item icon hide. The rig is hidden by TeleportState itself.
+    /// </summary>
+    public bool InTransit { get; private set; }
+
+    public void SetInTransit(bool inTransit)
+    {
+        InTransit = inTransit;
+        if (IsAlive) _rb.simulated = !inTransit;
+    }
+
     private void SetRenderersVisible(bool visible)
     {
         if (!visible)
@@ -487,9 +566,9 @@ public sealed class PlayerController : MonoBehaviour, IKickable
     /// Applies an external impulse to the player (explosion, spring, etc.).
     /// Optionally plays hit animations if treated as a kick.
     /// </summary>
-    public void AddImpulse(Vector2 impulse, bool isKick = false, bool resetSpeed = false)
+    public void AddImpulse(Vector2 impulse, bool isKick = false, bool resetSpeed = false, bool ignoreImmunity = false)
     {
-        if (ImpulseImmune) return;
+        if (ImpulseImmune && !ignoreImmunity) return;
 
         _movement.AddImpulse(impulse, resetSpeed);
 
@@ -599,7 +678,12 @@ public sealed class PlayerController : MonoBehaviour, IKickable
     }
 
     /// <summary>Drops the currently held block. Called on death and reset.</summary>
-    public void DropBlock() => _blockHandler.DropBlock();
+    public void DropBlock()
+    {
+        _blockHandler.DropBlock();
+        // The item is lost with the chicken (GDD) and never crosses rounds.
+        if (_itemSlot != null) _itemSlot.Clear();
+    }
 
     /// <summary>
     /// Discards the current block and assigns a new one.
@@ -622,6 +706,12 @@ public sealed class PlayerController : MonoBehaviour, IKickable
 
     /// <summary>Delegated from PlayerMovement. Used by CinemachineVerticalRig2D.</summary>
     public bool IsGrounded => _movement.IsGrounded;
+
+    /// <summary>Velocity of the last tick (before any contact this tick). Used by the tire to send you back.</summary>
+    public Vector2 Velocity => _movement.CurrentState.velocity;
+
+    /// <summary>Standing only on other chickens. Delegated from PlayerMovement.</summary>
+    public bool IsOnPlayer => _movement.IsOnPlayer;
 
     // ── Editor ────────────────────────────────────────────────────────────────
 

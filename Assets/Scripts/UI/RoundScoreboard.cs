@@ -11,6 +11,10 @@ using UnityEngine.UI;
 /// cloned (rows are HorizontalLayoutGroups) and every egg shrinks to keep the
 /// row's width.
 ///
+/// Each row shows the player's chicken as a live portrait (ChickenPortraitStudio,
+/// nov 2026): the new rig in that player's colour, idling. It replaces the old
+/// still image of the row, which stays in the scene but hidden.
+///
 /// Lives on the PlayersPoints panel of a level. Rows are in slot order (P1..P4).
 /// Wired by Tools > Don't Chicken Out > Limpiar nivel.
 /// </summary>
@@ -23,6 +27,9 @@ public sealed class RoundScoreboard : MonoBehaviour
         [Tooltip("Shown only when that player is in the match.")]
         public GameObject root;
         public Image[]    eggs;
+
+        [Tooltip("Old still image of the chicken. Empty = the first Image of the row that is not an egg.")]
+        public Image portrait;
     }
 
     [SerializeField] private Row[]  rows = new Row[4];
@@ -59,6 +66,8 @@ public sealed class RoundScoreboard : MonoBehaviour
             if (row.root != null) row.root.SetActive(player != null);
             if (player == null) continue;
 
+            ShowPortrait(row, player, r);
+
             EnsureEggs(r, roundsToWin);
             for (int i = 0; i < row.eggs.Length; i++)
             {
@@ -66,6 +75,8 @@ public sealed class RoundScoreboard : MonoBehaviour
                 row.eggs[i].sprite = i < player.roundsWon ? filledEgg : _emptyEggs[r][i];
             }
         }
+
+        ChickenPortraitStudio.SetLive(true);
 
         _fadeTween?.Kill();
         _fadeTween = _group.DOFade(1f, fade).SetUpdate(true);
@@ -77,7 +88,50 @@ public sealed class RoundScoreboard : MonoBehaviour
 
         _fadeTween?.Kill();
         _fadeTween = _group.DOFade(0f, fade).SetUpdate(true)
-                           .OnComplete(() => gameObject.SetActive(false));
+                           .OnComplete(() =>
+                           {
+                               gameObject.SetActive(false);
+                               ChickenPortraitStudio.SetLive(false);
+                           });
+    }
+
+    /// <summary>
+    /// Hides the row's old still chicken and shows a live portrait of the new
+    /// rig in its place (a RawImage child filling the same rect).
+    /// </summary>
+    private void ShowPortrait(Row row, PlayerController player, int slot)
+    {
+        Image still = row.portrait != null ? row.portrait : FindStill(row);
+        if (still == null) return;
+
+        RenderTexture texture = ChickenPortraitStudio.PortraitOf(player, slot);
+        if (texture == null) return;
+
+        still.enabled = false;
+
+        Transform existing = still.transform.Find("ChickenPortrait");
+        RawImage raw = existing != null ? existing.GetComponent<RawImage>() : null;
+        if (raw == null)
+        {
+            var go = new GameObject("ChickenPortrait", typeof(RectTransform), typeof(RawImage));
+            go.transform.SetParent(still.transform, false);
+            go.transform.SetAsFirstSibling();
+            var rt = (RectTransform)go.transform;
+            rt.anchorMin = Vector2.zero;
+            rt.anchorMax = Vector2.one;
+            rt.offsetMin = rt.offsetMax = Vector2.zero;
+            raw = go.GetComponent<RawImage>();
+            raw.raycastTarget = false;
+        }
+        raw.texture = texture;
+    }
+
+    private static Image FindStill(Row row)
+    {
+        if (row.root == null) return null;
+        foreach (Image image in row.root.GetComponentsInChildren<Image>(true))
+            if (row.eggs == null || Array.IndexOf(row.eggs, image) < 0) return image;
+        return null;
     }
 
     // Also from Show(): the panel may start inactive in the scene, so Awake

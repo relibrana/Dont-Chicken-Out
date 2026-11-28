@@ -143,7 +143,7 @@ public sealed class PlayerNameTag : MonoBehaviour
 
         // Hidden while the player is out of the round: a tag floating over a
         // corpse is noise, and the chicken is not on screen anyway.
-        bool visible = _owner.isOnGame && _owner.gameObject.activeInHierarchy;
+        bool visible = _owner.isOnGame && _owner.gameObject.activeInHierarchy && !_owner.InTransit;
 
         if (_label.enabled != visible)
         {

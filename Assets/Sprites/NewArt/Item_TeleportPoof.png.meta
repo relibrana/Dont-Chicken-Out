@@ -245,6 +245,28 @@ TextureImporter:
       indices: 
       edges: []
       weights: []
+    - serializedVersion: 2
+      name: Item_TeleportPoof_Icon
+      rect:
+        serializedVersion: 2
+        x: 327
+        y: 64
+        width: 118
+        height: 133
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 5c3f9d2a7e1b4f60a8d4c2e9b7f13a55
+      internalID: 917384225
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
     outline: []
     customData: 
     physicsShape: []
@@ -266,6 +288,7 @@ TextureImporter:
       Item_TeleportPoof_2: 1290108756
       Item_TeleportPoof_3: -1492542533
       Item_TeleportPoof_4: 103417169
+      Item_TeleportPoof_Icon: 917384225
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

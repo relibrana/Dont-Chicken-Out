@@ -17,6 +17,19 @@ public sealed class PlayerBlockHandler : MonoBehaviour
     [SerializeField] private LayerMask layersToDetect;
     [SerializeField] private float blockDetectDistance = 0.1f;
 
+    [Header("Empujar (GDD)")]
+    [SerializeField, Min(0f), Tooltip("Cuánto hay que insistir contra una pieza antes de que empiece el empuje. Muy corto: lo justo para no empujar sin querer.")]
+    private float pushThreshold = 0.12f;
+
+    [SerializeField, Min(0f), Tooltip("Velocidad a la que se mueve lo empujado (escala con la variable Empuje de la progresión).")]
+    private float pushSpeed = 3f;
+
+    [SerializeField, Min(1f), Tooltip("El pollo metálico empuja piezas más rápido (GDD).")]
+    private float metalPushMultiplier = 1.5f;
+
+    private float _pushInsist;
+    private PlayerInputHandler _inputHandler;
+
     // ── Public API ────────────────────────────────────────────────────────────
 
     public HoldableItem CurrentBlock { get; private set; }
@@ -67,8 +80,9 @@ public sealed class PlayerBlockHandler : MonoBehaviour
 
     private void Awake()
     {
-        _movement   = GetComponent<PlayerMovement>();
-        _controller = GetComponent<PlayerController>();
+        _movement     = GetComponent<PlayerMovement>();
+        _controller   = GetComponent<PlayerController>();
+        _inputHandler = GetComponent<PlayerInputHandler>();
     }
 
     private void Update()
@@ -87,6 +101,8 @@ public sealed class PlayerBlockHandler : MonoBehaviour
     private void FixedUpdate()
     {
         float dt = Time.fixedDeltaTime;
+
+        TickPush(dt);
 
         if (_generationPending)
         {
@@ -194,7 +210,8 @@ public sealed class PlayerBlockHandler : MonoBehaviour
     private void FetchNewBlock()
     {
         PoolingManager poolManager = GameManager.instance.poolManager;
-        GameObject randomBlock     = poolManager.GetPooledBlock(blockPosition.position, _controller.GameRank);
+        int third                  = GameplayCamera.ViewThird(transform.position.y);
+        GameObject randomBlock     = poolManager.GetPooledBlock(blockPosition.position, third);
 
         CurrentBlock = randomBlock.GetComponent<HoldableItem>();
         CurrentBlock.SetOwner(_controller);
@@ -228,7 +245,9 @@ public sealed class PlayerBlockHandler : MonoBehaviour
             return;
         }
 
-        IsBlockUnavailable = !_movement.IsGrounded;
+        // GDD (colocar pieza): only still and supported. Walking or sliding to a
+        // stop shows the preview red and placing does nothing.
+        IsBlockUnavailable = !_movement.IsGrounded || _movement.SpeedX > StillSpeed;
 
         if (!IsBlockUnavailable)
         {
@@ -248,6 +267,9 @@ public sealed class PlayerBlockHandler : MonoBehaviour
     // Runs every frame for every sub-block of the held piece: one reused buffer
     // instead of a new List per call (that was ~16 lists a frame with 4 players).
     private readonly List<Collider2D> _overlapResults = new();
+
+    /// <summary>Horizontal speed under which the chicken counts as still for placing.</summary>
+    private const float StillSpeed = 0.25f;
 
     private bool CheckOverlapping(Collider2D collider)
     {
@@ -281,6 +303,44 @@ public sealed class PlayerBlockHandler : MonoBehaviour
         );
 
         _animController.SetTouchingBlock(hit.collider != null);
+    }
+
+    /// <summary>
+    /// GDD (empujar): walking into a placed piece and holding the direction a
+    /// moment turns into a push. Renewed every tick while the player insists,
+    /// so it stops as soon as they let go or turn round.
+    /// </summary>
+    private void TickPush(float dt)
+    {
+        if (_controller == null || _inputHandler == null || !_controller.isOnGame || _controller.IsMovementLocked)
+        {
+            _pushInsist = 0f;
+            return;
+        }
+
+        float move   = _inputHandler.CurrentInput.moveDirection;
+        float facing = Mathf.Sign(transform.localScale.x);
+        if (Mathf.Abs(move) < 0.5f || Mathf.Sign(move) != facing)
+        {
+            _pushInsist = 0f;
+            return;
+        }
+
+        RaycastHit2D hit = Physics2D.Raycast(blockCheckPoint.position, Vector2.right * facing, blockDetectDistance, blockLayer);
+        BlockScript piece = hit.collider != null ? hit.collider.GetComponentInParent<BlockScript>() : null;
+        if (piece == null || !piece.IsPlacedPiece)
+        {
+            _pushInsist = 0f;
+            return;
+        }
+
+        _pushInsist += dt;
+        if (_pushInsist < pushThreshold) return;
+
+        float speed = pushSpeed * ProgressionManager.Get(ProgressionVar.Push);
+        if (_controller.TryGetComponent(out MetalChickenState metal) && metal.IsActive) speed *= metalPushMultiplier;
+
+        BlockScript.PushGroup(piece, facing, speed, dt * 2.5f);
     }
 
     /// <summary>Returns the world position where a new block should be spawned.</summary>

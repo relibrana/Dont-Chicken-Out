@@ -83,12 +83,28 @@ public sealed class ProgressionManager : MonoBehaviour
     {
         get
         {
-            if (_recoveryTimer <= 0f || _recoveryDuration <= 0f) return 1f;
+            float factor = 1f;
+            if (_recoveryTimer > 0f && _recoveryDuration > 0f)
+            {
+                float t = 1f - Mathf.Clamp01(_recoveryTimer / _recoveryDuration);
+                factor = Mathf.SmoothStep(0f, 1f, t);
+            }
 
-            float t = 1f - Mathf.Clamp01(_recoveryTimer / _recoveryDuration);
-            return Mathf.SmoothStep(0f, 1f, t);
+            // GDD: with the ribbon in view the camera eases down to a crawl
+            // (never 0), so the ones behind can catch up before it is crossed.
+            if (RibbonIsUp && values != null)
+            {
+                float slow = values.ribbonCameraSlowdownSeconds > 0f
+                    ? Mathf.Clamp01(_ribbonUpTime / values.ribbonCameraSlowdownSeconds)
+                    : 1f;
+                factor *= Mathf.Lerp(1f, values.ribbonCameraMinFactor, Mathf.SmoothStep(0f, 1f, slow));
+            }
+            return factor;
         }
     }
+
+    // Seconds since the current ribbon appeared (camera slow-down).
+    private float _ribbonUpTime;
 
     /// <summary>Fires with the new phase right after the scalars are applied.</summary>
     public event Action<int> OnPhaseChanged;
@@ -161,6 +177,7 @@ public sealed class ProgressionManager : MonoBehaviour
 
         if (RibbonIsUp)
         {
+            _ribbonUpTime += deltaTime;
             CheckRibbonSafetyNet();
             return; // Timer stays frozen until the ribbon is broken (doc §2.3).
         }
@@ -263,6 +280,7 @@ public sealed class ProgressionManager : MonoBehaviour
 
     private void SpawnRibbon()
     {
+        _ribbonUpTime = 0f;
         if (!isAuthority || values == null) return;
 
         // Without a camera the spawn height would be meaningless and the ribbon

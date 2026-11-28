@@ -89,6 +89,10 @@ Para limpiar una escena que aún los tenga y conectar el marcador: **Tools > Don
 accesorio), listo para un `[Networked]` de Fusion (`fusion2-integracion.md` §4.1). Hoy siempre es el default: la
 personalización está bloqueada y el color lo da el cuarto.
 
+## Ítems de prueba (solo editor)
+
+En la pantalla de **Reglas**, al darle Play en el editor, sale a la derecha un panel con los ítems de `ItemsPool.asset` (`Utility/ItemTestFilter`): casilla por ítem, **Solo** deja uno, **Todos** vuelve a lo normal. Se maneja con el ratón y se guarda entre sesiones (EditorPrefs). Con algo filtrado, un aviso amarillo abajo a la izquierda lo recuerda en todas las escenas. Las cajas siguen el peso del tercio entre los permitidos; si ninguno tiene peso en ese tercio, salen al azar entre ellos. En builds no existe.
+
 ## Pendiente / abierto
 
 - **Arte:** ya no hay cuadros por defecto (nov 2026, tablas del menú). Falta un sprite de panel propio para las ventanas

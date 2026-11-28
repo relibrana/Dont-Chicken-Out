@@ -7,7 +7,11 @@ using UnityEngine;
 /// input. It sticks where it first lands — pushing the player it hits, if
 /// any — and stays there for the whole round as a trampoline that works for
 /// everyone. Keeps the original disc's bounce feel and squash animation.
-/// Once stuck it is immovable: kicks no longer shove it around.
+/// GDD (nov 2026): about 2x2 blocks; whoever hits it is sent back the way
+/// they came (their whole velocity is reversed); pieces just rest on it. A
+/// kick slides it (it bounces off walls and pieces, pushes chickens, and what
+/// sat on it loses its support) and it sticks again where it stops. Only a
+/// blast or the anvil break it.
 /// Named SpringDisc until oct 2026.
 /// </summary>
 public class Tire : ThrowableItem
@@ -31,15 +35,66 @@ public class Tire : ThrowableItem
     private Sequence squashAnimation;
     private Vector3 spriteBaseScale;
 
+    [Header("Patada (GDD)")]
+    [SerializeField, Min(0f), Tooltip("Fracción de la patada que la desliza.")]
+    private float kickPushScale = 0.45f;
+
+    [SerializeField, Min(0f), Tooltip("Rozamiento mientras se desliza.")]
+    private float slideDamping = 3f;
+
+    [SerializeField, Min(0.01f), Tooltip("Por debajo de esta velocidad se vuelve a quedar fija.")]
+    private float refixSpeed = 0.35f;
+
     private bool _stuck;
+    private bool _sliding;
+    private PhysicsMaterial2D _slideMaterial;
 
     void Awake()
     {
         spriteBaseScale = spriteRenderer.transform.localScale;
+
+        if (TryGetComponent(out KickResponse kick))
+            kick.KickOverride = OnKicked;
+
+        _slideMaterial = new PhysicsMaterial2D("TireSlide") { bounciness = 0.6f, friction = 0f };
+    }
+
+    private void FixedUpdate()
+    {
+        if (_sliding && rb2d.linearVelocity.magnitude < refixSpeed)
+            Stick();
+    }
+
+    /// <summary>Broken by a blast or the anvil (the only things that can, GDD).</summary>
+    public void Break()
+    {
+        if (!Launched && !_stuck) return; // still waiting in a slot
+        gameObject.SetActive(false);
+    }
+
+    private bool OnKicked(Vector2 impulse)
+    {
+        if (!_stuck && !_sliding) return false; // in flight: as usual
+
+        _stuck   = false;
+        _sliding = true;
+
+        rb2d.bodyType      = RigidbodyType2D.Dynamic;
+        rb2d.gravityScale  = 0f;
+        rb2d.linearDamping = slideDamping;
+        foreach (Collider2D col in colliders)
+            if (col != null) col.sharedMaterial = _slideMaterial;
+
+        rb2d.linearVelocity = new Vector2(impulse.x * kickPushScale, 0f);
+        return true;
     }
 
     protected override void OnCollisionEnter2D(Collision2D collision)
     {
+        // Sliding after a kick: the physics bounces it off walls and pieces and
+        // shoves chickens; it sticks again when it slows down (FixedUpdate).
+        if (_sliding) return;
+
         if (!_stuck)
         {
             base.OnCollisionEnter2D(collision);
@@ -64,10 +119,13 @@ public class Tire : ThrowableItem
 
     private void Stick()
     {
-        _stuck = true;
+        _stuck   = true;
+        _sliding = false;
 
         rb2d.linearVelocity = Vector2.zero;
         rb2d.bodyType       = RigidbodyType2D.Static;
+        foreach (Collider2D col in colliders)
+            if (col != null) col.sharedMaterial = null;
     }
 
     private void Bounce(Collision2D collision)
@@ -78,18 +136,37 @@ public class Tire : ThrowableItem
         PlayerController player = collision.gameObject.GetComponent<PlayerController>();
         if (rb == null || player == null) return;
 
-        Vector2 direction = ((Vector2)(collision.gameObject.transform.position - spriteRenderer.transform.position)).normalized;
-        player.AddImpulse(direction * bounceForce, resetSpeed: true);
+        player.AddImpulse(BounceVelocity(player.Velocity, collision.gameObject.transform.position), resetSpeed: true);
 
         SimEvents.Raise(SimEvent.TireBounced, transform.position, this);
 
         TriggerAnimation();
     }
 
+    /// <summary>
+    /// GDD: back the way it came, the whole velocity reversed (running right
+    /// onto it sends you up and left). Never weaker than the tire’s own kick,
+    /// so a slow touch still bounces; standing still on it sends you away
+    /// from its centre.
+    /// </summary>
+    public Vector2 BounceVelocity(Vector2 incoming, Vector2 hitterPosition)
+    {
+        float minimum = bounceForce.magnitude;
+        Vector2 back  = -incoming;
+
+        if (back.sqrMagnitude < 0.01f)
+            back = ((Vector2)hitterPosition - (Vector2)spriteRenderer.transform.position).normalized * minimum;
+        else if (back.magnitude < minimum)
+            back = back.normalized * minimum;
+
+        return back;
+    }
+
     protected override void OnDisable()
     {
         base.OnDisable();
-        _stuck = false;
+        _stuck   = false;
+        _sliding = false;
 
         // Pooled: never come back squashed.
         squashAnimation?.Kill();

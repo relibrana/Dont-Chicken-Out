@@ -18,11 +18,8 @@ public enum ProgressionVar
     BlockFall = 2,
 
     /// <summary>
-    /// NOT CONSUMED BY ANYTHING, on purpose.
-    /// Pushing is the player walking into a block — there is no push force to
-    /// scale, so push already accelerates through LateralSpeed. Kept so the
-    /// seven variables of the design doc stay visible and mapped one to one.
-    /// Side effect: the doc's +7 for push is really the lateral +5.
+    /// Push speed (nov 2026, GDD empujar): how fast a pushed piece moves, and
+    /// how far a kick slides it. Consumed by PlayerBlockHandler and BlockScript.
     /// </summary>
     Push = 3,
 

@@ -1,10 +1,12 @@
 using UnityEngine;
 
 /// <summary>
-/// Attached to each individual sub-block child of a BlockScript.
-/// Handles its own HP, color feedback (white → soft red), and death.
-/// Notifies the parent BlockScript when it dies so the parent can
-/// check whether all children are gone and return itself to the pool.
+/// Attached to each individual sub-block child of a BlockScript. Since nov
+/// 2026 the life is the whole piece's (GDD): hits are forwarded to the parent
+/// BlockScript, which breaks every block at once at zero. A block with no
+/// parent piece keeps its own HP, as before.
+/// Notifies the parent BlockScript when it leaves so the parent can check
+/// whether all children are gone and return itself to the pool.
 /// Reset on Awake and OnDisable ensures pool reuse is clean.
 /// </summary>
 public sealed class BlockDamageable : MonoBehaviour, IDamageable
@@ -44,9 +46,18 @@ public sealed class BlockDamageable : MonoBehaviour, IDamageable
 
     // ── IDamageable ───────────────────────────────────────────────────────────
 
+    /// <summary>The piece this block belongs to (null for a loose block).</summary>
+    public BlockScript Piece => _parentBlock;
+
     public void TakeDamage(int amount, PlayerController player)
     {
         if (amount <= 0 || _currentLife <= 0) return;
+
+        if (_parentBlock != null)
+        {
+            _parentBlock.TakeHit(amount, player);
+            return;
+        }
 
         _currentLife -= amount;
 
@@ -96,6 +107,12 @@ public sealed class BlockDamageable : MonoBehaviour, IDamageable
         _spriteRenderer.enabled = true;
         var col = GetComponent<Collider2D>();
         if (col != null) col.enabled = true;
+    }
+
+    /// <summary>Damage tint set by the piece (its life, not this block's).</summary>
+    public void SetTint(Color tint)
+    {
+        if (_currentLife > 0) _spriteRenderer.color = tint;
     }
 
     private void RefreshColor()

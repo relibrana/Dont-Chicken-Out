@@ -20,7 +20,7 @@ public sealed class HotPotatoPickup : MonoBehaviour, IInstantItem
     private float explosionImpulse = 60f;
 
     [SerializeField, Min(0), Tooltip("Daño a los sub-bloques dentro del radio.")]
-    private int explosionBlockDamage = 3;
+    private int explosionBlockDamage = 999; // GDD: the blast breaks every piece it touches whole
 
     [SerializeField, Tooltip("Capas afectadas por la explosión (jugadores y bloques).")]
     private LayerMask explosionLayers = ~0;

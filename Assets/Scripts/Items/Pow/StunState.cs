@@ -23,6 +23,7 @@ public sealed class StunState : PlayerItemState
         // Sin esto el pollo sigue deslizándose por la deceleración normal y no
         // se lee como aturdido, se lee como que patina.
         Movement.StopHorizontal();
+        Movement.GlideLocks++; // GDD: kicked while stunned flies off without gliding
 
         KeepStunned();
     }
@@ -38,6 +39,7 @@ public sealed class StunState : PlayerItemState
     protected override void OnStateEnded()
     {
         Controller.PopMovementLock();
+        Movement.GlideLocks = Mathf.Max(0, Movement.GlideLocks - 1);
         PlayerAnimController anim = Controller.AnimController;
         if (anim != null) anim.EndStun();
     }

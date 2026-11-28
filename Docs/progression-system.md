@@ -8,6 +8,8 @@ audio.
 
 ## 1. Qué hace
 
+> **Nov 2026:** con el listón a la vista la cámara se frena hasta `ribbonCameraMinFactor` (30 %) en `ribbonCameraSlowdownSeconds` (2 s), nunca a 0. La variable **Empuje** ya se consume: velocidad del empuje de piezas y del deslizamiento por patada (`PlayerBlockHandler.pushSpeed`, `BlockScript.kickSlideSpeed`).
+
 Un cronómetro corre durante la ronda. Al llegar a cero aparece un **listón** anclado al mundo a
 una distancia fija por encima de la vista; el cronómetro se congela. El **primer jugador que lo
 toca** lo rompe, y la rotura es lo que aplica la fase siguiente: se recalculan los escalares, la

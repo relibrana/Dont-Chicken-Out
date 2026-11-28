@@ -13,6 +13,12 @@ public class HoldableItem : MonoBehaviour
 	[HideInInspector] public bool overlapping = false;
     public List<SpriteRenderer> spriteRenderers = new();
 
+	[Tooltip("Icono sobre la cabeza mientras el ítem espera en el hueco (PlayerItemSlot). Vacío = el sprite del propio ítem.")]
+	[SerializeField] private Sprite icon;
+
+	/// <summary>What the item looks like over its carrier's head.</summary>
+	public Sprite Icon => icon != null ? icon : spriteRenderers.Count > 0 && spriteRenderers[0] != null ? spriteRenderers[0].sprite : null;
+
 	/// <summary>Player currently holding (or who last held) this item. Set by PlayerBlockHandler.</summary>
 	public PlayerController Owner { get; private set; }
 

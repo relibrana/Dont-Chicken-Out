@@ -13,9 +13,11 @@ MonoBehaviour:
   m_Name: EasyBlocks
   m_EditorClassIdentifier: 
   blocks:
-  - prefab: {fileID: 1777092656929224787, guid: 6431cc751e26c4ca494192f14e4ed4f6, type: 3}
-    chance: 40
-  - prefab: {fileID: 8904384935305461590, guid: fff542d9e74b749b2a662e6cdb26deea, type: 3}
-    chance: 40
   - prefab: {fileID: 1974060792461469227, guid: 54c6d2c70df9242e78242f2248d13dd2, type: 3}
+    chance: 30
+  - prefab: {fileID: 1777092656929224787, guid: 6431cc751e26c4ca494192f14e4ed4f6, type: 3}
+    chance: 35
+  - prefab: {fileID: 8559084241221279014, guid: 8e83006b931494924b971616f1e4bc55, type: 3}
     chance: 20
+  - prefab: {fileID: 1974060792461469227, guid: 6a2887f2f9596e143af7bf36d5ccbbed, type: 3}
+    chance: 15

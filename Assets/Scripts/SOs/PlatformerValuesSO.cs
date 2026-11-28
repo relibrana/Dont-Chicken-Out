@@ -25,6 +25,13 @@ public class PlatformerValuesSO : ScriptableObject
     public float lowJumpMultiplier = 2f;
     [Tooltip("Resistance force when the Jump Button is on hold while falling")]
     public float glideResistance = 1f;
+    [Tooltip("Velocidad fija de bajada al planear (GDD: una velocidad, no un multiplicador). Es lo que equilibra el planeo: "
+             + "si es muy baja, el vacío deja de amenazar.")]
+    public float glideFallSpeed = 4f;
+    [Tooltip("Segundos de caída antes de que arranque el planeo. Absorbe el planeo accidental de quien suelta el salto un poco tarde.")]
+    public float glideEntryDelay = 0.08f;
+    [Tooltip("Corrección de esquinas: si al subir la cabeza roza la esquina de un bloque, se desplaza hasta esto de lado para pasar. 0 = off.")]
+    public float cornerCorrection = 0.15f;
 
 
     [Header("Additional Values")]
@@ -34,6 +41,8 @@ public class PlatformerValuesSO : ScriptableObject
     public float jumpBufferTime = 0.15f;
     [Tooltip("Amount of Force the kick will make")]
     public Vector2 kickForce;
+    [Tooltip("Tiempo mínimo entre dos patadas del mismo pollito (GDD: recuperación).")]
+    public float kickCooldown = 0.3f;
     [Tooltip("Cooldown time between each block Placement. Scaled by the progression system (Placement Cadence).\n"
              + "This plus Block Generation Delay is the total time between two placements, which is what "
              + "drives blocks/second in the progression safety check.")]
