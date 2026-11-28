@@ -13,6 +13,87 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Unity.2D.Animation.Runtime::UnityEngine.U2D.Animation.SpriteLibrarySourceAsset
   m_Library:
+  - m_Name: WingWear_R
+    m_Hash: 788700979
+    m_CategoryList: []
+    m_OverrideEntries:
+    - m_Name: Metal
+      m_Hash: 27515853
+      m_Sprite: {fileID: 7268046911467887822, guid: 081cb0f6fdce628449992c1748653f3d,
+        type: 3}
+      m_FromMain: 0
+      m_SpriteOverride: {fileID: 7268046911467887822, guid: 081cb0f6fdce628449992c1748653f3d,
+        type: 3}
+    m_FromMain: 0
+    m_EntryOverrideCount: 1
+  - m_Name: WingLower_R
+    m_Hash: 189788532
+    m_CategoryList: []
+    m_OverrideEntries:
+    - m_Name: Yellow
+      m_Hash: 396945833
+      m_Sprite: {fileID: 4373681816788260807, guid: 081cb0f6fdce628449992c1748653f3d,
+        type: 3}
+      m_FromMain: 0
+      m_SpriteOverride: {fileID: 4373681816788260807, guid: 081cb0f6fdce628449992c1748653f3d,
+        type: 3}
+    - m_Name: Blue
+      m_Hash: 1040475530
+      m_Sprite: {fileID: 2112792747315627460, guid: 081cb0f6fdce628449992c1748653f3d,
+        type: 3}
+      m_FromMain: 0
+      m_SpriteOverride: {fileID: 2112792747315627460, guid: 081cb0f6fdce628449992c1748653f3d,
+        type: 3}
+    - m_Name: Green
+      m_Hash: 291225893
+      m_Sprite: {fileID: 942888752978568104, guid: 081cb0f6fdce628449992c1748653f3d,
+        type: 3}
+      m_FromMain: 0
+      m_SpriteOverride: {fileID: 942888752978568104, guid: 081cb0f6fdce628449992c1748653f3d,
+        type: 3}
+    - m_Name: Pink
+      m_Hash: 206692072
+      m_Sprite: {fileID: 6392840540914330308, guid: 081cb0f6fdce628449992c1748653f3d,
+        type: 3}
+      m_FromMain: 0
+      m_SpriteOverride: {fileID: 6392840540914330308, guid: 081cb0f6fdce628449992c1748653f3d,
+        type: 3}
+    m_FromMain: 0
+    m_EntryOverrideCount: 4
+  - m_Name: WingUpper_R
+    m_Hash: 967394359
+    m_CategoryList: []
+    m_OverrideEntries:
+    - m_Name: Yellow
+      m_Hash: 396945833
+      m_Sprite: {fileID: 6286346477118401082, guid: 081cb0f6fdce628449992c1748653f3d,
+        type: 3}
+      m_FromMain: 0
+      m_SpriteOverride: {fileID: 6286346477118401082, guid: 081cb0f6fdce628449992c1748653f3d,
+        type: 3}
+    - m_Name: Blue
+      m_Hash: 1040475530
+      m_Sprite: {fileID: 5539866150190525511, guid: 081cb0f6fdce628449992c1748653f3d,
+        type: 3}
+      m_FromMain: 0
+      m_SpriteOverride: {fileID: 5539866150190525511, guid: 081cb0f6fdce628449992c1748653f3d,
+        type: 3}
+    - m_Name: Green
+      m_Hash: 291225893
+      m_Sprite: {fileID: 4029992214116787530, guid: 081cb0f6fdce628449992c1748653f3d,
+        type: 3}
+      m_FromMain: 0
+      m_SpriteOverride: {fileID: 4029992214116787530, guid: 081cb0f6fdce628449992c1748653f3d,
+        type: 3}
+    - m_Name: Pink
+      m_Hash: 206692072
+      m_Sprite: {fileID: -1688612318875235137, guid: 081cb0f6fdce628449992c1748653f3d,
+        type: 3}
+      m_FromMain: 0
+      m_SpriteOverride: {fileID: -1688612318875235137, guid: 081cb0f6fdce628449992c1748653f3d,
+        type: 3}
+    m_FromMain: 0
+    m_EntryOverrideCount: 4
   - m_Name: Headwear
     m_Hash: 332903193
     m_CategoryList: []
@@ -149,89 +230,8 @@ MonoBehaviour:
         type: 3}
     m_FromMain: 0
     m_EntryOverrideCount: 4
-  - m_Name: Wing_wear_R
-    m_Hash: 666805348
-    m_CategoryList: []
-    m_OverrideEntries:
-    - m_Name: Metal
-      m_Hash: 27515853
-      m_Sprite: {fileID: 7268046911467887822, guid: 081cb0f6fdce628449992c1748653f3d,
-        type: 3}
-      m_FromMain: 0
-      m_SpriteOverride: {fileID: 7268046911467887822, guid: 081cb0f6fdce628449992c1748653f3d,
-        type: 3}
-    m_FromMain: 0
-    m_EntryOverrideCount: 1
-  - m_Name: Wing_Lower_R
-    m_Hash: 833990788
-    m_CategoryList: []
-    m_OverrideEntries:
-    - m_Name: Yellow
-      m_Hash: 396945833
-      m_Sprite: {fileID: 4373681816788260807, guid: 081cb0f6fdce628449992c1748653f3d,
-        type: 3}
-      m_FromMain: 0
-      m_SpriteOverride: {fileID: 4373681816788260807, guid: 081cb0f6fdce628449992c1748653f3d,
-        type: 3}
-    - m_Name: Blue
-      m_Hash: 1040475530
-      m_Sprite: {fileID: 2112792747315627460, guid: 081cb0f6fdce628449992c1748653f3d,
-        type: 3}
-      m_FromMain: 0
-      m_SpriteOverride: {fileID: 2112792747315627460, guid: 081cb0f6fdce628449992c1748653f3d,
-        type: 3}
-    - m_Name: Green
-      m_Hash: 291225893
-      m_Sprite: {fileID: 942888752978568104, guid: 081cb0f6fdce628449992c1748653f3d,
-        type: 3}
-      m_FromMain: 0
-      m_SpriteOverride: {fileID: 942888752978568104, guid: 081cb0f6fdce628449992c1748653f3d,
-        type: 3}
-    - m_Name: Pink
-      m_Hash: 206692072
-      m_Sprite: {fileID: 6392840540914330308, guid: 081cb0f6fdce628449992c1748653f3d,
-        type: 3}
-      m_FromMain: 0
-      m_SpriteOverride: {fileID: 6392840540914330308, guid: 081cb0f6fdce628449992c1748653f3d,
-        type: 3}
-    m_FromMain: 0
-    m_EntryOverrideCount: 4
-  - m_Name: Wing_Upper_R
-    m_Hash: 55772615
-    m_CategoryList: []
-    m_OverrideEntries:
-    - m_Name: Yellow
-      m_Hash: 396945833
-      m_Sprite: {fileID: 6286346477118401082, guid: 081cb0f6fdce628449992c1748653f3d,
-        type: 3}
-      m_FromMain: 0
-      m_SpriteOverride: {fileID: 6286346477118401082, guid: 081cb0f6fdce628449992c1748653f3d,
-        type: 3}
-    - m_Name: Blue
-      m_Hash: 1040475530
-      m_Sprite: {fileID: 5539866150190525511, guid: 081cb0f6fdce628449992c1748653f3d,
-        type: 3}
-      m_FromMain: 0
-      m_SpriteOverride: {fileID: 5539866150190525511, guid: 081cb0f6fdce628449992c1748653f3d,
-        type: 3}
-    - m_Name: Green
-      m_Hash: 291225893
-      m_Sprite: {fileID: 4029992214116787530, guid: 081cb0f6fdce628449992c1748653f3d,
-        type: 3}
-      m_FromMain: 0
-      m_SpriteOverride: {fileID: 4029992214116787530, guid: 081cb0f6fdce628449992c1748653f3d,
-        type: 3}
-    - m_Name: Pink
-      m_Hash: 206692072
-      m_Sprite: {fileID: -1688612318875235137, guid: 081cb0f6fdce628449992c1748653f3d,
-        type: 3}
-      m_FromMain: 0
-      m_SpriteOverride: {fileID: -1688612318875235137, guid: 081cb0f6fdce628449992c1748653f3d,
-        type: 3}
-    m_FromMain: 0
-    m_EntryOverrideCount: 4
-  - m_Name: Footwear_R
-    m_Hash: 155488148
+  - m_Name: FootWear_R
+    m_Hash: 250120866
     m_CategoryList: []
     m_OverrideEntries:
     - m_Name: Metal
@@ -371,8 +371,8 @@ MonoBehaviour:
         type: 3}
     m_FromMain: 0
     m_EntryOverrideCount: 4
-  - m_Name: Footwear_L
-    m_Hash: 860599031
+  - m_Name: FootWear_L
+    m_Hash: 887601089
     m_CategoryList: []
     m_OverrideEntries:
     - m_Name: Metal
@@ -423,8 +423,15 @@ MonoBehaviour:
       m_FromMain: 0
       m_SpriteOverride: {fileID: 8580190984938348854, guid: 081cb0f6fdce628449992c1748653f3d,
         type: 3}
+    - m_Name: Big
+      m_Hash: 733389993
+      m_Sprite: {fileID: 8408860208327723851, guid: 081cb0f6fdce628449992c1748653f3d,
+        type: 3}
+      m_FromMain: 0
+      m_SpriteOverride: {fileID: 8408860208327723851, guid: 081cb0f6fdce628449992c1748653f3d,
+        type: 3}
     m_FromMain: 0
-    m_EntryOverrideCount: 4
+    m_EntryOverrideCount: 5
   - m_Name: Foot_Base_L
     m_Hash: 416729855
     m_CategoryList: []
@@ -458,21 +465,21 @@ MonoBehaviour:
         type: 3}
     m_FromMain: 0
     m_EntryOverrideCount: 2
-  - m_Name: Wing_wear_L
-    m_Hash: 498178311
+  - m_Name: WingWear_L
+    m_Hash: 353215056
     m_CategoryList: []
     m_OverrideEntries:
     - m_Name: Metal
       m_Hash: 27515853
-      m_Sprite: {fileID: 611744863736248548, guid: 081cb0f6fdce628449992c1748653f3d,
+      m_Sprite: {fileID: 7153387478199899980, guid: 081cb0f6fdce628449992c1748653f3d,
         type: 3}
       m_FromMain: 0
-      m_SpriteOverride: {fileID: 611744863736248548, guid: 081cb0f6fdce628449992c1748653f3d,
+      m_SpriteOverride: {fileID: 7153387478199899980, guid: 081cb0f6fdce628449992c1748653f3d,
         type: 3}
     m_FromMain: 0
     m_EntryOverrideCount: 1
-  - m_Name: Wing_Lower_L
-    m_Hash: 196775399
+  - m_Name: WingLower_L
+    m_Hash: 826330135
     m_CategoryList: []
     m_OverrideEntries:
     - m_Name: Yellow
@@ -505,8 +512,8 @@ MonoBehaviour:
         type: 3}
     m_FromMain: 0
     m_EntryOverrideCount: 4
-  - m_Name: Wing_Upper_L
-    m_Hash: 962345124
+  - m_Name: WingUpper_L
+    m_Hash: 61241684
     m_CategoryList: []
     m_OverrideEntries:
     - m_Name: Yellow
@@ -540,5 +547,5 @@ MonoBehaviour:
     m_FromMain: 0
     m_EntryOverrideCount: 4
   m_PrimaryLibraryGUID: 
-  m_ModificationHash: 639293530368298314
+  m_ModificationHash: 639314054991751447
   m_Version: 1
